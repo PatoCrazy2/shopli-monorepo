@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Initial example model, will be updated based on core rules later
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(CAJERO)
+  pin_hash  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  turnos    Turno[]
+}
+
+enum Role {
+  DUENO     @map("DUEÑO")
+  ENCARGADO
+  CAJERO
+}
+
+model Sucursal {
+  id        String   @id @default(uuid())
+  nombre    String
+  direccion String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventario Inventario_Sucursal[]
+  turnos     Turno[]
+  ventas     Venta[]
+}
+
+model Proveedor {
+  id        String   @id @default(uuid())
+  nombre    String   @unique
+  contacto  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productos Producto[]
+}
+
+model Producto {
+  id             String   @id @default(uuid())
+  nombre         String
+  codigo_interno String?  @unique
+  descripcion    String?
+  costo          Decimal  @db.Decimal(10, 2)
+  precio_publico Decimal  @db.Decimal(10, 2)
+  categoria      String?
+  proveedor_id   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  proveedor      Proveedor? @relation(fields: [proveedor_id], references: [id])
+  inventario     Inventario_Sucursal[]
+  detalle_ventas Detalle_Venta[]
+}
+
+model Inventario_Sucursal {
+  id          String   @id @default(uuid())
+  sucursal_id String
+  producto_id String
+  cantidad    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sucursal    Sucursal @relation(fields: [sucursal_id], references: [id], onDelete: Restrict)
+  producto    Producto @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+
+  @@unique([sucursal_id, producto_id])
+}
+
+model Turno {
+  id             String      @id @default(uuid())
+  usuario_id     String
+  sucursal_id    String
+  estado         EstadoTurno @default(ABIERTO)
+  monto_inicial  Decimal     @db.Decimal(10, 2)
+  total_ventas   Decimal     @default(0) @db.Decimal(10, 2)
+  fecha_apertura DateTime    @default(now())
+  fecha_cierre   DateTime?
+  
+  usuario        User        @relation(fields: [usuario_id], references: [id])
+  sucursal       Sucursal    @relation(fields: [sucursal_id], references: [id], onDelete: Restrict)
+  ventas         Venta[]
+}
+
+enum EstadoTurno {
+  ABIERTO
+  CERRADO
+}
+
+model Venta {
+  id          String      @id @default(uuid())
+  turno_id    String
+  sucursal_id String
+  total       Decimal     @db.Decimal(10, 2)
+  estado      EstadoVenta @default(COMPLETADA)
+  sync_status SyncStatus  @default(PENDING)
+  fecha       DateTime    @default(now())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  turno       Turno       @relation(fields: [turno_id], references: [id])
+  sucursal    Sucursal    @relation(fields: [sucursal_id], references: [id])
+  detalles    Detalle_Venta[]
+}
+
+enum EstadoVenta {
+  COMPLETADA
+  CANCELADA
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+}
+
+model Detalle_Venta {
+  id                         String   @id @default(uuid())
+  venta_id                   String
+  producto_id                String
+  cantidad                   Int
+  precio_unitario_historico  Decimal  @db.Decimal(10, 2)
+  
+  venta                      Venta    @relation(fields: [venta_id], references: [id], onDelete: Cascade)
+  producto                   Producto @relation(fields: [producto_id], references: [id], onDelete: Restrict)
+}
