@@ -24,8 +24,24 @@ description: Aplica esta regla cuando trabajes en el frontend, crees o modifique
   - **Baja Densidad de Datos:** Priorizar el "aire" en la interfaz. Las métricas deben ser gigantes (ej. `text-5xl`), los gráficos deben tener márgenes amplios, y las tablas deben tener un `padding` generoso (no usar tablas compactas). El dueño debe poder escanear la salud del negocio de un vistazo sin sentirse abrumado.
 
 ## 4. Rendimiento Perceptual y Animaciones
-- **Velocidad Absoluta (Zero-Animations):** La aplicación debe sentirse ultra rápida. **Regla estricta:** Deshabilitar transiciones y animaciones innecesarias. Clics, apertura de modales, cambios de pestaña y renderizado de listas deben ser *instantáneos*. (Evitar clases como `transition-all`, `duration-200`, `animate-in` salvo casos extremadamente justificados).
+- **Velocidad Absoluta en POS(Zero-Animations):** La aplicación debe sentirse ultra rápida. **Regla estricta:** Deshabilitar transiciones y animaciones innecesarias. Clics, apertura de modales, cambios de pestaña y renderizado de listas deben ser *instantáneos*. (Evitar clases como `transition-all`, `duration-200`, `animate-in` salvo casos extremadamente justificados).
 
 ## 5. Experiencia Offline-First (RxDB / PowerSync)
 - **Indicador de Conexión (El Semáforo Sutil):** El estado de la red NO debe ser intrusivo. Se utilizará un pequeño indicador visual (tipo semáforo: círculo verde/amarillo/rojo) en la barra de navegación superior (esquina).
 - **Comportamiento Offline:** Si el semáforo está amarillo/rojo (sin internet o sincronizando), el cajero debe poder seguir operando con total normalidad. La UI no debe bloquearse ni mostrar banners de advertencia gigantes que interrumpan el flujo de trabajo.
+##Frontend Admin (Dashboard y Login Next.js)##
+Principio: Experiencia Premium y Fluida:A diferencia del POS, el Admin sí debe usar animaciones suaves y agradables para mejorar percepción de calidad.
+Animaciones Permitidas (y Recomendadas),Transiciones suaves (duration-200 a duration-300),Fade-in en tarjetas,Animación sutil en hover de cards,Elevación ligera (shadow-md → shadow-lg),Micro-interacciones en botones,Transiciones suaves entre páginas,Reglas de Animación,Nunca deben afectar rendimiento.
+Nunca deben bloquear interacción.
+Deben ser sutiles, no llamativas.
+Curva recomendada: ease-out
+No usar rebotes exagerados.
+Densidad Visual
+Métricas grandes (text-4xl a text-6xl)
+Cards con padding generoso (p-6 mínimo)
+Tablas aireadas (no compactas)
+Márgenes amplios entre secciones
+El dueño debe:
+Escanear información en 2–3 segundos
+Sentir control
+Percibir producto premium
