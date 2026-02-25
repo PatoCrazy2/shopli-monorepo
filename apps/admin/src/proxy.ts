@@ -10,5 +10,5 @@ export default withAuth({
 
 export const config = {
     // Proteger por defecto solo rutas de Admin Dashboard, no afectar /api usado por el POS.
-    matcher: ["/((?!api/|auth/|_next/static|_next/image|favicon.ico).*)"],
+    matcher: ["/((?!api/|auth/|_next/static|_next/image|favicon.ico|login).*)"],
 };
