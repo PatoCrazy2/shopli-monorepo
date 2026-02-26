@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export function useCloseRegister() {
-    const { activeShift, closeShift } = useAuth();
+    const { activeShift } = useAuth();
     const navigate = useNavigate();
 
     const [physicalCount, setPhysicalCount] = useState<string>('');
@@ -21,13 +21,9 @@ export function useCloseRegister() {
         if (physicalCount === '') return;
         setIsClosing(true);
 
-        setTimeout(() => {
-            closeShift(parsedCount);
-            setIsClosing(false);
-            // It will be handled conditionally by AuthContext / RequireNoOpenShift
-            // but explicitly returning to /abrir-caja ensures proper routing state
-            navigate('/abrir-caja', { replace: true });
-        }, 800); // UI micro-interaction simulated delay
+        // Sin delay artificial: Velocidad Absoluta en POS
+        setIsClosing(false);
+        navigate('/auditoria-cierre', { state: { physicalCount: parsedCount } });
     };
 
     return {

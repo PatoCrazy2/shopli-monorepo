@@ -57,12 +57,14 @@ model Producto {
   precio_publico Decimal  @db.Decimal(10, 2)
   categoria      String?
   proveedor_id   String?
+  isCritical     Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   proveedor      Proveedor? @relation(fields: [proveedor_id], references: [id])
   inventario     Inventario_Sucursal[]
   detalle_ventas Detalle_Venta[]
+  auditorias     AuditItem[]
 }
 
 model Inventario_Sucursal {
@@ -92,6 +94,7 @@ model Turno {
   usuario        User        @relation(fields: [usuario_id], references: [id])
   sucursal       Sucursal    @relation(fields: [sucursal_id], references: [id], onDelete: Restrict)
   ventas         Venta[]
+  auditorias     InventoryAudit[]
 }
 
 enum EstadoTurno {
@@ -134,4 +137,30 @@ model Detalle_Venta {
   
   venta                      Venta    @relation(fields: [venta_id], references: [id], onDelete: Cascade)
   producto                   Producto @relation(fields: [producto_id], references: [id], onDelete: Restrict)
+}
+
+model InventoryAudit {
+  id          String   @id @default(uuid())
+  turno_id    String
+  usuario_id  String
+  sucursal_id String
+  createdAt   DateTime @default(now())
+
+  turno       Turno       @relation(fields: [turno_id], references: [id])
+  items       AuditItem[]
+}
+
+model AuditItem {
+  id              String   @id @default(uuid())
+  auditId         String
+  productId       String
+  expectedStock   Int
+  countedStock    Int
+  discrepancy     Int
+  reason          String?  // Daño, Error de registro, Faltante/Robo
+  comments        String?
+  createdAt       DateTime @default(now())
+
+  audit           InventoryAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  producto        Producto       @relation(fields: [productId], references: [id], onDelete: Restrict)
 }
