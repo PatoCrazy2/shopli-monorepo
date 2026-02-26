@@ -20,6 +20,20 @@ export function useCart() {
         setShowCart(false);
     };
 
+    const removeFromCart = (id: number) => {
+        setCartItems((prev) => prev.filter((item) => item.id !== id));
+    };
+
+    const updateQuantity = (id: number, quantity: number) => {
+        if (quantity <= 0) {
+            removeFromCart(id);
+            return;
+        }
+        setCartItems((prev) =>
+            prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+        );
+    };
+
     const totalCart = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -28,6 +42,8 @@ export function useCart() {
         showCart,
         setShowCart,
         handleAddToCart,
+        removeFromCart,
+        updateQuantity,
         clearCart,
         totalCart,
         totalItems
