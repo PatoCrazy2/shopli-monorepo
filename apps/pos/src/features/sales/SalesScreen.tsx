@@ -4,6 +4,7 @@ import ProductGrid from "./components/ProductGrid";
 import CheckoutBar from "./components/CheckoutBar";
 import CartScreen from "./components/CartScreen";
 import { useCart } from "./hooks/useCart";
+import { useSalesHistory } from "./hooks/useSalesHistory";
 
 export default function SalesScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -12,14 +13,22 @@ export default function SalesScreen() {
         showCart,
         setShowCart,
         handleAddToCart,
+        removeFromCart,
+        updateQuantity,
         clearCart,
         totalCart,
         totalItems
     } = useCart();
+    const { addSale } = useSalesHistory();
 
     const handleCheckout = () => {
-        // In a real scenario, an offline sale is generated here
-        setShowSuccessModal(true);
+        // En un escenario real, aquí se persistiría en RxDB
+        const sale = addSale(cartItems, totalCart, totalItems);
+        if (sale) {
+            setShowSuccessModal(true);
+        } else {
+            alert("Error: No hay turno activo o sesión de usuario.");
+        }
     };
 
     const closeSuccessModal = () => {
@@ -50,6 +59,8 @@ export default function SalesScreen() {
                     totalCart={totalCart}
                     onBack={() => setShowCart(false)}
                     onCheckout={handleCheckout}
+                    onRemove={removeFromCart}
+                    onUpdateQuantity={updateQuantity}
                 />
             )}
 

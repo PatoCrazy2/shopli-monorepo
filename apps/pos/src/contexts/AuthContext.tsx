@@ -30,7 +30,7 @@ interface AuthContextType {
     login: (pin: string) => void;
     logout: () => void;
     openShift: (initialAmount: number) => void;
-    closeShift: () => void;
+    closeShift: (physicalAmount: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -88,10 +88,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('mock_shift', JSON.stringify(newShift));
     };
 
-    const closeShift = () => {
-        // Implement closing logic here
+    const closeShift = (physicalAmount: number) => {
+        if (!activeShift) return;
+
+        // Mock updating the shift to CERRADO
+        const closedShift = {
+            ...activeShift,
+            status: 'CERRADO' as const,
+            closedAt: new Date(),
+            // Optionally, we could store the physicalAmount on the model but for now we just change status
+        };
+
+        // In a real app we would save the closed shift to a "shifts history" list.
+        // For local state we clear the *active* shift.
         setActiveShift(null);
         localStorage.removeItem('mock_shift');
+        console.log('Shift closed. Physical amount recorded:', physicalAmount, closedShift);
     };
 
     return (

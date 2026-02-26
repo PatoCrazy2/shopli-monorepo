@@ -4,6 +4,10 @@ import { LoginForm } from './features/auth/LoginForm';
 import MainLayout from './components/layout/MainLayout';
 import SalesScreen from './features/sales/SalesScreen';
 import OpenRegisterScreen from './features/sales/OpenRegisterScreen';
+import CloseRegisterScreen from './features/sales/CloseRegisterScreen';
+import SalesHistoryScreen from './features/sales/SalesHistoryScreen';
+import InventoryScreen from './features/inventory/InventoryScreen';
+import InventoryAuditWizard from './features/inventory/InventoryAuditWizard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -68,6 +72,10 @@ function AppRoutes() {
         }
       >
         <Route index element={<SalesScreen />} />
+        <Route path="corte-caja" element={<CloseRegisterScreen />} />
+        <Route path="historial-ventas" element={<SalesHistoryScreen />} />
+        <Route path="inventario" element={<InventoryScreen />} />
+        <Route path="auditoria-cierre" element={<InventoryAuditWizard />} />
       </Route>
     </Routes>
   );

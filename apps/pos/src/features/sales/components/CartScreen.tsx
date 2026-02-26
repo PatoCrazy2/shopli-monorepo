@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, Minus } from 'lucide-react';
 import type { CartItem } from '../types/cart.types';
 
 interface CartScreenProps {
@@ -7,9 +7,11 @@ interface CartScreenProps {
     totalCart: number;
     onBack: () => void;
     onCheckout: () => void;
+    onRemove: (id: number) => void;
+    onUpdateQuantity: (id: number, quantity: number) => void;
 }
 
-export default function CartScreen({ cartItems, totalItems, totalCart, onBack, onCheckout }: CartScreenProps) {
+export default function CartScreen({ cartItems, totalItems, totalCart, onBack, onCheckout, onRemove, onUpdateQuantity }: CartScreenProps) {
     return (
         <div className="flex-1 flex flex-col bg-white">
             <div className="h-16 flex items-center px-6 border-b border-gray-200 gap-4 shrink-0">
@@ -24,12 +26,35 @@ export default function CartScreen({ cartItems, totalItems, totalCart, onBack, o
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {cartItems.map(item => (
-                    <div key={item.id} className="flex items-center justify-between">
-                        <div>
+                    <div key={item.id} className="flex items-center justify-between p-4 border border-gray-100 shadow-sm rounded-xl">
+                        <div className="flex-1">
                             <p className="font-semibold text-lg">{item.name}</p>
-                            <p className="text-gray-500">{item.quantity} x ${item.price}.00</p>
+                            <p className="font-bold text-gray-900">${item.price * item.quantity}.00</p>
                         </div>
-                        <p className="font-semibold text-lg">${item.price * item.quantity}.00</p>
+
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg">
+                                <button
+                                    onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                                    className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-l-lg transition-colors"
+                                >
+                                    <Minus className="w-5 h-5 text-gray-700" />
+                                </button>
+                                <span className="w-10 text-center font-semibold">{item.quantity}</span>
+                                <button
+                                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                    className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-r-lg transition-colors"
+                                >
+                                    <Plus className="w-5 h-5 text-gray-700" />
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => onRemove(item.id)}
+                                className="p-3 text-red-600 hover:bg-red-50 active:bg-red-100 rounded-lg transition-colors"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -42,7 +67,11 @@ export default function CartScreen({ cartItems, totalItems, totalCart, onBack, o
 
                 <button
                     onClick={onCheckout}
-                    className="w-full h-16 bg-black text-white text-xl font-bold rounded-lg hover:bg-zinc-800 active:bg-zinc-900 flex items-center justify-center"
+                    disabled={cartItems.length === 0}
+                    className={`w-full h-16 text-xl font-bold rounded-lg flex items-center justify-center transition-colors ${cartItems.length === 0
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900'
+                        }`}
                 >
                     Cobrar
                 </button>

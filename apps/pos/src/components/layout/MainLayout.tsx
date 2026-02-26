@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { Wifi, WifiOff, Menu } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "./Sidebar";
 
@@ -24,7 +24,7 @@ export default function MainLayout({ onLogout }: MainLayoutProps) {
                         onClick={toggle}
                         className="flex items-center gap-3 -ml-2 p-2 rounded-md hover:bg-gray-100 min-h-[3rem] transition-none"
                     >
-                        <Menu className="w-6 h-6" />
+                        <img src="/menushopli.svg" alt="ShopLI Logo" className="w-6 h-6" />
                         <h1 className="text-xl font-bold tracking-tight">ShopLI <sub style={{ fontSize: '0.5em' }}>POS</sub></h1>
                     </button>
                 </div>
