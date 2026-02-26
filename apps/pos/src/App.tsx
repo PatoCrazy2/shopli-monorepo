@@ -1,37 +1,83 @@
-import { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginForm } from './features/auth/LoginForm';
+import MainLayout from './components/layout/MainLayout';
+import SalesScreen from './features/sales/SalesScreen';
+import OpenRegisterScreen from './features/sales/OpenRegisterScreen';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+// Componente para proteger rutas que requieren autenticación PERO no necesariamente turno abierto
+export function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
-  const handleLogin = (pin: string) => {
-    // Aquí implementaremos la validación del PIN con la BD local de RxDB/PowerSync en el futuro.
-    // Por ahora, cualquier PIN nos da acceso a modo de demostración.
-    console.log('Login attempt with PIN:', pin);
-    setIsAuthenticated(true);
-  };
+// Componente para proteger la pantalla de ventas: REQUIERE turno abierto
+function RequireOpenShift({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, hasActiveShift } = useAuth();
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!hasActiveShift) return <Navigate to="/abrir-caja" replace />;
 
-  if (!isAuthenticated) {
-    return <LoginForm onLogin={handleLogin} />;
-  }
+  return <>{children}</>;
+}
 
-  // Placeholder para el Dashboard del POS
+// Componente para evitar que usuarios con turno abierto entren a "abrir caja"
+function RequireNoOpenShift({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, hasActiveShift } = useAuth();
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (hasActiveShift) return <Navigate to="/" replace />; // Ya tiene turno, va a ventas
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  const { isAuthenticated, login, logout } = useAuth();
+
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 font-sans text-black">
-      <h1 className="text-4xl font-bold mb-4">Módulo de Ventas Activo</h1>
-      <p className="text-xl text-zinc-600 mb-8">El modo Offline-First está listo para usarse.</p>
-      <button
-        onClick={handleLogout}
-        className="h-16 px-8 bg-black text-white text-xl font-bold rounded-lg touch-manipulation active:bg-neutral-800"
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          !isAuthenticated ? (
+            <LoginForm onLogin={login} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/abrir-caja"
+        element={
+          <RequireNoOpenShift>
+            <OpenRegisterScreen />
+          </RequireNoOpenShift>
+        }
+      />
+
+      <Route
+        path="/"
+        element={
+          <RequireOpenShift>
+            <MainLayout onLogout={logout} />
+          </RequireOpenShift>
+        }
       >
-        Cerrar Sesión
-      </button>
-    </div>
+        <Route index element={<SalesScreen />} />
+      </Route>
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 
