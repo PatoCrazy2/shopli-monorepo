@@ -1,5 +1,7 @@
 import { Outlet } from "react-router-dom";
-import { Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff, Menu } from "lucide-react";
+import { useSidebar } from "../../hooks/useSidebar";
+import Sidebar from "./Sidebar";
 
 // TODO: Replace with actual connection state hook from RxDB/PowerSync later
 const isOnline = true;
@@ -9,12 +11,22 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ onLogout }: MainLayoutProps) {
+    const { isOpen, toggle, close } = useSidebar();
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
+            <Sidebar isOpen={isOpen} onClose={close} onLogout={onLogout} />
+
             {/* Top Navigation Bar */}
-            <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
+            <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 relative z-10">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-bold tracking-tight">ShopLI POS</h1>
+                    <button
+                        onClick={toggle}
+                        className="flex items-center gap-3 -ml-2 p-2 rounded-md hover:bg-gray-100 min-h-[3rem] transition-none"
+                    >
+                        <Menu className="w-6 h-6" />
+                        <h1 className="text-xl font-bold tracking-tight">ShopLI <sub style={{ fontSize: '0.5em' }}>POS</sub></h1>
+                    </button>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -38,14 +50,6 @@ export default function MainLayout({ onLogout }: MainLayoutProps) {
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold">
                         C1
                     </div>
-                    {onLogout && (
-                        <button
-                            onClick={onLogout}
-                            className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-zinc-800"
-                        >
-                            Cerrar Sesión
-                        </button>
-                    )}
                 </div>
             </header>
 

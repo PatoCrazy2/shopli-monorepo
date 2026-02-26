@@ -28,3 +28,9 @@ trigger: always_on
 - En caso de conflicto de inventario:
   - Se prioriza el primer registro sincronizado.
 - La sincronización debe ser idempotente.
+
+##Arquitectura POS
+- UI renderiza
+- Hooks manejan estado
+- Lógica compleja se abstrae
+ -Nada de lógica de negocio dentro de JSX
