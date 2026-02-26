@@ -67,7 +67,11 @@ export default function CartScreen({ cartItems, totalItems, totalCart, onBack, o
 
                 <button
                     onClick={onCheckout}
-                    className="w-full h-16 bg-black text-white text-xl font-bold rounded-lg hover:bg-zinc-800 active:bg-zinc-900 flex items-center justify-center"
+                    disabled={cartItems.length === 0}
+                    className={`w-full h-16 text-xl font-bold rounded-lg flex items-center justify-center transition-colors ${cartItems.length === 0
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900'
+                        }`}
                 >
                     Cobrar
                 </button>
