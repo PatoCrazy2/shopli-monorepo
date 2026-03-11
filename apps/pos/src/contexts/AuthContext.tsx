@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import { db, seedLocalData } from '../lib/db';
 
 // Mock types for user and shift state.
 // In the future this will be mapped to the PowerSync/RxDB models.
@@ -27,9 +28,9 @@ interface AuthContextType {
     activeShift: Shift | null;
     isAuthenticated: boolean;
     hasActiveShift: boolean;
-    login: (pin: string) => void;
+    login: (pin: string) => Promise<boolean>;
     logout: () => void;
-    openShift: (initialAmount: number) => void;
+    openShift: (initialAmount: number, branchId: string) => void;
     closeShift: (physicalAmount: number) => void;
 }
 
@@ -46,15 +47,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return saved ? JSON.parse(saved) : null;
     });
 
-    const login = (pin: string) => {
-        // MOCK LOGIN: Allows any PIN for now.
-        console.log('Login attempt with PIN:', pin);
-        // We set a mock user
+    const login = async (pin: string): Promise<boolean> => {
+        const count = await db.users.count();
+        if (count === 0) {
+            await seedLocalData();
+        }
+
+        const localUser = await db.users.where('pin').equals(pin).first();
+        
+        if (!localUser) {
+            console.warn('PIN Incorrecto', pin);
+            return false;
+        }
+
         const mockUser: User = {
-            id: 'usr_12345',
-            name: 'Cajero Demo',
-            role: 'CAJERO',
-            branchId: 'br_999',
+            id: localUser.id,
+            name: localUser.name || 'Usuario',
+            role: localUser.role,
+            branchId: 'branch-1', // Default inicial. En OpenRegisterScreen se asigna el real al Turno
             branchName: 'Sucursal Principal',
         };
 
@@ -62,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setActiveShift(null);
         localStorage.setItem('mock_user', JSON.stringify(mockUser));
         localStorage.removeItem('mock_shift');
+        return true;
     };
 
     const logout = () => {
@@ -71,13 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('mock_shift');
     };
 
-    const openShift = (initialAmount: number) => {
+    const openShift = (initialAmount: number, branchId: string) => {
         if (!user) return;
 
         const newShift: Shift = {
             id: crypto.randomUUID(),
             userId: user.id,
-            branchId: user.branchId,
+            branchId: branchId, // Use the selected branch
             status: 'ABIERTO',
             initialAmount,
             totalSales: 0,

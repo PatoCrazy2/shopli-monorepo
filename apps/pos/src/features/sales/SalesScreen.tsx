@@ -21,9 +21,9 @@ export default function SalesScreen() {
     } = useCart();
     const { addSale } = useSalesHistory();
 
-    const handleCheckout = () => {
-        // En un escenario real, aquí se persistiría en RxDB
-        const sale = addSale(cartItems, totalCart, totalItems);
+    const handleCheckout = async () => {
+        // En un escenario real, aquí se persistiría en RxDB (ahora Dexie)
+        const sale = await addSale(cartItems, totalCart);
         if (sale) {
             setShowSuccessModal(true);
         } else {
@@ -40,7 +40,7 @@ export default function SalesScreen() {
         <div className="relative flex w-full h-full bg-gray-50 overflow-hidden">
             {/* Product Search & Grid */}
             {!showCart && (
-                <div className="flex-1 flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 flex flex-col p-3 sm:p-6 overflow-y-auto custom-scrollbar">
                     <ProductGrid onAddToCart={handleAddToCart} />
 
                     <CheckoutBar

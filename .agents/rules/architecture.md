@@ -10,12 +10,12 @@ trigger: always_on
 - **Frontend POS (Cliente):** Vite + React (PWA Offline-First).
 - **Base de Datos & ORM:** PostgreSQL (Neon en producción, Docker local) + Prisma.
 - **Autenticación:** NextAuth.js (Auth.js).
-- **Sincronización:** RxDB (o PowerSync) en cliente POS.
+- **Sincronización:** Dixie.js en cliente POS.
 - **Estilos y UI:** Tailwind CSS + Shadcn/UI.
 
 ## Patrones de Desarrollo
 - **Backend/Admin:** Priorizar React Server Components (RSC) y Server Actions en el Dashboard de Next.js. Las APIs deben usarse primariamente para servir datos al cliente POS.
-- **Cliente POS (Offline-First):** La app de Vite asume desconexión constante. Todas las transacciones de ventas y consultas de inventario se resuelven contra la base de datos local (RxDB/PowerSync) y se sincronizan en background hacia el servidor central.
+- **Cliente POS (Offline-First):** La app de Vite asume desconexión constante. Todas las transacciones de ventas y consultas de inventario se resuelven contra la base de datos local (Dixie.js) y se sincronizan en background hacia el servidor central.
 
 ## Arquitectura Backend y Base de Datos
 - **Next.js como API Central:** No existe un servidor backend separado (como Express o Nest). La aplicación `apps/admin` expone endpoints REST a través de `app/api/...` exclusivamente para servir a la aplicación cliente Vite (`apps/pos`).

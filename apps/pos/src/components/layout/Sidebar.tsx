@@ -1,20 +1,19 @@
 import { NavLink } from "react-router-dom";
-import { ShoppingCart, Package, Wallet, History, LogOut, X } from "lucide-react";
+import { ShoppingCart, Package, Wallet, History, X } from "lucide-react";
 
 interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
-    onLogout?: () => void;
 }
 
-export default function Sidebar({ isOpen, onClose, onLogout }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (!isOpen) return null;
 
     const navItems = [
         { path: "/", label: "Ventas", icon: ShoppingCart },
+        { path: "/historial-ventas", label: "Historial de Ventas", icon: History },
         { path: "/inventario", label: "Inventario", icon: Package },
         { path: "/corte-caja", label: "Corte de Caja", icon: Wallet },
-        { path: "/historial-ventas", label: "Historial de Ventas", icon: History },
     ];
 
     return (
@@ -55,20 +54,6 @@ export default function Sidebar({ isOpen, onClose, onLogout }: SidebarProps) {
                     ))}
                 </nav>
 
-                {onLogout && (
-                    <div className="p-4 border-t border-gray-200">
-                        <button
-                            onClick={() => {
-                                onClose();
-                                onLogout();
-                            }}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-4 min-h-[3rem] text-base font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-none"
-                        >
-                            <LogOut className="w-5 h-5" />
-                            Cerrar Sesión
-                        </button>
-                    </div>
-                )}
             </aside>
         </>
     );
