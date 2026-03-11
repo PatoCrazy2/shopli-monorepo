@@ -1,42 +1,46 @@
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { Role } from "@shopli/db";
 
-export default async function proxy(req: NextRequest) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const isAuthPage = req.nextUrl.pathname.startsWith("/login");
+export default auth((req) => {
+    const isLoggedIn = !!req.auth;
+    const { pathname } = req.nextUrl;
 
-    // Si no hay token y no es página de login, redirige a /login limpia
-    if (!token && !isAuthPage) {
-        const loginUrl = new URL("/login", req.url);
-        loginUrl.search = ""; // Asegura limpieza absoluta
-        return NextResponse.redirect(loginUrl);
+    const isLoginPage = pathname === "/login";
+    const isDashboardRoute = pathname.startsWith("/dashboard");
+
+    // Si hay sesión y está en /login -> redirect a /dashboard
+    if (isLoginPage) {
+        if (isLoggedIn) {
+            return NextResponse.redirect(new URL("/dashboard", req.url));
+        }
+        return NextResponse.next();
     }
 
-    // Si ya estamos en login pero trae callbackUrl sucio, lo limpiamos y recargamos
-    if (!token && isAuthPage && req.nextUrl.search) {
-        const cleanLoginUrl = new URL("/login", req.url);
-        cleanLoginUrl.search = "";
-        return NextResponse.redirect(cleanLoginUrl);
+    // Role verification (Only DUENO and ENCARGADO can access the Dashboard)
+    // Se toma req.auth.user.role porque req.auth es la sesion y hemos extendido Session en types
+    if (isDashboardRoute && isLoggedIn) {
+        // En Auth.js v5 beta req.auth type contains our User session, including role defined in types
+        const userRole = (req.auth as any)?.user?.role;
+        if (userRole && userRole !== "DUEÑO" && userRole !== "ENCARGADO") {
+            // El CAJERO o un rol no válido no deben poder entrar al dashboard
+            return NextResponse.redirect(new URL("/login?error=unauthorized", req.url));
+        }
     }
 
-    // Role verification according to core.md (DUEÑO and ENCARGADO only)
-    if (token && token.role !== Role.DUENO && token.role !== Role.ENCARGADO) {
-        // Si de alguna manera alguien entró con rol bloqueado, limparlo o mandarlo lejos.
-        // Al POS no tiene acceso porque es otro app, pero no podemos dejarlo aquí.
-        return NextResponse.redirect(new URL("/login?error=unauthorized", req.url));
-    }
-
-    // Si hay token válido (DUEÑO/ENCARGADO) y estamos en /login, no lo dejes entrar al login de nuevo
-    if (token && isAuthPage) {
-        return NextResponse.redirect(new URL("/", req.url));
+    // Si no hay sesión -> redirect a /login para rutas protegidas
+    if (isDashboardRoute) {
+        if (!isLoggedIn) {
+            return NextResponse.redirect(new URL("/login", req.url));
+        }
     }
 
     return NextResponse.next();
-}
+});
 
 export const config = {
-    // Proteger por defecto solo rutas de Admin Dashboard, no afectar /api usado por el POS.
-    matcher: ["/((?!api/|auth/|_next/static|_next/image|favicon.ico).*)"],
+    // Excluimos explícitamente las rutas internas de Next.js, archivos estáticos y /api/auth/* para evitar bucles.
+    // Omitimos excluir '/login' de este matcher para que el middleware logre capturar la ruta 
+    // y accionar la redirección a /dashboard cuando ya hay sesión.
+    matcher: ["/((?!api/auth|api/pos|_next/static|_next/image|favicon.ico).*)"],
 };
+
