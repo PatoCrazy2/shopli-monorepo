@@ -56,50 +56,52 @@ export default function InventoryScreen() {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50 sticky top-0">
                             <tr>
-                                <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase tracking-wider">
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/2">
                                     Producto
                                 </th>
-                                <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Stock Disponible
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/4">
+                                    Stock
                                 </th>
-                                <th scope="col" className="px-6 py-4 text-left text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Última Actualización
+                                <th scope="col" className="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/4">
+                                    Actualización
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredProducts.length === 0 ? (
                                 <tr>
-                                    <td colSpan={3} className="px-6 py-12 text-center text-gray-500">
+                                    <td colSpan={3} className="px-3 py-8 text-center text-gray-500">
                                         <div className="flex flex-col items-center justify-center">
-                                            <PackageSearch className="w-12 h-12 text-gray-300 mb-3" />
-                                            <p className="text-lg font-medium">No se encontraron productos</p>
+                                            <PackageSearch className="w-10 h-10 text-gray-300 mb-2" />
+                                            <p className="text-sm font-medium">No se encontraron productos</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 filteredProducts.map((product) => (
                                     <tr key={product.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-3 py-3 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <div className="text-base font-bold text-gray-900">{product.nombre}</div>
+                                                <div className="text-sm font-medium text-gray-900">{product.nombre}</div>
                                                 {product.isCritical && (
-                                                    <span className="ml-3 px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-black text-white">
+                                                    <span className="ml-2 px-2 py-0.5 inline-flex text-xs leading-4 font-bold rounded-full bg-black text-white">
                                                         Crítico
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-4 py-1 rounded-full text-base font-bold
-                                                ${product.stock <= 5 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}
-                                            `}>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-sm font-bold ${product.stock <= 5 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                                                }`}>
                                                 {product.stock}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-base text-gray-500">
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
                                             {new Date(product.updatedAt).toLocaleDateString('es-MX', {
-                                                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                                                day: '2-digit',
+                                                month: 'short',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
                                             })}
                                         </td>
                                     </tr>

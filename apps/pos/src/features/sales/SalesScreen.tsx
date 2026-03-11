@@ -40,7 +40,7 @@ export default function SalesScreen() {
         <div className="relative flex w-full h-full bg-gray-50 overflow-hidden">
             {/* Product Search & Grid */}
             {!showCart && (
-                <div className="flex-1 flex flex-col p-6 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 flex flex-col p-3 sm:p-6 overflow-y-auto custom-scrollbar">
                     <ProductGrid onAddToCart={handleAddToCart} />
 
                     <CheckoutBar

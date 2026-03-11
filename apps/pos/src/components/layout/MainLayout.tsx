@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { Wifi, WifiOff } from "lucide-react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "./Sidebar";
 
@@ -29,7 +28,7 @@ export default function MainLayout() {
 
             {/* Top Navigation Bar */}
             {!isAuditActive && (
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 relative z-10">
+                <header className="h-14 sm:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-10">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={toggle}
@@ -40,25 +39,19 @@ export default function MainLayout() {
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        {/* Sutil Connection Indicator (Semáforo) */}
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-500">
-                                {isOnline ? "Conectado" : "Offline"}
+                    <div className="flex items-center gap-3">
+                        {/* Indicador de conexión con texto pequeño */}
+                        <div className="flex items-center gap-1">
+                            <span className={`text-xs font-medium ${isOnline ? "text-green-600" : "text-red-600"}`}>
+                                {isOnline ? "Online" : "Offline"}
                             </span>
                             <div
-                                className={`w-3 h-3 rounded-full ${isOnline ? "bg-green-500" : "bg-red-500"
-                                    }`}
-                                title={isOnline ? "Sincronizado" : "Trabajando sin conexión"}
+                                className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-red-500"}`}
+                                title={isOnline ? "Conectado" : "Offline"}
                             />
-                            {isOnline ? (
-                                <Wifi className="w-4 h-4 text-green-600" />
-                            ) : (
-                                <WifiOff className="w-4 h-4 text-red-600" />
-                            )}
                         </div>
-                        {/* User profile / shift info will go here */}
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold">
+                        {/* User profile / shift info */}
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-xs">
                             C1
                         </div>
                     </div>
