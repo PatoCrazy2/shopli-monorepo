@@ -1,69 +1,66 @@
-import { NextAuthOptions } from "next-auth";
+import NextAuth, { type DefaultSession } from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db, Role } from "@shopli/db";
 import bcrypt from "bcryptjs";
 
-export const authOptions: NextAuthOptions = {
-    providers: [
-        CredentialsProvider({
-            name: "Credentials",
-            credentials: {
-                email: { label: "Email", type: "email" },
-                password: { label: "Password", type: "password" },
-            },
-            async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    return null;
-                }
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(db),
+  session: { strategy: "jwt" },
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Contraseña", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-                const user = await db.user.findUnique({
-                    where: { email: credentials.email },
-                });
+        const user = await db.user.findUnique({
+          where: {
+            email: credentials.email as string,
+          },
+        });
 
-                if (!user || !user.pin_hash) {
-                    return null;
-                }
+        if (!user || !user.pin_hash) {
+          return null;
+        }
 
-                // Regla: Solo DUEÑO y ENCARGADO pueden acceder al Admin
-                if (user.role !== Role.DUENO && user.role !== Role.ENCARGADO) {
-                    return null;
-                }
+        const passwordsMatch = await bcrypt.compare(
+          credentials.password as string,
+          user.pin_hash
+        );
 
-                const isValidPassword = await bcrypt.compare(credentials.password, user.pin_hash);
+        if (passwordsMatch) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        }
 
-                if (!isValidPassword) {
-                    return null;
-                }
-
-                return {
-                    id: user.id, // UUID v4
-                    email: user.email,
-                    name: user.name,
-                    role: user.role,
-                };
-            },
-        }),
-    ],
-    callbacks: {
-        async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id;
-                token.role = user.role;
-            }
-            return token;
-        },
-        async session({ session, token }) {
-            if (session.user) {
-                session.user.id = token.id;
-                session.user.role = token.role;
-            }
-            return session;
-        },
+        return null;
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
     },
-    session: {
-        strategy: "jwt",
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+      }
+      return session;
     },
-    pages: {
-        signIn: "/login",
-    },
-};
+  },
+});

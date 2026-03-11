@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { pullFromCloud } from '../../lib/sync';
 
 export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boolean> | void }) {
     const [pin, setPin] = useState('');
     const [error, setError] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const handleKeyPress = (key: string) => {
         if (pin.length < 4) { // Max PIN length = 4
@@ -23,6 +26,18 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
             if (success === false) {
                 setError(true);
                 setPin('');
+            } else {
+                // Autenticado localmente, bloqueamos con "Sincronizando..."
+                setIsSyncing(true);
+                const syncResult = await pullFromCloud();
+                setIsSyncing(false);
+                
+                if (syncResult.source === 'cache') {
+                    // Fallback visual según la instrucción: "Modo Offline"
+                    // Si tienes toast de Shadcn en @repo/ui cambia este alert por toast
+                    alert("⚠️ Modo Offline: Operando con datos locales"); 
+                }
+                // Si es cloud continúa silenciosamente, en ambos casos el `onLogin` del AuthProvider ya actualizó el estado a isAuthenticated = true permitiendo la redirección al router.
             }
         }
     };
@@ -90,10 +105,17 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
                     {/* Action Button */}
                     <button
                         type="submit"
-                        disabled={pin.length === 0}
-                        className="w-full h-16 bg-black text-white text-xl font-bold rounded-lg disabled:opacity-50 disabled:bg-zinc-400 touch-manipulation"
+                        disabled={pin.length === 0 || isSyncing}
+                        className="w-full h-16 bg-black text-white text-xl font-bold rounded-lg disabled:opacity-50 disabled:bg-zinc-400 touch-manipulation flex items-center justify-center transition-all"
                     >
-                        Acceder
+                        {isSyncing ? (
+                            <>
+                                <Loader2 className="animate-spin mr-2" size={24} />
+                                Sincronizando catálogo...
+                            </>
+                        ) : (
+                            'Acceder'
+                        )}
                     </button>
                 </form>
             </div>

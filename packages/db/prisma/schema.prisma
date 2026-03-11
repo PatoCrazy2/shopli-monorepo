@@ -15,7 +15,7 @@ model User {
   role      Role     @default(CAJERO)
   pin_hash  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt                  DateTime @updatedAt @default(now())
 
   turnos    Turno[]
 }
@@ -31,7 +31,7 @@ model Sucursal {
   nombre    String
   direccion String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt                  DateTime @updatedAt @default(now())
 
   inventario Inventario_Sucursal[]
   turnos     Turno[]
@@ -43,7 +43,7 @@ model Proveedor {
   nombre    String   @unique
   contacto  String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt                  DateTime @updatedAt @default(now())
 
   productos Producto[]
 }

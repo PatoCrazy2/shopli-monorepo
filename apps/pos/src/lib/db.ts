@@ -1,5 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie';
 
+export interface LocalMeta {
+  key: string;
+  value: any;
+}
+
 export interface LocalUser {
   id: string; // UUID
   name: string | null;
@@ -94,10 +99,11 @@ export class ShopLIPOSDatabase extends Dexie {
   sale_details!: EntityTable<LocalSaleDetail, 'id'>;
   inventory!: EntityTable<LocalInventory, 'id'>;
   audits!: EntityTable<LocalAudit, 'id'>;
+  meta!: EntityTable<LocalMeta, 'key'>;
 
   constructor() {
     super('ShopLIPOS');
-    this.version(7).stores({
+    this.version(8).stores({
       users: 'id, role, pin',
       branches: 'id',
       products: 'id, codigo_interno, categoria',
@@ -107,6 +113,7 @@ export class ShopLIPOSDatabase extends Dexie {
       sale_details: 'id, venta_id, producto_id',
       inventory: 'id, sucursal_id, producto_id, [sucursal_id+producto_id]',
       audits: 'id, shiftId, sync_status',
+      meta: 'key',
     });
   }
 }
