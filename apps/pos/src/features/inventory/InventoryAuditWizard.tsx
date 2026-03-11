@@ -1,9 +1,22 @@
 import { PackageSearch, AlertTriangle } from "lucide-react";
 import { useInventoryAuditWizard } from "./hooks/useInventoryAuditWizard";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function InventoryAuditWizard() {
     const navigate = useNavigate();
+    const { logout, closeShift } = useAuth();
+
+    // Bloqueo de navegación nativa (Atrás/Adelante del navegador)
+    useEffect(() => {
+        window.history.pushState(null, "", window.location.href);
+        const handlePopState = () => {
+            window.history.pushState(null, "", window.location.href);
+        };
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, []);
     const {
         auditProducts,
         currentIndex,
@@ -17,7 +30,8 @@ export default function InventoryAuditWizard() {
         setSelectedReason,
         comments,
         setComments,
-        handleNext
+        handleNext,
+        physicalAmountPassed
     } = useInventoryAuditWizard();
 
     if (auditProducts.length === 0) return null; // Loading state
@@ -32,7 +46,11 @@ export default function InventoryAuditWizard() {
                     <h1 className="text-4xl font-bold mb-4">Auditoría Completada</h1>
                     <p className="text-gray-400 text-lg mb-8">El conteo ciego ha sido registrado. El turno se ha cerrado exitosamente.</p>
                     <button
-                        onClick={() => navigate('/login')}
+                        onClick={() => {
+                            closeShift(physicalAmountPassed);
+                            logout();
+                            navigate('/login', { replace: true });
+                        }}
                         className="bg-white text-black font-bold text-xl py-4 px-12 rounded-lg hover:bg-gray-200 h-16 min-w-[200px]"
                     >
                         Volver al Inicio

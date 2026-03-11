@@ -1,107 +1,102 @@
-import { useState, useCallback, useEffect } from "react";
-import type { Product, AuditItem, InventoryAudit } from "../types/inventory.types";
+import { useCallback } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../../lib/db";
+import type { Product, AuditItem } from "../types/inventory.types";
 import { useAuth } from "../../../contexts/AuthContext";
-
-const INVENTORY_STORAGE_KEY = "mock_inventory_items";
-const AUDITS_STORAGE_KEY = "mock_inventory_audits";
-
-// Generar catálogo inicial falso si no existe
-const generateInitialProducts = (): Product[] => [
-    { id: "1", nombre: "Coca Cola 600ml", costo: 10, precio_publico: 18, isCritical: true, stock: 45, updatedAt: new Date().toISOString() },
-    { id: "2", nombre: "Cigarros Marlboro 20s", costo: 50, precio_publico: 75, isCritical: true, stock: 12, updatedAt: new Date().toISOString() },
-    { id: "3", nombre: "Galletas Emperador", costo: 12, precio_publico: 19, isCritical: false, stock: 4, updatedAt: new Date().toISOString() }, // Stock bajo
-    { id: "4", nombre: "Agua Ciel 1L", costo: 8, precio_publico: 15, isCritical: false, stock: 30, updatedAt: new Date().toISOString() },
-    { id: "5", nombre: "Papas Sabritas 45g", costo: 14, precio_publico: 22, isCritical: false, stock: 18, updatedAt: new Date().toISOString() },
-    { id: "6", nombre: "Red Bull Energy", costo: 35, precio_publico: 48, isCritical: true, stock: 3, updatedAt: new Date().toISOString() }, // Stock bajo
-];
 
 export function useInventory() {
     const { user, activeShift } = useAuth();
-    const [products, setProducts] = useState<Product[]>([]);
+    
+    const productsDb = useLiveQuery(async () => {
+        if (!user) return [];
+        const allProducts = await db.products.toArray();
+        const allInventory = await db.inventory.where('sucursal_id').equals(user.branchId).toArray();
+        
+        return allProducts.map(p => {
+            const inv = allInventory.find(i => i.producto_id === p.id);
+            return {
+                id: p.id,
+                nombre: p.nombre,
+                codigo_interno: p.codigo_interno || undefined,
+                descripcion: p.descripcion || undefined,
+                costo: p.costo,
+                precio_publico: p.precio_publico,
+                categoria: p.categoria || undefined,
+                isCritical: p.isCritical,
+                stock: inv ? inv.cantidad : 0,
+                updatedAt: inv ? inv.updatedAt : p.updatedAt
+            } as Product;
+        });
+    }, [user]) ?? [];
 
-    // Cargar o inicializar inventario falso
-    useEffect(() => {
-        const storedProducts = localStorage.getItem(INVENTORY_STORAGE_KEY);
-        if (storedProducts) {
-            try {
-                setProducts(JSON.parse(storedProducts));
-            } catch (e) {
-                console.error("Error parsing inventory from localStorage", e);
-                setProducts(generateInitialProducts());
-            }
-        } else {
-            const initial = generateInitialProducts();
-            setProducts(initial);
-            localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(initial));
-        }
-    }, []);
-
-    // Helper: Obtener productos para auditar (2 Críticos + 1 Azar)
     const getProductsForAudit = useCallback((): Product[] => {
-        const criticals = products.filter(p => p.isCritical);
-        const nonCriticals = products.filter(p => !p.isCritical);
+        const criticals = productsDb.filter(p => p.isCritical);
+        const nonCriticals = productsDb.filter(p => !p.isCritical);
 
-        // Agarra aleatoriamente 2 críticos (o menos si no hay 2)
         const selectedCriticals = [...criticals].sort(() => 0.5 - Math.random()).slice(0, 2);
-
-        // Agarra 1 normal (o los que falten para llegar a 3 si no hubo suficientes críticos)
         const neededRandom = 3 - selectedCriticals.length;
         const selectedRandoms = [...nonCriticals].sort(() => 0.5 - Math.random()).slice(0, neededRandom);
 
         return [...selectedCriticals, ...selectedRandoms];
-    }, [products]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productsDb?.length]);
 
-    // Helper: Guardar resultado de la auditoría y ajustar stock virtualmente
-    const saveAudit = useCallback((auditItems: Omit<AuditItem, 'id' | 'auditId' | 'createdAt'>[]) => {
+    const saveAudit = useCallback(async (auditItems: Omit<AuditItem, 'id' | 'auditId' | 'createdAt'>[]) => {
         if (!user || !activeShift) return;
 
-        // 1. Crear el record de la auditoría
-        const auditRecord: InventoryAudit = {
+        const auditRecord = {
             id: crypto.randomUUID(),
             shiftId: activeShift.id,
             userId: user.id,
             branchId: user.branchId,
             createdAt: new Date().toISOString(),
+            sync_status: 'PENDING' as const,
             items: auditItems.map(item => ({
                 id: crypto.randomUUID(),
-                auditId: 'temp_audit_id', // Se sobreescribirá abajo
+                auditId: 'temp_audit_id',
                 ...item,
                 createdAt: new Date().toISOString()
             }))
         };
-
-        // fix the circular reference feeling above
         auditRecord.items.forEach(i => i.auditId = auditRecord.id);
-
-        // Guardar la auditoría
-        const storedAudits = JSON.parse(localStorage.getItem(AUDITS_STORAGE_KEY) || "[]");
-        localStorage.setItem(AUDITS_STORAGE_KEY, JSON.stringify([...storedAudits, auditRecord]));
-
-        // 2. Ajustar el inventario real (falso)
-        const newProducts = [...products];
-        auditItems.forEach(auditItem => {
-            if (auditItem.discrepancy !== 0) {
-                const prodIndex = newProducts.findIndex(p => p.id === auditItem.productId);
-                if (prodIndex !== -1) {
-                    newProducts[prodIndex] = {
-                        ...newProducts[prodIndex],
-                        stock: auditItem.countedStock,
-                        updatedAt: new Date().toISOString()
-                    };
+        
+        try {
+            await db.transaction('rw', db.audits, db.inventory, async () => {
+                await db.audits.add(auditRecord);
+                
+                // Actualiza el inventario en Dexie
+                for (const auditItem of auditItems) {
+                    if (auditItem.discrepancy !== 0) {
+                        const invItem = await db.inventory
+                            .where('[sucursal_id+producto_id]')
+                            .equals([user.branchId, auditItem.productId])
+                            .first();
+                        
+                        if (invItem) {
+                            await db.inventory.update(invItem.id, {
+                                cantidad: auditItem.countedStock,
+                                updatedAt: new Date().toISOString()
+                            });
+                        } else {
+                            await db.inventory.add({
+                                id: crypto.randomUUID(),
+                                sucursal_id: user.branchId,
+                                producto_id: auditItem.productId,
+                                cantidad: auditItem.countedStock,
+                                updatedAt: new Date().toISOString()
+                            });
+                        }
+                    }
                 }
-            }
-        });
-
-        setProducts(newProducts);
-        localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(newProducts));
-
-        console.log("Auditoría guardada localmente", auditRecord);
-
-    }, [products, user, activeShift]);
-
+            });
+            console.log("Auditoría guardada exitosamente en BD local:", auditRecord);
+        } catch (error) {
+            console.error("Error guardando auditoría en BD local", error);
+        }
+    }, [user, activeShift]);
 
     return {
-        products,
+        products: productsDb,
         getProductsForAudit,
         saveAudit
     };

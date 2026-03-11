@@ -21,9 +21,9 @@ export default function SalesScreen() {
     } = useCart();
     const { addSale } = useSalesHistory();
 
-    const handleCheckout = () => {
-        // En un escenario real, aquí se persistiría en RxDB
-        const sale = addSale(cartItems, totalCart, totalItems);
+    const handleCheckout = async () => {
+        // En un escenario real, aquí se persistiría en RxDB (ahora Dexie)
+        const sale = await addSale(cartItems, totalCart);
         if (sale) {
             setShowSuccessModal(true);
         } else {

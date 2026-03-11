@@ -1,22 +1,29 @@
 import React, { useState } from 'react';
 
-export function LoginForm({ onLogin }: { onLogin: (pin: string) => void }) {
+export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boolean> | void }) {
     const [pin, setPin] = useState('');
+    const [error, setError] = useState(false);
 
     const handleKeyPress = (key: string) => {
         if (pin.length < 4) { // Max PIN length = 4
+            setError(false);
             setPin((prev) => prev + key);
         }
     };
 
     const handleBackspace = () => {
+        setError(false);
         setPin((prev) => prev.slice(0, -1));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (pin.length > 0) {
-            onLogin(pin);
+            const success = await onLogin(pin);
+            if (success === false) {
+                setError(true);
+                setPin('');
+            }
         }
     };
 
@@ -25,7 +32,11 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => void }) {
             <div className="w-full max-w-sm">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold tracking-tight text-black mb-2">ShopLI <sub>POS</sub></h1>
-                    <p className="text-zinc-500 text-lg">Ingresa tu PIN para continuar</p>
+                    {error ? (
+                        <p className="text-red-500 font-semibold text-lg animate-pulse">PIN incorrecto, intenta de nuevo</p>
+                    ) : (
+                        <p className="text-zinc-500 text-lg">Ingresa tu PIN para continuar</p>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-8">
@@ -34,8 +45,10 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => void }) {
                         {[...Array(4)].map((_, i) => (
                             <div
                                 key={i}
-                                className={`w-14 h-16 rounded-lg border-2 flex items-center justify-center text-3xl font-bold ${pin.length > i ? 'border-black text-black' : 'border-zinc-200 text-transparent'
-                                    } bg-white`}
+                                className={`w-14 h-16 rounded-lg border-2 flex items-center justify-center text-3xl font-bold transition-colors ${
+                                    error ? 'border-red-500 text-red-500 bg-red-50' :
+                                    pin.length > i ? 'border-black text-black bg-white' : 'border-zinc-200 text-transparent bg-white'
+                                }`}
                             >
                                 {pin.length > i ? '•' : ''}
                             </div>

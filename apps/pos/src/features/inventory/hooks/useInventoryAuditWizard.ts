@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useInventory } from "./useInventory";
 import type { Product, AuditItem } from "../types/inventory.types";
-import { useAuth } from "../../../contexts/AuthContext";
+
 
 export function useInventoryAuditWizard() {
     const { getProductsForAudit, saveAudit } = useInventory();
-    const { closeShift } = useAuth();
+    const location = useLocation();
 
     // Estado del Wizard
     const [auditProducts, setAuditProducts] = useState<Product[]>([]);
@@ -27,12 +28,17 @@ export function useInventoryAuditWizard() {
 
     useEffect(() => {
         // Inicializar los productos al cargar
-        const prods = getProductsForAudit();
-        setAuditProducts(prods);
-    }, [getProductsForAudit]);
+        if (auditProducts.length === 0) {
+            const prods = getProductsForAudit();
+            if (prods.length > 0) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setAuditProducts(prods);
+            }
+        }
+    }, [getProductsForAudit, auditProducts.length]);
 
     // Helper to get physical money passed via navigation state if any, else 0
-    const physicalAmountPassed = 0;
+    const physicalAmountPassed = location.state?.physicalCount || 0;
 
     const currentProduct = auditProducts.length > 0 ? auditProducts[currentIndex] : null;
 
@@ -101,9 +107,7 @@ export function useInventoryAuditWizard() {
             // Finalizó la auditoría
             setIsComplete(true);
             saveAudit(newResults);
-
-            // Cerrar el turno en AuthContext
-            closeShift(physicalAmountPassed);
+            // El cierre de turno real y logout se delegan al botón de completar en la UI
         }
     };
 
@@ -120,6 +124,7 @@ export function useInventoryAuditWizard() {
         setSelectedReason,
         comments,
         setComments,
-        handleNext
+        handleNext,
+        physicalAmountPassed
     };
 }

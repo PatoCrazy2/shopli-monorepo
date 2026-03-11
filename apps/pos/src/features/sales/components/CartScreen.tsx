@@ -1,5 +1,8 @@
-import { ArrowLeft, Trash2, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, Minus, AlertTriangle } from 'lucide-react';
 import type { CartItem } from '../types/cart.types';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../../lib/db';
 
 interface CartScreenProps {
     cartItems: CartItem[];
@@ -7,11 +10,19 @@ interface CartScreenProps {
     totalCart: number;
     onBack: () => void;
     onCheckout: () => void;
-    onRemove: (id: number) => void;
-    onUpdateQuantity: (id: number, quantity: number) => void;
+    onRemove: (id: string) => void;
+    onUpdateQuantity: (id: string, quantity: number) => void;
 }
 
 export default function CartScreen({ cartItems, totalItems, totalCart, onBack, onCheckout, onRemove, onUpdateQuantity }: CartScreenProps) {
+    const { user } = useAuth();
+    
+    // Consultamos el inventario local para los artículos en el carrito
+    const inventoryDb = useLiveQuery(() => {
+        if (!user) return [];
+        return db.inventory.where('sucursal_id').equals(user.branchId).toArray();
+    }, [user]) ?? [];
+
     return (
         <div className="flex-1 flex flex-col bg-white">
             <div className="h-16 flex items-center px-6 border-b border-gray-200 gap-4 shrink-0">
@@ -25,11 +36,24 @@ export default function CartScreen({ cartItems, totalItems, totalCart, onBack, o
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {cartItems.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-4 border border-gray-100 shadow-sm rounded-xl">
-                        <div className="flex-1">
-                            <p className="font-semibold text-lg">{item.name}</p>
-                            <p className="font-bold text-gray-900">${item.price * item.quantity}.00</p>
+                {cartItems.map(item => {
+                    const inv = inventoryDb.find(i => i.producto_id === item.producto_id);
+                    const currentStock = inv ? inv.cantidad : 0;
+                    const stockIsLow = currentStock <= 0;
+                    
+                    return (
+                    <div key={item.id} className={`flex items-center justify-between p-4 border shadow-sm rounded-xl transition-colors ${stockIsLow ? 'bg-amber-50/30 border-amber-200' : 'bg-white border-gray-100'}`}>
+                        <div className="flex-1 pr-2">
+                            <div className="flex items-start gap-2">
+                                <p className="font-semibold text-lg leading-tight">{item.name}</p>
+                                {stockIsLow && (
+                                    <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        Stock: {currentStock}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="font-bold text-gray-900 mt-1">${item.price * item.quantity}.00</p>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -56,7 +80,7 @@ export default function CartScreen({ cartItems, totalItems, totalCart, onBack, o
                             </button>
                         </div>
                     </div>
-                ))}
+                )})}
             </div>
 
             <div className="p-6 bg-gray-50 border-t border-gray-200 shrink-0">

@@ -5,6 +5,10 @@ export default function OpenRegisterScreen() {
         user,
         initialAmount,
         error,
+        branches,
+        selectedBranchId,
+        setSelectedBranchId,
+        isLoadingBranches,
         handleAmountChange,
         handleBlur,
         handleSubmit,
@@ -36,10 +40,6 @@ export default function OpenRegisterScreen() {
                             <span className="text-sm font-semibold text-gray-900">{user.name}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-500">Sucursal</span>
-                            <span className="text-sm font-semibold text-gray-900">{user.branchName}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-gray-500">Fecha</span>
                             <span className="text-sm font-semibold text-gray-900 capitalize">{dateFormatter.format(now)}</span>
                         </div>
@@ -57,6 +57,27 @@ export default function OpenRegisterScreen() {
 
                     {/* Formulario */}
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <div>
+                            <label htmlFor="branchId" className="block text-sm font-medium text-gray-700 mb-2">
+                                Sucursal *
+                            </label>
+                            <select
+                                id="branchId"
+                                value={selectedBranchId}
+                                onChange={(e) => setSelectedBranchId(e.target.value)}
+                                disabled={isLoadingBranches || branches.length === 0}
+                                className="block w-full px-4 py-4 text-lg border-gray-300 rounded-xl focus:ring-black focus:border-black bg-gray-50 transition-colors"
+                                required
+                            >
+                                <option value="" disabled>Selecciona una sucursal</option>
+                                {branches.map((branch) => (
+                                    <option key={branch.id} value={branch.id}>
+                                        {branch.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div>
                             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
                                 Monto inicial en caja *

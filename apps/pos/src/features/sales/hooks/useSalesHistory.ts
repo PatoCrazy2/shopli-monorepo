@@ -1,53 +1,94 @@
-import { useState, useCallback, useEffect } from "react";
-import type { Sale } from "../types/sale.types";
+import { useCallback } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db, type LocalSale, type LocalSaleDetail, type LocalCartItem } from "../../../lib/db";
 import { useAuth } from "../../../contexts/AuthContext";
-
-const SALES_STORAGE_KEY = "mock_sales_history";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export function useSalesHistory() {
     const { user, activeShift } = useAuth();
-    const [sales, setSales] = useState<Sale[]>([]);
+    
+    // Live query para las ventas
+    const salesArray = useLiveQuery<LocalSale[]>(() => db.sales.toArray(), []);
+    const salesDb = salesArray || [];
 
-    // Cargar ventas desde localStorage inicial
-    useEffect(() => {
-        const storedSales = localStorage.getItem(SALES_STORAGE_KEY);
-        if (storedSales) {
-            try {
-                setSales(JSON.parse(storedSales));
-            } catch (e) {
-                console.error("Error parsing sales from localStorage", e);
-                setSales([]);
-            }
-        }
-    }, []);
-
-    const addSale = useCallback((items: any[], totalAmount: number, totalItems: number) => {
+    const addSale = useCallback(async (items: LocalCartItem[], totalAmount: number) => {
         if (!user || !activeShift) {
             console.error("No se puede registrar venta: Falta usuario o turno activo");
             return null;
         }
 
-        const newSale: Sale = {
-            id: crypto.randomUUID(),
-            branchId: user.branchId,
-            userId: user.id,
-            shiftId: activeShift.id,
-            items,
-            totalAmount,
-            totalItems,
-            createdAt: new Date().toISOString(),
+        const now = new Date();
+        const timestamp = format(now, "yyMMdd", { locale: es });
+        const todayStr = now.toISOString().split("T")[0];
+        
+        const todayCount = await db.sales
+            .filter(s => s.fecha.startsWith(todayStr) && s.sucursal_id === user.branchId)
+            .count();
+        const dailyCounter = (todayCount + 1).toString().padStart(3, '0');
+        
+        const baseUuid = crypto.randomUUID();
+        const saleId = `${timestamp}-${dailyCounter}-${baseUuid}`;
+
+        const detalles: LocalSaleDetail[] = items.map(item => ({
+             id: crypto.randomUUID(),
+             venta_id: saleId,
+             producto_id: item.producto_id,
+             nombre_producto: item.name,
+             cantidad: item.quantity,
+             precio_unitario_historico: item.price
+        }));
+
+        const newSale: LocalSale = {
+            id: saleId,
+            turno_id: activeShift.id,
+            sucursal_id: user.branchId, // Asumimos que activeShift o user tiene la info de sucursal
+            total: totalAmount,
+            estado: 'COMPLETADA',
+            sync_status: 'PENDING',
+            fecha: new Date().toISOString()
         };
 
-        setSales((prev) => {
-            const updated = [newSale, ...prev];
-            localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(updated));
-            return updated;
-        });
+        try {
+            await db.transaction('rw', db.sales, db.sale_details, db.cart, db.inventory, async () => {
+                await db.sales.add(newSale);
+                await db.sale_details.bulkAdd(detalles);
+                
+                // Descontar inventario
+                for (const item of items) {
+                    const invItem = await db.inventory
+                        .where('[sucursal_id+producto_id]')
+                        .equals([user.branchId, item.producto_id])
+                        .first();
+                    
+                    if (invItem) {
+                        await db.inventory.update(invItem.id, {
+                            cantidad: invItem.cantidad - item.quantity,
+                            updatedAt: new Date().toISOString()
+                        });
+                    } else {
+                        await db.inventory.add({
+                            id: crypto.randomUUID(),
+                            sucursal_id: user.branchId,
+                            producto_id: item.producto_id,
+                            cantidad: -item.quantity,
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+                }
 
-        return newSale;
+                // Limpiar carrito
+                await db.cart.clear();
+            });
+
+            return newSale;
+        } catch (error) {
+            console.error("Error al registrar la venta local:", error);
+            return null;
+        }
     }, [user, activeShift]);
 
-    // Función pura para filtrar por fecha y branch
+    // Función pura para filtrar por fecha (Adaptada a Dexie o array en memoria)
     const getSalesByDate = useCallback((dateOffsetDays: number) => {
         if (!user) return [];
 
@@ -55,16 +96,17 @@ export function useSalesHistory() {
         targetDate.setDate(targetDate.getDate() - dateOffsetDays);
         const targetDateString = targetDate.toISOString().split("T")[0]; // YYYY-MM-DD
 
-        return sales.filter((sale) => {
-            const saleDateString = sale.createdAt.split("T")[0];
-            return sale.branchId === user.branchId && saleDateString === targetDateString;
+        return salesDb.filter((sale: LocalSale) => {
+            const saleDateString = sale.fecha.split("T")[0];
+            return sale.sucursal_id === user.branchId && saleDateString === targetDateString;
         });
-    }, [sales, user]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [salesDb?.length, user]);
 
     // Función auxiliar para obtener totales
     const getTotalsByDate = useCallback((dateOffsetDays: number) => {
         const filteredSales = getSalesByDate(dateOffsetDays);
-        const totalAmount = filteredSales.reduce((acc, sale) => acc + sale.totalAmount, 0);
+        const totalAmount = filteredSales.reduce((acc: number, sale: LocalSale) => acc + sale.total, 0);
         const totalSalesCount = filteredSales.length;
 
         return { totalAmount, totalSalesCount };
@@ -72,7 +114,7 @@ export function useSalesHistory() {
 
 
     return {
-        sales,
+        sales: salesDb,
         addSale,
         getSalesByDate,
         getTotalsByDate
