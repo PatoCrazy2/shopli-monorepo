@@ -1,22 +1,23 @@
 import { DefaultSession } from "next-auth";
+import { Role } from "@shopli/db";
 
 declare module "next-auth" {
     interface Session {
         user: {
             id: string;
-            role: string;
+            role: Role;
         } & DefaultSession["user"];
     }
 
     interface User {
-        id: string;
-        role: string;
+        id?: string;
+        role?: Role;
     }
 }
 
 declare module "next-auth/jwt" {
     interface JWT {
-        id: string;
-        role: string;
+        id?: string;
+        role?: Role;
     }
 }
