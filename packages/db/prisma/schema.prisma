@@ -134,6 +134,8 @@ model Detalle_Venta {
   producto_id                String
   cantidad                   Int
   precio_unitario_historico  Decimal  @db.Decimal(10, 2)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
   
   venta                      Venta    @relation(fields: [venta_id], references: [id], onDelete: Cascade)
   producto                   Producto @relation(fields: [producto_id], references: [id], onDelete: Restrict)
