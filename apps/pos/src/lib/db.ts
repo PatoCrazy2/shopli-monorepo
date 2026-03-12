@@ -29,6 +29,7 @@ export interface LocalProduct {
   precio_publico: number;
   categoria: string | null;
   isCritical: boolean;
+  isActive: boolean;
   updatedAt: string;
 }
 
@@ -143,6 +144,7 @@ export async function seedLocalData(sucursal_id = "branch-1") {
       precio_publico: 20.0,
       categoria: 'Panadería',
       isCritical: false,
+      isActive: true,
       updatedAt: new Date().toISOString()
     },
     {
@@ -154,6 +156,7 @@ export async function seedLocalData(sucursal_id = "branch-1") {
       precio_publico: 15.0,
       categoria: 'Bebidas',
       isCritical: false,
+      isActive: true,
       updatedAt: new Date().toISOString()
     },
     {
@@ -165,6 +168,7 @@ export async function seedLocalData(sucursal_id = "branch-1") {
       precio_publico: 25.0,
       categoria: 'Botanas',
       isCritical: false,
+      isActive: true,
       updatedAt: new Date().toISOString()
     }
   ];
