@@ -9,15 +9,17 @@ datasource db {
 
 // Initial example model, will be updated based on core rules later
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  role      Role     @default(CAJERO)
-  pin_hash  String?
-  createdAt DateTime @default(now())
-  updatedAt                  DateTime @updatedAt @default(now())
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String?
+  numero_tel String?
+  role       Role     @default(CAJERO)
+  pin_hash   String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt @default(now())
 
-  turnos    Turno[]
+  turnos     Turno[]
 }
 
 enum Role {
