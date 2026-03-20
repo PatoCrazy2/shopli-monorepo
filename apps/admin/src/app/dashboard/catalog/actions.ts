@@ -123,3 +123,25 @@ export async function toggleProduct(id: string, currentState: boolean) {
     return { error: "No se pudo cambiar el estado del producto" };
   }
 }
+
+export async function searchProducts(query: string) {
+  try {
+    return await db.producto.findMany({
+      where: {
+        nombre: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      include: {
+        inventario: true,
+      },
+      orderBy: {
+        nombre: "asc",
+      },
+    });
+  } catch (error) {
+    console.error("Error searching products:", error);
+    return [];
+  }
+}

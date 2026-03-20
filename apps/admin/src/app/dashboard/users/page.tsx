@@ -1,8 +1,8 @@
-import { db } from "@shopli/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { toggleUser } from "./actions";
+import { getUsers } from "./queries";
 
 export default async function UsersPage() {
   const session = await auth();
@@ -16,19 +16,7 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
-  const users = await db.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      // @ts-ignore - 'numero_tel' exist in db
-      numero_tel: true,
-      role: true,
-      // @ts-ignore - 'active' está en el schema de la bd real pero los tipos pueden estar out of date por el server lock de windows
-      active: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const users = await getUsers();
 
   return (
     <div className="space-y-6">

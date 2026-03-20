@@ -164,6 +164,7 @@ model AuditItem {
   discrepancy     Int
   reason          String?  // Daño, Error de registro, Faltante/Robo
   comments        String?
+  resolved        Boolean  @default(false)
   createdAt       DateTime @default(now())
 
   audit           InventoryAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)

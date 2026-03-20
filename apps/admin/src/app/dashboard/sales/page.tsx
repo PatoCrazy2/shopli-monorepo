@@ -1,56 +1,24 @@
-import { db } from "@shopli/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getSales, getSucursales } from "./queries";
 
 export default async function SalesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ CAJERO?: string; date?: string }>;
+  searchParams: Promise<{ SUCURSAL?: string; date?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   const sp = await searchParams;
-  const cajeroId = sp.CAJERO;
+  const sucursalId = sp.SUCURSAL;
   const dateStr = sp.date;
 
-  const where: any = {};
-
-  if (cajeroId) {
-    where.turno = { usuario_id: cajeroId };
-  }
-
-  if (dateStr) {
-    const start = new Date(`${dateStr}T00:00:00.000Z`);
-    const end = new Date(`${dateStr}T23:59:59.999Z`);
-    where.fecha = { gte: start, lte: end };
-  }
-
-  const ventas = await db.venta.findMany({
-    where,
-    orderBy: { fecha: "desc" },
-    include: {
-      turno: {
-        include: {
-          usuario: {
-            select: { name: true, id: true }
-          }
-        }
-      },
-      detalles: {
-        include: {
-          producto: { select: { nombre: true } }
-        }
-      }
-    }
-  });
+  const ventas = await getSales({ sucursalId, dateStr });
 
   const totalVentas = ventas.reduce((acc, v) => acc + Number(v.total), 0);
 
-  const cajeros = await db.user.findMany({
-    where: { role: { in: ["CAJERO", "ENCARGADO", "DUENO"] } },
-    select: { id: true, name: true }
-  });
+  const sucursales = await getSucursales();
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("es-MX", {
@@ -90,16 +58,16 @@ export default async function SalesPage({
           </div>
           
           <div className="space-y-1 w-full md:w-auto">
-            <label htmlFor="CAJERO" className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Filtar por Cajero</label>
+            <label htmlFor="SUCURSAL" className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Filtrar por Sucursal</label>
             <select 
-              name="CAJERO" 
-              id="CAJERO"
-              defaultValue={cajeroId || ""}
+              name="SUCURSAL" 
+              id="SUCURSAL"
+              defaultValue={sucursalId || ""}
               className="flex h-10 w-full min-w-[240px] rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900"
             >
-              <option value="">Todos los usuarios</option>
-              {cajeros.map(c => (
-                <option key={c.id} value={c.id}>{c.name || "Sin Nombre"}</option>
+              <option value="">Todas las sucursales</option>
+              {sucursales.map(s => (
+                <option key={s.id} value={s.id}>{s.nombre}</option>
               ))}
             </select>
           </div>
@@ -111,7 +79,7 @@ export default async function SalesPage({
             Aplicar
           </button>
           
-          {(dateStr || cajeroId) && (
+          {(dateStr || sucursalId) && (
             <a 
               href="/dashboard/sales" 
               className="h-10 px-5 bg-zinc-100 text-zinc-700 flex items-center justify-center rounded-md font-medium text-sm hover:bg-zinc-200 transition-colors w-full md:w-auto"
