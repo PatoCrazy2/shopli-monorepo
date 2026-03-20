@@ -26,9 +26,17 @@ export type SyncUser = {
   pin_hash: string | null;
 };
 
+export type SyncBranch = {
+  id: string;
+  name: string;
+  address: string | null;
+  updatedAt: string;
+};
+
 export type PullSyncResponse = {
   products: SyncProduct[];
   users: SyncUser[];
+  branches: SyncBranch[];
   syncedAt: string;
   nextCursor?: string;
 };
@@ -85,8 +93,8 @@ export async function GET(req: NextRequest) {
       ? { updatedAt: { gt: updatedAfterDate }, role: { in: [Role.CAJERO, Role.ENCARGADO] } } 
       : { role: { in: [Role.CAJERO, Role.ENCARGADO] } };
 
-    // 1. Ejecutar las dos solicitudes en paralelo
-    const [productsResult, usersResult] = await Promise.all([
+    // 1. Ejecutar las solicitudes en paralelo
+    const [productsResult, usersResult, branchesResult] = await Promise.all([
       db.producto.findMany({
         where: productsWhere,
         take: LIMIT + 1, // +1 para verificar si hay más páginas
@@ -105,6 +113,9 @@ export async function GET(req: NextRequest) {
           pin_hash: true,
           updatedAt: true,
         }
+      }),
+      db.sucursal.findMany({
+        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
       })
     ]);
 
@@ -125,6 +136,9 @@ export async function GET(req: NextRequest) {
     });
     usersResult.forEach(u => {
       if (u.updatedAt > maxDate) maxDate = u.updatedAt;
+    });
+    branchesResult.forEach(b => {
+      if (b.updatedAt > maxDate) maxDate = b.updatedAt;
     });
 
     // Si no hubo cambios y no existía un updatedAfter, emitiremos el tiempo del servidor actual.
@@ -159,9 +173,17 @@ export async function GET(req: NextRequest) {
       pin_hash: u.pin_hash ?? null,
     }));
 
+    const branches: SyncBranch[] = branchesResult.map((b) => ({
+      id: b.id,
+      name: b.nombre,
+      address: b.direccion ?? null,
+      updatedAt: b.updatedAt.toISOString(),
+    }));
+
     const responseBody: PullSyncResponse = {
       products,
       users,
+      branches,
       syncedAt,
       ...(nextCursor && { nextCursor }),
     };

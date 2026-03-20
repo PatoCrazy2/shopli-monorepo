@@ -19,6 +19,7 @@ export type SyncResult = {
 export type PullSyncResponse = {
   products?: any[];
   users?: any[];
+  branches?: any[];
   syncedAt?: string;
 };
 
@@ -52,12 +53,13 @@ export async function pullFromCloud(): Promise<SyncResult> {
       return { source: 'cache' };
     }
     
-    await db.transaction("rw", [db.products, db.users, db.meta, db.inventory], async () => {
+    await db.transaction("rw", [db.products, db.users, db.meta, db.inventory, db.branches], async () => {
       // 1. Si no hay lastSyncedAt, es carga completa: Limpiamos y metemos todo de golpe.
       if (!lastSyncedAt) {
         await db.products.clear();
         await db.users.clear();
         await db.inventory.clear(); // Opcional, pero recomendado si se trae el stock total
+        await db.branches.clear();
   
         // Inyectamos usuarios recibidos: mapping a modelo local LocalUser
         if (data.users && data.users.length > 0) {
@@ -68,6 +70,18 @@ export async function pullFromCloud(): Promise<SyncResult> {
               email: u.email || '',
               role: u.role,
               pin: u.pin_hash || null,
+            }))
+          );
+        }
+
+        // Inyectamos sucursales recibidos: mapping a modelo local LocalBranch
+        if (data.branches && data.branches.length > 0) {
+          await db.branches.bulkAdd(
+            data.branches.map((b: any) => ({
+              id: b.id,
+              nombre: b.name,
+              direccion: b.address,
+              updatedAt: b.updatedAt
             }))
           );
         }
@@ -109,6 +123,17 @@ export async function pullFromCloud(): Promise<SyncResult> {
               email: u.email || '',
               role: u.role,
               pin: u.pin_hash || null,
+            }))
+          );
+        }
+
+        if (data.branches && data.branches.length > 0) {
+           await db.branches.bulkPut(
+            data.branches.map((b: any) => ({
+              id: b.id,
+              nombre: b.name,
+              direccion: b.address,
+              updatedAt: b.updatedAt
             }))
           );
         }
