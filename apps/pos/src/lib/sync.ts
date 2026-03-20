@@ -33,10 +33,13 @@ export async function pullFromCloud(): Promise<SyncResult> {
     const metaRecord = await db.meta.get('lastSyncedAt');
     const lastSyncedAt = metaRecord ? metaRecord.value : null;
 
-    let endpoint = 'pos/sync/pull';
+    // Pasar el secret como query param — no dispara CORS preflight a diferencia de headers personalizados
+    const secret = import.meta.env.VITE_SYNC_SECRET || '';
+    const params = new URLSearchParams({ secret });
     if (lastSyncedAt) {
-      endpoint += `?updatedAfter=${encodeURIComponent(lastSyncedAt)}`;
+      params.set('updatedAfter', lastSyncedAt);
     }
+    const endpoint = `pos/sync/pull?${params.toString()}`;
 
     let data: PullSyncResponse;
     try {
@@ -64,7 +67,7 @@ export async function pullFromCloud(): Promise<SyncResult> {
               name: u.name,
               email: u.email || '',
               role: u.role,
-              pin: u.pin || null,
+              pin: u.pin_hash || null,
             }))
           );
         }
@@ -76,10 +79,11 @@ export async function pullFromCloud(): Promise<SyncResult> {
              nombre: p.name,
              codigo_interno: p.sku,
              descripcion: null,
-             costo: p.price, // Asumiendo costo temporal o mock,
+             costo: p.price,
              precio_publico: p.price,
              categoria: p.category,
              isCritical: p.stock <= 5,
+             isActive: true, // El endpoint solo devuelve productos activos
              updatedAt: p.updatedAt
           }));
           await db.products.bulkAdd(productsToAdd);
@@ -104,7 +108,7 @@ export async function pullFromCloud(): Promise<SyncResult> {
               name: u.name,
               email: u.email || '',
               role: u.role,
-              pin: u.pin || null,
+              pin: u.pin_hash || null,
             }))
           );
         }
@@ -120,6 +124,7 @@ export async function pullFromCloud(): Promise<SyncResult> {
               precio_publico: p.price,
               categoria: p.category,
               isCritical: p.stock <= 5,
+              isActive: true, // El endpoint solo devuelve productos activos
               updatedAt: p.updatedAt
             }))
            );

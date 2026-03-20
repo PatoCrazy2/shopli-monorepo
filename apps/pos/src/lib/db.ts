@@ -121,82 +121,18 @@ export class ShopLIPOSDatabase extends Dexie {
 
 export const db = new ShopLIPOSDatabase();
 
-// Seed initial test data
-export async function seedLocalData(sucursal_id = "branch-1") {
-  const currentCount = await db.products.count();
-  const userCount = await db.users.count();
-  
-  // Si ya están exactamente los 3 datos y al menos un usuario, no hacemos nada.
-  // Si no, limpiamos y cargamos la semilla de prueba.
-  if (currentCount === 3 && userCount > 0) return; 
-
-  const p1 = crypto.randomUUID();
-  const p2 = crypto.randomUUID();
-  const p3 = crypto.randomUUID();
-
-  const mockProducts: LocalProduct[] = [
-    {
-      id: p1,
-      nombre: 'Galletas de Chocolate',
-      codigo_interno: 'GAL-01',
-      descripcion: 'Paquete de galletas dulces',
-      costo: 10.0,
-      precio_publico: 20.0,
-      categoria: 'Panadería',
-      isCritical: false,
-      isActive: true,
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: p2,
-      nombre: 'Refresco de Cola',
-      codigo_interno: 'REF-02',
-      descripcion: 'Lata de 355ml',
-      costo: 8.0,
-      precio_publico: 15.0,
-      categoria: 'Bebidas',
-      isCritical: false,
-      isActive: true,
-      updatedAt: new Date().toISOString()
-    },
-    {
-      id: p3,
-      nombre: 'Papas Fritas',
-      codigo_interno: 'PAP-03',
-      descripcion: 'Bolsa chica de papas saladas',
-      costo: 15.0,
-      precio_publico: 25.0,
-      categoria: 'Botanas',
-      isCritical: false,
-      isActive: true,
-      updatedAt: new Date().toISOString()
-    }
-  ];
-
-  const mockBranches: LocalBranch[] = [
-    { id: sucursal_id, nombre: 'Sucursal Principal', direccion: 'Centro', updatedAt: new Date().toISOString() },
-    { id: 'branch-2', nombre: 'Sucursal Norte', direccion: 'Norte', updatedAt: new Date().toISOString() }
-  ];
-
-  const mockUsers: LocalUser[] = [
-    { id: 'usr_12345', name: 'Cajero Demo', email: 'cajero@demo.com', role: 'CAJERO', pin: '1234' }
-  ];
-
-  const mockInventory: LocalInventory[] = [
-    { id: crypto.randomUUID(), sucursal_id, producto_id: p1, cantidad: 50, updatedAt: new Date().toISOString() }, // Empezará en 50
-    { id: crypto.randomUUID(), sucursal_id, producto_id: p2, cantidad: 30, updatedAt: new Date().toISOString() }, // Empezará en 30
-    { id: crypto.randomUUID(), sucursal_id, producto_id: p3, cantidad: 10, updatedAt: new Date().toISOString() }, // Empezará en 10
-  ];
-
+/**
+ * Limpia completamente la base de datos local.
+ * Útil para forzar un pull fresco desde la nube.
+ */
+export async function clearLocalData(): Promise<void> {
+  // Dexie's typed API accepts at most 6 tables per transaction.
+  // We clear meta outside so the transaction stays within limits.
   await db.transaction('rw', db.users, db.branches, db.products, db.inventory, async () => {
     await db.users.clear();
     await db.branches.clear();
     await db.products.clear();
     await db.inventory.clear();
-    
-    await db.users.bulkAdd(mockUsers);
-    await db.branches.bulkAdd(mockBranches);
-    await db.products.bulkAdd(mockProducts);
-    await db.inventory.bulkAdd(mockInventory);
   });
+  await db.meta.clear();
 }

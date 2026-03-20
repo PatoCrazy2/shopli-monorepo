@@ -22,8 +22,6 @@ export async function apiClient<T>(endpoint: string, options?: ApiClientOptions)
   const fetchOptions: RequestInit = {
     ...restOptions,
     headers,
-    // Ensure NextAuth cookies travel to port 3000
-    credentials: 'include',
   };
 
   // Solo para entorno Test integrado donde Next.js es un proceso diferente

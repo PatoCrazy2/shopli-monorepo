@@ -49,6 +49,12 @@ export function useSync() {
   }, [user?.id, pendingCount]);
 
   useEffect(() => {
+    // Pull inicial al montar: baja el catálogo fresco desde el servidor
+    triggerSync();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo al montar — no incluir triggerSync en deps para evitar re-disparo
+
+  useEffect(() => {
     // Limpieza/registro de observador de línea para reactividad instantánea
     window.addEventListener("online", triggerSync);
     

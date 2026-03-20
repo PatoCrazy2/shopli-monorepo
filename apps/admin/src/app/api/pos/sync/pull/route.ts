@@ -23,6 +23,7 @@ export type SyncUser = {
   id: string;
   name: string | null;
   role: string;
+  pin_hash: string | null;
 };
 
 export type PullSyncResponse = {
@@ -38,15 +39,32 @@ export type PullSyncResponse = {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    // Deshabilita la validación condicionalmente para pruebas (si se corriera localmente bajo test o injectamos cabecera para vitest externo)
-    if (!session?.user && process.env.NODE_ENV !== 'test' && req.headers.get("x-test-bypass") !== "true") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { searchParams } = new URL(req.url);
+
+    // Validación de autenticación: acepta secret del POS via header O query param
+    // Los query params no requieren CORS preflight — más compatible con browsers
+    const validPosSecret = process.env.POS_SYNC_SECRET;
+    const posSecretHeader = req.headers.get("x-pos-sync-secret");
+    const posSecretQuery = searchParams.get("secret");
+    const isPosAuthorized =
+      validPosSecret &&
+      (posSecretHeader === validPosSecret || posSecretQuery === validPosSecret);
+
+    if (!isPosAuthorized) {
+      // Fallback: verificar sesión de NextAuth (acceso desde el admin dashboard)
+      const session = await auth();
+      const isAdminAuthorized = !!session?.user;
+      // Bypass para tests
+      const isTestBypass = process.env.NODE_ENV === 'test' || req.headers.get("x-test-bypass") === "true";
+
+      if (!isAdminAuthorized && !isTestBypass) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
-    const { searchParams } = new URL(req.url);
     const updatedAfterParam = searchParams.get("updatedAfter");
     const cursor = searchParams.get("cursor");
+
     
     // Límite de 1000 productos por request
     const LIMIT = 1000;
@@ -84,6 +102,7 @@ export async function GET(req: NextRequest) {
           id: true,
           name: true,
           role: true,
+          pin_hash: true,
           updatedAt: true,
         }
       })
@@ -137,6 +156,7 @@ export async function GET(req: NextRequest) {
       id: u.id,
       name: u.name,
       role: u.role,
+      pin_hash: u.pin_hash ?? null,
     }));
 
     const responseBody: PullSyncResponse = {
