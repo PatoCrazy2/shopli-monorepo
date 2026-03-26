@@ -2,11 +2,12 @@ import { useCallback } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type LocalSale, type LocalSaleDetail, type LocalCartItem } from "../../../lib/db";
 import { useAuth } from "../../../contexts/AuthContext";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { useNetworkSync } from "../../../hooks/useNetworkSync";
+// Imports eliminados
 
 export function useSalesHistory() {
     const { user, activeShift } = useAuth();
+    const { registerBackgroundSync } = useNetworkSync();
     
     // Live query para las ventas
     const salesArray = useLiveQuery<LocalSale[]>(() => db.sales.toArray(), []);
@@ -18,17 +19,7 @@ export function useSalesHistory() {
             return null;
         }
 
-        const now = new Date();
-        const timestamp = format(now, "yyMMdd", { locale: es });
-        const todayStr = now.toISOString().split("T")[0];
-        
-        const todayCount = await db.sales
-            .filter(s => s.fecha.startsWith(todayStr) && s.sucursal_id === user.branchId)
-            .count();
-        const dailyCounter = (todayCount + 1).toString().padStart(3, '0');
-        
-        const baseUuid = crypto.randomUUID();
-        const saleId = `${timestamp}-${dailyCounter}-${baseUuid}`;
+        const saleId = crypto.randomUUID();
 
         const detalles: LocalSaleDetail[] = items.map(item => ({
              id: crypto.randomUUID(),
@@ -80,6 +71,9 @@ export function useSalesHistory() {
                 // Limpiar carrito
                 await db.cart.clear();
             });
+
+            // Registrar el intento de Background Sync de inmediato si estamos en entorno productivo/PWA
+            await registerBackgroundSync();
 
             return newSale;
         } catch (error) {

@@ -39,7 +39,7 @@ function RequireNoOpenShift({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  const { isAuthenticated, login, logout } = useAuth();
+  const { isAuthenticated, login } = useAuth();
 
   return (
     <Routes>
@@ -67,7 +67,7 @@ function AppRoutes() {
         path="/"
         element={
           <RequireOpenShift>
-            <MainLayout onLogout={logout} />
+            <MainLayout />
           </RequireOpenShift>
         }
       >
@@ -81,9 +81,14 @@ function AppRoutes() {
   );
 }
 
+import { HardStopSyncScreen } from './components/HardStopSyncScreen';
+import { useNetworkSync } from './hooks/useNetworkSync';
+
 function App() {
+  useNetworkSync(); // Suscribe la PWA globalmente a eventos online/offline y Background Sync
   return (
     <AuthProvider>
+      <HardStopSyncScreen />
       <AppRoutes />
     </AuthProvider>
   );

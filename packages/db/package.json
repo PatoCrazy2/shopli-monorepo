@@ -12,7 +12,9 @@
         "clean": "rm -rf .turbo node_modules"
     },
     "dependencies": {
-        "@prisma/client": "^5.10.2"
+        "@prisma/client": "^5.10.2",
+        "@types/bcryptjs": "^2.4.6",
+        "bcryptjs": "^3.0.3"
     },
     "devDependencies": {
         "@types/node": "^25.3.0",

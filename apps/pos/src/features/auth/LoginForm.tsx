@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { pullFromCloud } from '../../lib/sync';
 
 export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boolean> | void }) {
     const [pin, setPin] = useState('');
@@ -22,23 +21,15 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (pin.length > 0) {
+            setIsSyncing(true);
             const success = await onLogin(pin);
+            setIsSyncing(false);
+            
             if (success === false) {
                 setError(true);
                 setPin('');
-            } else {
-                // Autenticado localmente, bloqueamos con "Sincronizando..."
-                setIsSyncing(true);
-                const syncResult = await pullFromCloud();
-                setIsSyncing(false);
-                
-                if (syncResult.source === 'cache') {
-                    // Fallback visual según la instrucción: "Modo Offline"
-                    // Si tienes toast de Shadcn en @repo/ui cambia este alert por toast
-                    alert("⚠️ Modo Offline: Operando con datos locales"); 
-                }
-                // Si es cloud continúa silenciosamente, en ambos casos el `onLogin` del AuthProvider ya actualizó el estado a isAuthenticated = true permitiendo la redirección al router.
             }
+            // Si es true, la redirección ocurre automáticamente porque AuthContext actualiza isAuthenticated
         }
     };
 
