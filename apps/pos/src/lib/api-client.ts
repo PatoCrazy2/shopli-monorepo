@@ -7,8 +7,8 @@ export async function apiClient<T>(endpoint: string, options?: ApiClientOptions)
   // Read base URL with fallback. We force relative path to leverage Vite local proxy.
   let rawBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
   
-  // Failsafe: Si variables de entorno están cacheadas con localhost absoluto, fórza el proxy
-  if (rawBaseUrl.startsWith('http://localhost') || rawBaseUrl.startsWith('http://127.0.0.1')) {
+  // Failsafe: Solo en desarrollo si está usando localhost intentar forzar el proxy relativo
+  if (import.meta.env.DEV && (rawBaseUrl.startsWith('http://localhost') || rawBaseUrl.startsWith('http://127.0.0.1'))) {
      rawBaseUrl = '/api';
   }
   

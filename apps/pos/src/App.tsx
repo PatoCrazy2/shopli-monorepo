@@ -39,7 +39,7 @@ function RequireNoOpenShift({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  const { isAuthenticated, login, logout } = useAuth();
+  const { isAuthenticated, login } = useAuth();
 
   return (
     <Routes>
@@ -67,7 +67,7 @@ function AppRoutes() {
         path="/"
         element={
           <RequireOpenShift>
-            <MainLayout onLogout={logout} />
+            <MainLayout />
           </RequireOpenShift>
         }
       >
