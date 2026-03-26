@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, Role, SyncStatus, EstadoTurno } from "@shopli/db";
+import { db, SyncStatus, EstadoTurno, EstadoVenta } from "@shopli/db";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 
@@ -7,37 +7,69 @@ import { auth } from "@/lib/auth";
 // Tipos Exportados
 // ==========================================
 export type PushSyncResponse = {
-  inserted: number;
-  failed: number;
-  results: Array<{
-    localId: string;
-    serverId: string | null;
-    status: "ok" | "error";
-    reason?: string;
-  }>;
+  success: boolean;
+  procesados: {
+    turnos: string[];
+    ventas: string[];
+    auditorias: string[];
+  };
 };
 
 // ==========================================
 // Validación Zod
 // ==========================================
-// Nota: paymentMethod se recibe y valida, pero no se inserta ya que 
-// el esquema base `Venta` de Prisma no cuenta actualmentre con dicha columna.
 const pushSyncSchema = z.object({
-  cashierId: z.string().uuid("El cashierId debe ser un UUID válido"),
-  sales: z.array(
+  turnos: z.array(
     z.object({
-      localId: z.string().uuid("El localId de la venta debe ser UUID válido"),
+      id: z.string().uuid(),
+      usuario_id: z.string().uuid(),
+      sucursal_id: z.string().uuid(),
+      estado: z.enum(["ABIERTO", "CERRADO"]),
+      monto_inicial: z.number().nonnegative(),
+      total_ventas: z.number().nonnegative(),
+      fecha_apertura: z.string().datetime(),
+      fecha_cierre: z.string().datetime().nullable().optional()
+    })
+  ).default([]),
+  ventas: z.array(
+    z.object({
+      id: z.string().uuid(),
+      turno_id: z.string().uuid(),
+      sucursal_id: z.string().uuid(),
+      total: z.number().nonnegative(),
+      estado: z.enum(["COMPLETADA", "CANCELADA"]),
+      fecha: z.string().datetime(),
+      detalles: z.array(
+        z.object({
+          producto_id: z.string().uuid(),
+          cantidad: z.number().positive().int(),
+          precio_unitario_historico: z.number().nonnegative()
+        })
+      ).min(1)
+    })
+  ).default([]),
+  auditorias: z.array(
+    z.object({
+      id: z.string().uuid(),
+      turno_id: z.string().uuid().optional(),
+      shiftId: z.string().uuid().optional(),
+      usuario_id: z.string().uuid().optional(),
+      userId: z.string().uuid().optional(),
+      sucursal_id: z.string().uuid().optional(),
+      branchId: z.string().uuid().optional(),
+      createdAt: z.string().datetime(),
       items: z.array(
         z.object({
-          productId: z.string(),
-          quantity: z.number().positive().int("La cantidad debe ser entera y positiva"),
-          unitPrice: z.number().nonnegative("El precio unitario no puede ser negativo")
+          productId: z.string().uuid(),
+          expectedStock: z.number().int(),
+          countedStock: z.number().int(),
+          discrepancy: z.number().int(),
+          reason: z.string().nullable().optional(),
+          comments: z.string().nullable().optional()
         })
-      ).min(1, "La venta debe tener al menos un item"),
-      total: z.number().nonnegative("El total no puede ser negativo"),
-      createdAt: z.string().datetime("La fecha createdAt debe ser un string ISO válido")
+      )
     })
-  )
+  ).default([])
 });
 
 // ==========================================
@@ -62,151 +94,149 @@ export async function POST(req: Request) {
       );
     }
 
-    const { cashierId, sales } = parseResult.data;
+    const { turnos, ventas, auditorias } = parseResult.data;
 
-    // 2. Verifica que cashierId exista y esté activo en PostgreSQL
-    // Nota: A falta de status o is_active en User, verificamos que tenga el rol adecuado.
-    const cashier = await db.user.findUnique({
-      where: { id: cashierId }
-    });
+    const procesados = {
+      turnos: [] as string[],
+      ventas: [] as string[],
+      auditorias: [] as string[]
+    };
 
-    if (!cashier || (cashier.role !== Role.CAJERO && cashier.role !== Role.ENCARGADO)) {
-      return NextResponse.json(
-        { error: "El usuario provisto no existe o no cuenta con permisos suficientes." },
-        { status: 403 }
-      );
-    }
+    // 2. Transaccionalidad: Implementa un db.$transaction de Prisma. Todo el lote debe procesarse de forma atómica.
+    await db.$transaction(async (tx) => {
 
-    const activeTurno = await db.turno.findFirst({
-      where: { usuario_id: cashierId, estado: EstadoTurno.ABIERTO },
-      orderBy: { fecha_apertura: "desc" }
-    });
-
-    if (!activeTurno) {
-      return NextResponse.json(
-        { error: "No hay un turno activo ('ABIERTO') para este usuario, la venta offline no puede asociarse." },
-        { status: 409 }
-      );
-    }
-
-    // 3. Verificamos Idempotencia antes de insertar
-    const localIds = sales.map((sale) => sale.localId);
-    const existingSales = await db.venta.findMany({
-      where: { id: { in: localIds } },
-      select: { id: true }
-    });
-    
-    const existingSet = new Set(existingSales.map((v) => v.id));
-    const results: PushSyncResponse["results"] = [];
-    
-    let inserted = 0;
-    let failed = 0;
-
-    // Filtramos las ventas ya insertadas previamente
-    const pendingSales = sales.filter((sale) => {
-      if (existingSet.has(sale.localId)) {
-        // En caso de reintento idempotente exitoso devolvemos que ya está en sync
-        results.push({
-          localId: sale.localId,
-          serverId: sale.localId,
-          status: "ok",
-          reason: "Ya sincronizado previamente."
+      // 2.1 Para turnos: Realiza un upsert usando el UUID.
+      for (const turno of turnos) {
+        await tx.turno.upsert({
+          where: { id: turno.id },
+          create: {
+            id: turno.id,
+            usuario_id: turno.usuario_id,
+            sucursal_id: turno.sucursal_id,
+            estado: turno.estado === "ABIERTO" ? EstadoTurno.ABIERTO : EstadoTurno.CERRADO,
+            monto_inicial: turno.monto_inicial,
+            total_ventas: turno.total_ventas,
+            fecha_apertura: new Date(turno.fecha_apertura),
+            fecha_cierre: turno.fecha_cierre ? new Date(turno.fecha_cierre) : null,
+          },
+          update: {
+            estado: turno.estado === "ABIERTO" ? EstadoTurno.ABIERTO : EstadoTurno.CERRADO,
+            total_ventas: turno.total_ventas,
+            fecha_cierre: turno.fecha_cierre ? new Date(turno.fecha_cierre) : null,
+          }
         });
-        return false;
+        procesados.turnos.push(turno.id);
       }
-      return true;
-    });
 
-    // 4. Inserción con 1 sola transacción
-    if (pendingSales.length > 0) {
-      // Usaremos Prisma $transaction interactivo para poder verificar stock, restar e insertar ventas individualmente
-      await db.$transaction(async (tx) => {
-        for (const sale of pendingSales) {
-          // A) Checar y descontar inventario de CADA producto en esta sucursal
-          // En la instrucción se pide "tx.product.update con decrement", pero basándonos en tu modelo
-          // de Prisma el stock reside relacionalmente en la tabla Inventario_Sucursal.
-          for (const item of sale.items) {
-            const inventory = await tx.inventario_Sucursal.findUnique({
-              where: {
-                sucursal_id_producto_id: {
-                  sucursal_id: activeTurno.sucursal_id,
-                  producto_id: item.productId
-                }
-              }
-            });
+      // 2.2 Para auditorias: Realiza un upsert usando el UUID.
+      for (const auditoria of auditorias) {
+        const turno_id = auditoria.turno_id || auditoria.shiftId;
+        const usuario_id = auditoria.usuario_id || auditoria.userId;
+        const sucursal_id = auditoria.sucursal_id || auditoria.branchId;
 
-            if (!inventory || inventory.cantidad < item.quantity) {
-              const productName = (await tx.producto.findUnique({ where: { id: item.productId } }))?.nombre || item.productId;
-              // Lanzar error explícito para forzar rollback de toda la Transacción
-              throw new Error(`Stock insuficiente para el producto ${productName} (${inventory?.cantidad || 0} disponibles, solicitados: ${item.quantity})`);
+        if (!turno_id || !usuario_id || !sucursal_id) {
+            throw new Error(`Referencia de auditoria incompleta: ${auditoria.id}`);
+        }
+
+        await tx.inventoryAudit.upsert({
+          where: { id: auditoria.id },
+          create: {
+            id: auditoria.id,
+            turno_id: turno_id,
+            usuario_id: usuario_id,
+            sucursal_id: sucursal_id,
+            createdAt: new Date(auditoria.createdAt),
+            items: {
+              create: auditoria.items.map(item => ({
+                productId: item.productId,
+                expectedStock: item.expectedStock,
+                countedStock: item.countedStock,
+                discrepancy: item.discrepancy,
+                reason: item.reason || null,
+                comments: item.comments || null
+              }))
             }
+          },
+          update: {
+            // Upsert Idempotencia: asumimos que las auditorías no modifican items aquí si ya existen.
+          }
+        });
+        procesados.auditorias.push(auditoria.id);
+      }
 
-            // Descontamos del inventario físicamente
-            await tx.inventario_Sucursal.update({
-              where: {
-                sucursal_id_producto_id: {
-                  sucursal_id: activeTurno.sucursal_id,
-                  producto_id: item.productId
-                }
-              },
-              data: {
-                cantidad: {
-                  decrement: item.quantity
-                }
-              }
-            });
+      // 2.3 Para ventas: Upsert. Si es create, usa creación anidada para insertar detalles. 
+      // Si es update, asume que la venta ya existe y no modifiques detalles.
+      for (const venta of ventas) {
+        // Checar si la venta existe
+        const existingSale = await tx.venta.findUnique({
+          where: { id: venta.id },
+          select: { id: true }
+        });
+
+        if (existingSale) {
+          // Si es update, asume que la venta ya existe y NO modifiques detalles
+          await tx.venta.update({
+             where: { id: venta.id },
+             data: {
+               estado: venta.estado === 'COMPLETADA' ? EstadoVenta.COMPLETADA : EstadoVenta.CANCELADA,
+               sync_status: SyncStatus.SYNCED
+             }
+          });
+        } else {
+          // Solución Delta (Inventario): decrementa stock central sin sobrescribir con cálculos locales
+          if (venta.estado === 'COMPLETADA') {
+            for (const detalle of venta.detalles) {
+               await tx.inventario_Sucursal.update({
+                 where: {
+                   sucursal_id_producto_id: {
+                     sucursal_id: venta.sucursal_id,
+                     producto_id: detalle.producto_id
+                   }
+                 },
+                 data: {
+                   cantidad: {
+                     decrement: detalle.cantidad
+                   }
+                 }
+               });
+            }
           }
 
-          // B) Inserta la Venta offline con sus respectivos Detalles anidados
+          // Si es create, usa creación anidada para insertar detalles al mismo tiempo
           await tx.venta.create({
             data: {
-              id: sale.localId, // Mantenemos el Venta ID igual al ID local devuelto por Dexie
-              turno_id: activeTurno.id,
-              sucursal_id: activeTurno.sucursal_id,
-              total: sale.total,
-              fecha: new Date(sale.createdAt),
+              id: venta.id,
+              turno_id: venta.turno_id,
+              sucursal_id: venta.sucursal_id,
+              total: venta.total,
+              estado: venta.estado === 'COMPLETADA' ? EstadoVenta.COMPLETADA : EstadoVenta.CANCELADA,
               sync_status: SyncStatus.SYNCED,
+              fecha: new Date(venta.fecha),
               detalles: {
-                create: sale.items.map((i) => ({
-                  producto_id: i.productId,
-                  cantidad: i.quantity,
-                  precio_unitario_historico: i.unitPrice
+                create: venta.detalles.map(d => ({
+                  producto_id: d.producto_id,
+                  cantidad: d.cantidad,
+                  precio_unitario_historico: d.precio_unitario_historico
                 }))
               }
             }
           });
-
-          // C) Acumular las ventas offline al turno actual (si quieres mantener en sincronía la tabla turno)
-          await tx.turno.update({
-            where: { id: activeTurno.id },
-            data: {
-              total_ventas: {
-                increment: sale.total
-              }
-            }
-          });
-
-          inserted++;
-          results.push({
-            localId: sale.localId,
-            serverId: sale.localId,
-            status: "ok",
-          });
         }
-      });
-    }
+        procesados.ventas.push(venta.id);
+      }
 
-    // 5. Respuesta exitosa
+    });
+
+    // 3. Respuesta: Devuelve un HTTP 200 con { success: true, procesados: {...} }
     return NextResponse.json({
-      inserted,
-      failed,
-      results
+      success: true,
+      procesados
     } satisfies PushSyncResponse, { status: 200 });
 
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Stock insuficiente")) {
+    if (error instanceof Error && error.message.includes("Record to update not found")) {
       return NextResponse.json(
-        { error: "Transacción abortada: Conflicto de inventario", details: error.message },
+        { error: "Transacción abortada: Inconsistencia referencial (por ej. Inventario no encontrado)", details: error.message },
         { status: 409 }
       );
     }
