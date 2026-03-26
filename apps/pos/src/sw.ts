@@ -25,14 +25,26 @@ self.addEventListener('sync', (event: any) => {
     console.log('[Service Worker] Background Sync ejecutándose: sync-pos-data');
     event.waitUntil(
       pushToCloud().then((result) => {
-        if (!result.success) {
-          // Si lanzamos error, el navegador reintentará este tag después (exponential backoff)
-          if (result.reason !== 'offline') {
-            throw new Error(`Background sync failed: ${result.reason}`);
-          }
-        } else {
+        if (!result.success && result.reason !== 'offline') {
+          throw new Error(`Background sync failed: ${result.reason}`);
+        } else if (result.success) {
           console.log('[Service Worker] Background Sync exitoso:', result.pushed);
         }
+      })
+    );
+  }
+});
+
+import { pullFromCloud } from './lib/sync-pull';
+
+self.addEventListener('periodicsync', (event: any) => {
+  if (event.tag === 'pull-catalog-daily') {
+    console.log('[Service Worker] Periodic Background Sync ejecutándose: pull-catalog-daily');
+    event.waitUntil(
+      pullFromCloud().then((result) => {
+          console.log('[Service Worker] Pull Periódico completado:', result);
+      }).catch(err => {
+          console.error('[Service Worker] Pull Periódico falló:', err);
       })
     );
   }
