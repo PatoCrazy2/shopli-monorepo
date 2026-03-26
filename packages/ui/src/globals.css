@@ -79,13 +79,12 @@
   --radius-xl: calc(var(--radius) + 2px);
 }
 
-/* Zero-Animations strict rule */
+
+/* Animations and transitions enabled for Rich Aesthetics */
 * {
-  transition-duration: 0s !important;
-  transition-delay: 0s !important;
-  animation-duration: 0s !important;
-  animation-delay: 0s !important;
+  transition-duration: 200ms;
 }
+
 
 @layer base {
   * {
