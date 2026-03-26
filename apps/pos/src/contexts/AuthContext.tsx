@@ -40,20 +40,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(() => {
-        const saved = localStorage.getItem('mock_user');
+        const saved = localStorage.getItem('auth_user');
         return saved ? JSON.parse(saved) : null;
     });
 
     const [activeShift, setActiveShift] = useState<Shift | null>(() => {
-        const saved = localStorage.getItem('mock_shift');
+        const saved = localStorage.getItem('pos_shift');
         return saved ? JSON.parse(saved) : null;
     });
 
     const login = async (pin: string): Promise<boolean> => {
-        // Si no hay usuarios guardados, intentamos sincronizar desde el servidor primero
-        const count = await db.users.count();
-        if (count === 0 && navigator.onLine) {
-            console.log("No hay usuarios locales, intentando pull inicial...");
+        // Enforce online pull to get freshest users and branches
+        if (navigator.onLine) {
+            console.log("Intentando pull de base de datos desde la nube local first...");
             await pullFromCloud();
         }
 
@@ -62,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .where('role').anyOf(['CAJERO', 'ENCARGADO'])
             .toArray();
 
+        // En un entorno local-first offline el PIN debe haber sido guardado previemente como un hash bcrypt (via pullFromCloud).
         let localUser = null;
         for (const u of allUsers) {
             if (u.pin && await bcrypt.compare(pin, u.pin)) {
@@ -71,30 +71,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (!localUser) {
-            console.warn('PIN Incorrecto o usuario no encontrado');
+            console.warn('PIN Incorrecto o usuario no encontrado en base de datos local');
             return false;
         }
 
-        const mockUser: User = {
+        const branch = await db.branches.toCollection().first();
+
+        const authUser: User = {
             id: localUser.id,
             name: localUser.name || 'Usuario',
             role: localUser.role,
-            branchId: 'branch-1', // Default inicial. En OpenRegisterScreen se asigna el real al Turno
-            branchName: 'Sucursal Principal',
+            branchId: branch?.id || '',
+            branchName: branch?.nombre || 'Sucursal Desconocida',
         };
 
-        setUser(mockUser);
+        setUser(authUser);
         setActiveShift(null);
-        localStorage.setItem('mock_user', JSON.stringify(mockUser));
-        localStorage.removeItem('mock_shift');
+        localStorage.setItem('auth_user', JSON.stringify(authUser));
+        localStorage.removeItem('pos_shift');
         return true;
     };
 
     const logout = () => {
         setUser(null);
         setActiveShift(null);
-        localStorage.removeItem('mock_user');
-        localStorage.removeItem('mock_shift');
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('pos_shift');
     };
 
     const openShift = (initialAmount: number, branchId: string) => {
@@ -103,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const newShift: Shift = {
             id: crypto.randomUUID(),
             userId: user.id,
-            branchId: branchId, // Use the selected branch
+            branchId: branchId,
             status: 'ABIERTO',
             initialAmount,
             totalSales: 0,
@@ -111,24 +113,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         setActiveShift(newShift);
-        localStorage.setItem('mock_shift', JSON.stringify(newShift));
+        localStorage.setItem('pos_shift', JSON.stringify(newShift));
     };
 
     const closeShift = (physicalAmount: number) => {
         if (!activeShift) return;
 
-        // Mock updating the shift to CERRADO
         const closedShift = {
             ...activeShift,
             status: 'CERRADO' as const,
             closedAt: new Date(),
-            // Optionally, we could store the physicalAmount on the model but for now we just change status
         };
 
-        // In a real app we would save the closed shift to a "shifts history" list.
-        // For local state we clear the *active* shift.
         setActiveShift(null);
-        localStorage.removeItem('mock_shift');
+        localStorage.removeItem('pos_shift');
         console.log('Shift closed. Physical amount recorded:', physicalAmount, closedShift);
     };
 

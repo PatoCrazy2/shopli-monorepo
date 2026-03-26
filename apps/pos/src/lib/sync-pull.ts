@@ -86,11 +86,11 @@ export async function pullFromCloud(): Promise<SyncResult> {
           }));
           await db.products.bulkAdd(productsToAdd);
 
-          // También mapear el inventario total recibido para la sucursal activa
-          // Asumiremos branch-1 como main por el momento en base al mock existente
+          const defaultBranchId = data.branches && data.branches.length > 0 ? data.branches[0].id : 'default';
+
           const invToAdd = data.products.map((p: any) => ({
              id: crypto.randomUUID(),
-             sucursal_id: 'branch-1', 
+             sucursal_id: defaultBranchId, 
              producto_id: p.id,
              cantidad: p.stock,
              updatedAt: p.updatedAt
@@ -138,11 +138,14 @@ export async function pullFromCloud(): Promise<SyncResult> {
             }))
            );
            
+           const currentBranch = await db.branches.toCollection().first();
+           const branchIdToUse = (data.branches && data.branches.length > 0) ? data.branches[0].id : (currentBranch?.id || 'default');
+
            // Upsert inventory
            await db.inventory.bulkPut(
              data.products.map((p: any) => ({
-                id: p.id, // Forzamos ID a ser P.id para mantener unicidad en incremental mock (idealmente compuesto o actualizamos basado en FK)
-                sucursal_id: 'branch-1', 
+                id: p.id, // Forzamos ID a ser P.id para mantener unicidad en incremental
+                sucursal_id: branchIdToUse, 
                 producto_id: p.id,
                 cantidad: p.stock,
                 updatedAt: p.updatedAt
