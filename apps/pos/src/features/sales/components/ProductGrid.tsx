@@ -1,7 +1,9 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, seedLocalData } from "../../../lib/db";
-import { useEffect } from "react";
+import { db } from "../../../lib/db";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
+import { pullFromCloud } from "../../../lib/sync";
+
 
 interface ProductGridProps {
     onAddToCart: (id: string) => void;
@@ -9,10 +11,19 @@ interface ProductGridProps {
 
 export default function ProductGrid({ onAddToCart }: ProductGridProps) {
     const { user } = useAuth();
+    const [isSyncing, setIsSyncing] = useState(false);
 
-    // For development/testing: auto-seed data if empty
+    // Si no hay productos al montar, intentar un pull desde la nube
     useEffect(() => {
-        seedLocalData();
+        const trySync = async () => {
+            const count = await db.products.count();
+            if (count === 0 && navigator.onLine) {
+                setIsSyncing(true);
+                await pullFromCloud();
+                setIsSyncing(false);
+            }
+        };
+        trySync();
     }, []);
 
     const products = useLiveQuery(async () => {
@@ -40,13 +51,17 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-24">
                 {products.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center p-12 text-gray-500">
-                        <p>No hay productos en el catálogo local.</p>
-                        <button 
-                            onClick={() => seedLocalData()} 
-                            className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200"
-                        >
-                            Cargar Datos de Prueba
-                        </button>
+                        {isSyncing ? (
+                            <>
+                                <p className="font-medium">Sincronizando datos desde el servidor...</p>
+                                <p className="text-sm mt-1 text-gray-400">Esto solo ocurre la primera vez.</p>
+                            </>
+                        ) : (
+                            <>
+                                <p>No hay productos en el catálogo local.</p>
+                                <p className="text-sm mt-1 text-gray-400">Verifica tu conexión al servidor y vuelve a intentarlo.</p>
+                            </>
+                        )}
                     </div>
                 )}
                 

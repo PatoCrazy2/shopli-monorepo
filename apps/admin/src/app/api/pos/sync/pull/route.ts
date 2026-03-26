@@ -23,11 +23,20 @@ export type SyncUser = {
   id: string;
   name: string | null;
   role: string;
+  pin_hash: string | null;
+};
+
+export type SyncBranch = {
+  id: string;
+  name: string;
+  address: string | null;
+  updatedAt: string;
 };
 
 export type PullSyncResponse = {
   products: SyncProduct[];
   users: SyncUser[];
+  branches: SyncBranch[];
   syncedAt: string;
   nextCursor?: string;
 };
@@ -38,15 +47,32 @@ export type PullSyncResponse = {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    // Deshabilita la validación condicionalmente para pruebas (si se corriera localmente bajo test o injectamos cabecera para vitest externo)
-    if (!session?.user && process.env.NODE_ENV !== 'test' && req.headers.get("x-test-bypass") !== "true") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { searchParams } = new URL(req.url);
+
+    // Validación de autenticación: acepta secret del POS via header O query param
+    // Los query params no requieren CORS preflight — más compatible con browsers
+    const validPosSecret = process.env.POS_SYNC_SECRET;
+    const posSecretHeader = req.headers.get("x-pos-sync-secret");
+    const posSecretQuery = searchParams.get("secret");
+    const isPosAuthorized =
+      validPosSecret &&
+      (posSecretHeader === validPosSecret || posSecretQuery === validPosSecret);
+
+    if (!isPosAuthorized) {
+      // Fallback: verificar sesión de NextAuth (acceso desde el admin dashboard)
+      const session = await auth();
+      const isAdminAuthorized = !!session?.user;
+      // Bypass para tests
+      const isTestBypass = process.env.NODE_ENV === 'test' || req.headers.get("x-test-bypass") === "true";
+
+      if (!isAdminAuthorized && !isTestBypass) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
-    const { searchParams } = new URL(req.url);
     const updatedAfterParam = searchParams.get("updatedAfter");
     const cursor = searchParams.get("cursor");
+
     
     // Límite de 1000 productos por request
     const LIMIT = 1000;
@@ -67,8 +93,8 @@ export async function GET(req: NextRequest) {
       ? { updatedAt: { gt: updatedAfterDate }, role: { in: [Role.CAJERO, Role.ENCARGADO] } } 
       : { role: { in: [Role.CAJERO, Role.ENCARGADO] } };
 
-    // 1. Ejecutar las dos solicitudes en paralelo
-    const [productsResult, usersResult] = await Promise.all([
+    // 1. Ejecutar las solicitudes en paralelo
+    const [productsResult, usersResult, branchesResult] = await Promise.all([
       db.producto.findMany({
         where: productsWhere,
         take: LIMIT + 1, // +1 para verificar si hay más páginas
@@ -84,8 +110,12 @@ export async function GET(req: NextRequest) {
           id: true,
           name: true,
           role: true,
+          pin_hash: true,
           updatedAt: true,
         }
+      }),
+      db.sucursal.findMany({
+        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
       })
     ]);
 
@@ -106,6 +136,9 @@ export async function GET(req: NextRequest) {
     });
     usersResult.forEach(u => {
       if (u.updatedAt > maxDate) maxDate = u.updatedAt;
+    });
+    branchesResult.forEach(b => {
+      if (b.updatedAt > maxDate) maxDate = b.updatedAt;
     });
 
     // Si no hubo cambios y no existía un updatedAfter, emitiremos el tiempo del servidor actual.
@@ -137,11 +170,20 @@ export async function GET(req: NextRequest) {
       id: u.id,
       name: u.name,
       role: u.role,
+      pin_hash: u.pin_hash ?? null,
+    }));
+
+    const branches: SyncBranch[] = branchesResult.map((b) => ({
+      id: b.id,
+      name: b.nombre,
+      address: b.direccion ?? null,
+      updatedAt: b.updatedAt.toISOString(),
     }));
 
     const responseBody: PullSyncResponse = {
       products,
       users,
+      branches,
       syncedAt,
       ...(nextCursor && { nextCursor }),
     };

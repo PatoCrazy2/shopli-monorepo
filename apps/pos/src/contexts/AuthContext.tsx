@@ -1,6 +1,8 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
-import { db, seedLocalData } from '../lib/db';
+import { db } from '../lib/db';
+import bcrypt from 'bcryptjs';
+import { pullFromCloud } from '../lib/sync';
 
 // Mock types for user and shift state.
 // In the future this will be mapped to the PowerSync/RxDB models.
@@ -48,15 +50,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const login = async (pin: string): Promise<boolean> => {
+        // Si no hay usuarios guardados, intentamos sincronizar desde el servidor primero
         const count = await db.users.count();
-        if (count === 0) {
-            await seedLocalData();
+        if (count === 0 && navigator.onLine) {
+            console.log("No hay usuarios locales, intentando pull inicial...");
+            await pullFromCloud();
         }
 
-        const localUser = await db.users.where('pin').equals(pin).first();
-        
+        // Obtenemos todos los usuarios con rol de POS y comparamos el PIN con bcrypt
+        const allUsers = await db.users
+            .where('role').anyOf(['CAJERO', 'ENCARGADO'])
+            .toArray();
+
+        let localUser = null;
+        for (const u of allUsers) {
+            if (u.pin && await bcrypt.compare(pin, u.pin)) {
+                localUser = u;
+                break;
+            }
+        }
+
         if (!localUser) {
-            console.warn('PIN Incorrecto', pin);
+            console.warn('PIN Incorrecto o usuario no encontrado');
             return false;
         }
 

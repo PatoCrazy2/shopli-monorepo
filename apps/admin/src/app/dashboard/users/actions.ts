@@ -1,187 +1,110 @@
 "use server";
 
+import { db } from "@shopli/db";
 import { revalidatePath } from "next/cache";
-import { db, Role } from "@shopli/db";
 import { auth } from "@/lib/auth";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
-// Validaciones con Zod
-const CreateUserSchema = z.object({
-    name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-    email: z.string().email("Correo electrónico inválido."),
-    role: z.enum([Role.CAJERO, Role.ENCARGADO] as [string, ...string[]], {
-        message: "Rol inválido, debe ser CAJERO o ENCARGADO.",
-    }),
-    pin: z.string().length(4, "El PIN debe tener exactamente 4 dígitos.").regex(/^\d+$/, "El PIN debe estar conformado únicamente por números."),
+const userSchema = z.object({
+  name: z.string().min(1, "El nombre es requerido"),
+  email: z.string().email("Email inválido"),
+  numero_tel: z.string().optional().nullable(),
+  role: z.enum(["ENCARGADO", "CAJERO"]),
+  pin: z.string().regex(/^\d{4}$/, "El PIN debe ser de 4 dígitos exactos"),
 });
 
-const UpdateUserSchema = z.object({
-    name: z.string().min(2, "El nombre debe tener al menos 2 caracteres.").optional(),
-    role: z.enum([Role.CAJERO, Role.ENCARGADO] as [string, ...string[]], {
-        message: "Rol inválido.",
-    }).optional(),
-});
+export async function createUser(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "DUENO") {
+    return { error: "No autorizado" };
+  }
 
-const ResetPinSchema = z.object({
-    pin: z.string().length(4, "El PIN debe tener exactamente 4 dígitos.").regex(/^\d+$/, "El PIN debe estar conformado únicamente por números."),
-});
+  const parseResult = userSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    numero_tel: formData.get("numero_tel") || null,
+    role: formData.get("role"),
+    pin: formData.get("pin"),
+  });
 
-// Helper de seguridad centralizado según las reglas del Admin Dashboard
-async function verifyOwnerStatus() {
-    const session = await auth();
-    if (!session?.user || session.user.role !== Role.DUENO) {
-        throw new Error("Acceso denegado. Solo los DUEÑOS pueden gestionar usuarios.");
+  if (!parseResult.success) {
+    return { error: "Datos inválidos", details: parseResult.error.flatten() };
+  }
+
+  const data = parseResult.data;
+
+  try {
+    const pin_hash = await bcrypt.hash(data.pin, 10);
+    
+    await db.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        // @ts-ignore - 'numero_tel' exists in db schema now
+        numero_tel: data.numero_tel,
+        role: data.role,
+        pin_hash,
+      },
+    });
+
+    revalidatePath("/dashboard/users");
+    return { success: true };
+  } catch (error: any) {
+    if (error?.code === "P2002") {
+      return { error: "⚠️ El email ya está en uso" };
     }
-    return session.user;
+    return { error: "Error al crear el usuario en el servidor" };
+  }
 }
 
-/**
- * Crea un nuevo Cajero o Encargado en la base de datos PostgreSQL.
- */
-export async function createUser(formData: unknown) {
-    try {
-        await verifyOwnerStatus();
+export async function resetPin(id: string, newPin: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "DUENO") {
+    return { error: "No autorizado" };
+  }
 
-        // Validar datos de entrada
-        const data = CreateUserSchema.parse(formData);
+  const pinSchema = z.string().regex(/^\d{4}$/, "El PIN debe ser de 4 dígitos exactos");
+  const parseResult = pinSchema.safeParse(newPin);
 
-        // Validar unicidad del correo
-        const existingUser = await db.user.findUnique({
-            where: { email: data.email },
-        });
+  if (!parseResult.success) {
+    return { error: "PIN inválido" };
+  }
 
-        if (existingUser) {
-            return { success: false, error: "Ya existe un usuario con este correo electrónico." };
-        }
-
-        // Hashear el PIN tal como requieren las Reglas Críticas
-        const pin_hash = await bcrypt.hash(data.pin, 10);
-
-        // Guardar a través de Prisma
-        await db.user.create({
-            data: {
-                name: data.name,
-                email: data.email,
-                role: data.role as Role,
-                pin_hash,
-            },
-        });
-
-        revalidatePath("/dashboard/users");
-        return { success: true };
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return { success: false, error: error.issues[0]?.message || "Datos de usuario inválidos." };
-        }
-        if (error instanceof Error) {
-            return { success: false, error: error.message };
-        }
-        return { success: false, error: "Ocurrió un error inesperado al intentar crear al usuario." };
-    }
+  try {
+    const pin_hash = await bcrypt.hash(parseResult.data, 10);
+    await db.user.update({
+      where: { id },
+      data: {
+        pin_hash,
+        updatedAt: new Date(),
+      },
+    });
+    revalidatePath("/dashboard/users");
+    return { success: true };
+  } catch (error) {
+    return { error: "Error al reiniciar el PIN" };
+  }
 }
 
-/**
- * Actualiza el perfil de un usuario existente (Nombre o Rol) excluyendo PIN.
- */
-export async function updateUser(id: string, formData: unknown) {
-    try {
-        await verifyOwnerStatus();
+export async function toggleUser(id: string, currentState: boolean, _formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "DUENO") {
+    throw new Error("No autorizado");
+  }
+  
+  if (session.user.id === id) {
+    throw new Error("No puedes desactivar tu propia cuenta");
+  }
 
-        const data = UpdateUserSchema.parse(formData);
-
-        // Validaciones previas a mutación
-        const userToUpdate = await db.user.findUnique({ where: { id } });
-        if (!userToUpdate) {
-            return { success: false, error: "Usuario no encontrado." };
-        }
-
-        if (userToUpdate.role === Role.DUENO) {
-            return { success: false, error: "No es posible degradar o modificar a un perfil nivel DUEÑO." };
-        }
-
-        await db.user.update({
-            where: { id },
-            data: {
-                ...(data.name && { name: data.name }),
-                ...(data.role && { role: data.role as Role }),
-            },
-        });
-
-        revalidatePath("/dashboard/users");
-        return { success: true };
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return { success: false, error: error.issues[0]?.message || "Datos de actualización inválidos." };
-        }
-        if (error instanceof Error) {
-            return { success: false, error: error.message };
-        }
-        return { success: false, error: "Ocurrió un error inesperado al actualizar al usuario." };
-    }
-}
-
-/**
- * Elimina una cuenta del sistema, aplicando barreras de protección.
- */
-export async function deleteUser(id: string) {
-    try {
-        const ownerSession = await verifyOwnerStatus();
-
-        // Evitar auto-eliminación
-        if (ownerSession.id === id) {
-            return { success: false, error: "No puedes eliminar tu propia cuenta de propietario." };
-        }
-
-        const userToDelete = await db.user.findUnique({ where: { id } });
-        if (!userToDelete) {
-            return { success: false, error: "Cuenta de usuario no encontrada." };
-        }
-
-        await db.user.delete({
-            where: { id },
-        });
-
-        revalidatePath("/dashboard/users");
-        return { success: true };
-    } catch (error) {
-        if (error instanceof Error) {
-            return { success: false, error: error.message };
-        }
-        return { success: false, error: "Ocurrió un error al intentar eliminar la cuenta." };
-    }
-}
-
-/**
- * Genera un nuevo hash de acceso y reemplaza el PIN anterior de un Cajero/Encargado.
- */
-export async function resetPin(id: string, formData: unknown) {
-    try {
-        await verifyOwnerStatus();
-
-        const data = ResetPinSchema.parse(formData);
-
-        const targetUser = await db.user.findUnique({ where: { id } });
-        if (!targetUser) {
-            return { success: false, error: "Usuario no encontrado en el sistema." };
-        }
-
-        const pin_hash = await bcrypt.hash(data.pin, 10);
-
-        await db.user.update({
-            where: { id },
-            data: { pin_hash },
-        });
-
-        revalidatePath("/dashboard/users");
-        return { success: true };
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            return { success: false, error: error.issues[0]?.message || "El formato del nuevo PIN es inválido." };
-        }
-        if (error instanceof Error) {
-            return { success: false, error: error.message };
-        }
-        return { success: false, error: "Ocurrió un error inesperado al restablecer el PIN." };
-    }
+  try {
+    await db.$executeRaw`
+      UPDATE "User"
+      SET "active" = ${!currentState}, "updatedAt" = NOW()
+      WHERE "id" = ${id}
+    `;
+    revalidatePath("/dashboard/users");
+  } catch (error) {
+    throw new Error("Error al cambiar el estado del usuario");
+  }
 }
