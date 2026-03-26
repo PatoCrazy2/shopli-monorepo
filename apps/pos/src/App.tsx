@@ -81,9 +81,12 @@ function AppRoutes() {
   );
 }
 
+import { HardStopSyncScreen } from './components/HardStopSyncScreen';
+
 function App() {
   return (
     <AuthProvider>
+      <HardStopSyncScreen />
       <AppRoutes />
     </AuthProvider>
   );

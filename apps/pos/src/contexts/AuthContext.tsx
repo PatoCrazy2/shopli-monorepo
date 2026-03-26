@@ -4,8 +4,7 @@ import { db } from '../lib/db';
 import bcrypt from 'bcryptjs';
 import { pullFromCloud } from '../lib/sync';
 
-// Mock types for user and shift state.
-// In the future this will be mapped to the PowerSync/RxDB models.
+
 export interface User {
     id: string;
     name: string;
@@ -32,8 +31,8 @@ interface AuthContextType {
     hasActiveShift: boolean;
     login: (pin: string) => Promise<boolean>;
     logout: () => void;
-    openShift: (initialAmount: number, branchId: string) => void;
-    closeShift: (physicalAmount: number) => void;
+    openShift: (initialAmount: number, branchId: string) => Promise<void>;
+    closeShift: (physicalAmount: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -99,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('pos_shift');
     };
 
-    const openShift = (initialAmount: number, branchId: string) => {
+    const openShift = async (initialAmount: number, branchId: string) => {
         if (!user) return;
 
         const newShift: Shift = {
@@ -112,11 +111,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             openedAt: new Date(),
         };
 
+        await db.turnos.add({
+            id: newShift.id,
+            usuario_id: newShift.userId,
+            sucursal_id: newShift.branchId,
+            estado: 'ABIERTO',
+            monto_inicial: newShift.initialAmount,
+            total_ventas: 0,
+            fecha_apertura: newShift.openedAt.toISOString(),
+            fecha_cierre: null,
+            sync_status: 'PENDING'
+        });
+
         setActiveShift(newShift);
         localStorage.setItem('pos_shift', JSON.stringify(newShift));
     };
 
-    const closeShift = (physicalAmount: number) => {
+    const closeShift = async (physicalAmount: number) => {
         if (!activeShift) return;
 
         const closedShift = {
@@ -124,6 +135,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             status: 'CERRADO' as const,
             closedAt: new Date(),
         };
+
+        await db.turnos.update(activeShift.id, {
+            estado: 'CERRADO',
+            fecha_cierre: new Date().toISOString(),
+            sync_status: 'PENDING'
+        });
 
         setActiveShift(null);
         localStorage.removeItem('pos_shift');

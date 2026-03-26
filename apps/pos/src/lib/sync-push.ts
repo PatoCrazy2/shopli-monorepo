@@ -1,4 +1,5 @@
 import { db } from './db';
+import { apiClient } from './api-client';
 
 export type PushResult = {
   success: boolean;
@@ -75,22 +76,14 @@ export async function pushToCloud(): Promise<PushResult> {
 
     const secret = import.meta.env.VITE_POS_SYNC_SECRET || '';
     
-    // Hacemos el fetch POST al BFF con el secret injectado por headers
-    const response = await fetch('/api/pos/sync/push', {
+    // Hacemos el fetch POST al BFF con el secret injectado por headers a través del proxy
+    const data = await apiClient<any>('pos/sync/push', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'x-pos-sync-secret': secret
       },
-      body: JSON.stringify(payload)
+      body: payload
     });
-
-    if (!response.ok) {
-       const text = await response.text();
-       return { success: false, reason: `server_error: ${response.status} - ${text}` };
-    }
-
-    const data = await response.json();
 
     // Reconciliación Local (ACK). Si es 200 OK, procedemos a marcar como 'SYNCED'
     if (data.success && data.procesados) {

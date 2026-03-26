@@ -3,6 +3,7 @@ import { useInventoryAuditWizard } from "./hooks/useInventoryAuditWizard";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { pushToCloud } from "../../lib/sync";
 
 export default function InventoryAuditWizard() {
     const navigate = useNavigate();
@@ -46,8 +47,9 @@ export default function InventoryAuditWizard() {
                     <h1 className="text-4xl font-bold mb-4">Auditoría Completada</h1>
                     <p className="text-gray-400 text-lg mb-8">El conteo ciego ha sido registrado. El turno se ha cerrado exitosamente.</p>
                     <button
-                        onClick={() => {
-                            closeShift(physicalAmountPassed);
+                        onClick={async () => {
+                            await closeShift(physicalAmountPassed);
+                            await pushToCloud();
                             logout();
                             navigate('/login', { replace: true });
                         }}

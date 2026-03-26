@@ -77,10 +77,29 @@ const pushSyncSchema = z.object({
 // ==========================================
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    // Deshabilita la validación condicionalmente para pruebas (si se corriera localmente bajo test o injectamos cabecera para vitest externo)
-    if (!session?.user && process.env.NODE_ENV !== 'test' && req.headers.get("x-test-bypass") !== "true") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Validación de autenticación: acepta secret del POS via header O query param
+    const validPosSecret = process.env.POS_SYNC_SECRET;
+    const posSecretHeader = req.headers.get("x-pos-sync-secret");
+    
+    // Fallback URL parse explicitly for secret query param if preferred over header
+    const { searchParams } = new URL(req.url);
+    const posSecretQuery = searchParams.get("secret");
+
+    const isPosAuthorized =
+      validPosSecret &&
+      (posSecretHeader === validPosSecret || posSecretQuery === validPosSecret);
+
+    if (!isPosAuthorized) {
+      // Fallback: verificar sesión de NextAuth (acceso desde el admin dashboard local)
+      const session = await auth();
+      const isAdminAuthorized = !!session?.user;
+      
+      // Bypass para scripts de test / integración 
+      const isTestBypass = process.env.NODE_ENV === 'test' || req.headers.get("x-test-bypass") === "true";
+
+      if (!isAdminAuthorized && !isTestBypass) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     const body = await req.json().catch(() => ({}));

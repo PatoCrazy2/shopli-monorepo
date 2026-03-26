@@ -1,14 +1,29 @@
-type ApiClientOptions = Omit<RequestInit, 'body'> & { body?: unknown };
+type ApiClientOptions = Omit<RequestInit, 'body'> & { 
+  body?: unknown;
+  params?: Record<string, string>;
+};
 
 export async function apiClient<T>(endpoint: string, options?: ApiClientOptions): Promise<T> {
-  // Read base URL with fallback and remove trailing slashes
-  const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+  // Read base URL with fallback. We force relative path to leverage Vite local proxy.
+  let rawBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+  
+  // Failsafe: Si variables de entorno están cacheadas con localhost absoluto, fórza el proxy
+  if (rawBaseUrl.startsWith('http://localhost') || rawBaseUrl.startsWith('http://127.0.0.1')) {
+     rawBaseUrl = '/api';
+  }
+  
   const baseUrl = rawBaseUrl.replace(/\/+$/, '');
   
   // Remove leading slash from endpoint to avoid double slashes
   const cleanEndpoint = endpoint.replace(/^\/+/, '');
   
-  const url = `${baseUrl}/${cleanEndpoint}`;
+  let url = `${baseUrl}/${cleanEndpoint}`;
+
+  // Append query params if provided
+  if (options?.params) {
+    const searchParams = new URLSearchParams(options.params);
+    url += `?${searchParams.toString()}`;
+  }
 
   const headers = new Headers(options?.headers);
   

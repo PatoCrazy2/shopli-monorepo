@@ -18,18 +18,18 @@ export async function pullFromCloud(): Promise<SyncResult> {
     const metaRecord = await db.meta.get('lastSyncedAt');
     const lastSyncedAt = metaRecord ? metaRecord.value : null;
 
-    // Pasar el secret como query param — no dispara CORS preflight a diferencia de headers personalizados
     const secret = import.meta.env.VITE_SYNC_SECRET || '';
-    const params = new URLSearchParams({ secret });
+    const params: Record<string, string> = { secret };
     if (lastSyncedAt) {
-      params.set('updatedAfter', lastSyncedAt);
+      params.updatedAfter = lastSyncedAt;
     }
-    const endpoint = `pos/sync/pull?${params.toString()}`;
+    const endpoint = `pos/sync/pull`;
 
     let data: PullSyncResponse;
     try {
       data = await apiClient<PullSyncResponse>(endpoint, {
         method: 'GET',
+        params // Pass params to apiClient
       });
     } catch (error: any) {
       // Offline o error de servidor (500)
