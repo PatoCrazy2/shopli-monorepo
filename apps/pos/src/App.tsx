@@ -82,8 +82,10 @@ function AppRoutes() {
 }
 
 import { HardStopSyncScreen } from './components/HardStopSyncScreen';
+import { useNetworkSync } from './hooks/useNetworkSync';
 
 function App() {
+  useNetworkSync(); // Suscribe la PWA globalmente a eventos online/offline y Background Sync
   return (
     <AuthProvider>
       <HardStopSyncScreen />

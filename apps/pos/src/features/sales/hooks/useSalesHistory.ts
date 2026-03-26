@@ -2,10 +2,12 @@ import { useCallback } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, type LocalSale, type LocalSaleDetail, type LocalCartItem } from "../../../lib/db";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useNetworkSync } from "../../../hooks/useNetworkSync";
 // Imports eliminados
 
 export function useSalesHistory() {
     const { user, activeShift } = useAuth();
+    const { registerBackgroundSync } = useNetworkSync();
     
     // Live query para las ventas
     const salesArray = useLiveQuery<LocalSale[]>(() => db.sales.toArray(), []);
@@ -69,6 +71,9 @@ export function useSalesHistory() {
                 // Limpiar carrito
                 await db.cart.clear();
             });
+
+            // Registrar el intento de Background Sync de inmediato si estamos en entorno productivo/PWA
+            await registerBackgroundSync();
 
             return newSale;
         } catch (error) {
