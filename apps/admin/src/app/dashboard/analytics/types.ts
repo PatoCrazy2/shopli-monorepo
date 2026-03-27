@@ -6,10 +6,12 @@ export interface AnalyticsFilters {
   estado?: "COMPLETADA" | "CANCELADA";
 }
 
-export interface MetricCard {
+export interface MetricCardData {
   label: string;
   value: number;
-  format: "currency" | "number";
+  format: "currency" | "number" | "percentage";
+  trend?: number; // percentage change
+  description?: string;
 }
 
 export interface BranchSale {
@@ -29,6 +31,7 @@ export interface UserSale {
 export interface DateSale {
   date: string; // ISO or YYYY-MM-DD
   totalSales: number;
+  orders: number;
 }
 
 export interface ProductPerformance {
@@ -40,6 +43,12 @@ export interface ProductPerformance {
   grossMargin: number; // revenue - costs
 }
 
+export interface CategoryPerformance {
+    name: string;
+    value: number;
+    color: string;
+}
+
 export interface AnalyticsData {
   summary: {
     totalRevenue: number;
@@ -47,9 +56,18 @@ export interface AnalyticsData {
     averageTicket: number;
     totalCosts: number;
     grossProfit: number;
+    marginPercent: number;
   };
   branchSales: BranchSale[];
   userSales: UserSale[];
   dateSales: DateSale[];
   topProducts: ProductPerformance[];
+  categorySales: CategoryPerformance[];
+}
+
+export interface InventoryAnalytics {
+    totalValueAtCost: number;
+    totalUnits: number;
+    lowStockItems: number;
+    criticalItems: number;
 }

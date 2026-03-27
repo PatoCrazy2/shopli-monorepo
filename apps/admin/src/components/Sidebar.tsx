@@ -59,7 +59,8 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string 
                     ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:h-screen
                 `}
             >
-                <div className="p-6 pb-2 hidden md:block">
+                <div className="p-6 pb-2 hidden md:flex md:items-center md:gap-2">
+                    <img src="/shopli_snbg.svg" alt="ShopLI Logo" className="w-6 h-6" />
                     <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">ShopLI</h1>
                 </div>
 
