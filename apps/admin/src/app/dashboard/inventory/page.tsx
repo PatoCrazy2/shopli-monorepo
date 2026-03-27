@@ -39,12 +39,15 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventario de Stock</h1>
-          <p className="text-muted-foreground mt-2 text-zinc-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div className="flex flex-col justify-center py-2">
+          <h1 className="text-3xl font-black tracking-tight text-black">Inventario de Stock</h1>
+          <p className="text-sm text-zinc-400 font-medium mt-1">
             Control de existencias, movimientos entre sucursales y ajustes manuales.
           </p>
+        </div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <TransferModal products={products} branches={branches} />
         </div>
       </div>
 
@@ -94,14 +97,9 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         />
       </div>
 
-      {/* Actions Bar - Filter & Transfer */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 shadow-sm mt-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
-          <BranchFilter branches={branches} />
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
-          <TransferModal products={products} branches={branches} />
-        </div>
+      {/* Filter Bar */}
+      <div className="flex items-center gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 shadow-sm mt-8">
+        <BranchFilter branches={branches} />
       </div>
 
       {/* Tabla de Datos */}
@@ -114,7 +112,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                 <th className="px-4 py-3 font-semibold text-zinc-500 uppercase tracking-wider text-xs">Producto</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 uppercase tracking-wider text-xs">Categoría</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-right uppercase tracking-wider text-xs">Costo Unit.</th>
-                  <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-24 uppercase tracking-wider text-xs">Stock</th>
+                <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-24 uppercase tracking-wider text-xs">Stock</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-right uppercase tracking-wider text-xs">Valor P.</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-32 uppercase tracking-wider text-xs">Estado</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-24 uppercase tracking-wider text-xs">Acciones</th>
@@ -149,8 +147,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset ${isNegative ? 'bg-rose-50 text-rose-700 ring-rose-200' :
-                            isLow ? 'bg-amber-50 text-amber-700 ring-amber-200' :
-                              'bg-zinc-50 text-zinc-700 ring-zinc-200 shadow-sm'
+                          isLow ? 'bg-amber-50 text-amber-700 ring-amber-200' :
+                            'bg-zinc-50 text-zinc-700 ring-zinc-200 shadow-sm'
                           }`}>
                           {p.totalStock}
                         </span>
@@ -168,11 +166,15 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <QuickAdjustModal 
-                          productId={p.id} 
-                          productName={p.nombre} 
+                        <QuickAdjustModal
+                          productId={p.id}
+                          productName={p.nombre}
                           branches={branches}
                           selectedBranchId={branchId}
+                          productShares={p.inventario.map(inv => ({
+                            sucursal_id: inv.sucursal_id,
+                            cantidad: inv.cantidad
+                          }))}
                         />
                       </td>
                     </tr>

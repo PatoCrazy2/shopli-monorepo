@@ -8,34 +8,38 @@ interface QuickAdjustModalProps {
   productName: string;
   branches: { id: string; nombre: string }[];
   selectedBranchId?: string;
+  productShares: { sucursal_id: string; cantidad: number }[];
 }
 
-export function QuickAdjustModal({ productId, productName, branches, selectedBranchId }: QuickAdjustModalProps) {
+export function QuickAdjustModal({ productId, productName, branches, selectedBranchId, productShares }: QuickAdjustModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState<number | "">("");
-  const [reason, setReason] = useState("");
+  const [newStockStr, setNewStockStr] = useState<string>("");
   const [branchId, setBranchId] = useState(selectedBranchId || "");
   const [isPending, startTransition] = useTransition();
 
+  // Find current stock for the selected branch
+  const currentBranchStock = productShares.find(s => s.sucursal_id === branchId)?.cantidad ?? 0;
+
   const handleSave = () => {
-    const numericAmount = Number(amount);
-    if (!amount || isNaN(numericAmount) || numericAmount === 0 || !branchId) {
-      alert("Compruebe los campos requeridos (sucursal, cantidad)");
+    const newStockValue = parseInt(newStockStr);
+    if (isNaN(newStockValue) || !branchId) {
+      alert("Por favor ingrese una cantidad válida y seleccione una sucursal.");
       return;
     }
-    if (!reason.trim()) {
-      alert("Por favor ingrese un motivo para el ajuste.");
+
+    const diff = newStockValue - currentBranchStock;
+    if (diff === 0) {
+      setIsOpen(false);
       return;
     }
 
     startTransition(async () => {
-      const res = await adjustStock(productId, numericAmount, reason, branchId);
+      const res = await adjustStock(productId, diff, "Ajuste manual de inventario", branchId);
       if (res.error) {
         alert(res.error);
       } else {
         setIsOpen(false);
-        setAmount("");
-        setReason("");
+        setNewStockStr("");
         if (!selectedBranchId) setBranchId("");
       }
     });
@@ -53,80 +57,74 @@ export function QuickAdjustModal({ productId, productName, branches, selectedBra
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-zinc-200">
-            <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
-              <div>
-                <h2 className="text-base font-bold text-zinc-900 leading-tight">Ajuste Rápido</h2>
-                <p className="text-[11px] text-zinc-500 font-medium truncate max-w-[250px]">{productName}</p>
-              </div>
-              <button 
-                onClick={() => setIsOpen(false)} 
-                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-zinc-100 flex flex-col">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-zinc-100 bg-zinc-50/30">
+              <h2 className="text-xl font-bold text-black tracking-tight">Ajuste de Stock</h2>
+              <p className="text-[12px] text-zinc-400 font-medium mt-0.5">Indica la cantidad real en estante</p>
             </div>
             
-            <div className="p-5 space-y-4">
-              {!selectedBranchId ? (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Sucursal a afectar</label>
-                  <select 
-                    value={branchId}
-                    onChange={(e) => setBranchId(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-zinc-900 appearance-none"
-                  >
-                    <option value="">Seleccione sucursal...</option>
-                    {branches.map(b => (
-                       <option key={b.id} value={b.id}>{b.nombre}</option>
-                    ))}
-                  </select>
+            <div className="p-6 space-y-5">
+              {/* Context Info */}
+              <div className="space-y-3">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Sucursal</span>
+                  {selectedBranchId ? (
+                    <span className="text-sm font-semibold text-black mt-0.5">{selectedBranchName}</span>
+                  ) : (
+                    <select 
+                      value={branchId}
+                      onChange={(e) => setBranchId(e.target.value)}
+                      className="mt-1 w-full bg-zinc-50 border-none rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-black transition-all"
+                    >
+                      <option value="">Seleccionar Sucursal...</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.nombre}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
-              ) : (
-                <div className="p-2 bg-blue-50/50 border border-blue-100 rounded-lg flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                  <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Sucursal: {selectedBranchName}</span>
-                </div>
-              )}
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Cantidad (+/-)</label>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Producto</span>
+                  <span className="text-sm font-semibold text-black mt-0.5 truncate">{productName}</span>
+                </div>
+              </div>
+
+              {/* Quantities */}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="bg-zinc-50 p-4 rounded-xl border border-zinc-100">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Actual</span>
+                  <span className="text-2xl font-black text-zinc-400">{currentBranchStock}</span>
+                </div>
+                
+                <div className="bg-white p-4 rounded-xl border-2 border-black ring-4 ring-black/5">
+                  <span className="text-[10px] font-bold text-black uppercase tracking-widest block mb-1">Nuevo</span>
                   <input 
                     type="number" 
-                    value={amount} 
-                    onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : "")}
-                    placeholder="Ej. 5"
+                    value={newStockStr} 
+                    onChange={(e) => setNewStockStr(e.target.value)}
+                    placeholder="0"
                     autoFocus
-                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-zinc-900"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Motivo</label>
-                  <input 
-                    type="text" 
-                    value={reason} 
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="Ej. Conteo"
-                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-zinc-900"
+                    className="w-full bg-transparent text-2xl font-black text-black focus:outline-none p-0"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="px-5 py-4 bg-zinc-50 border-t border-zinc-100 flex flex-col gap-2">
+            {/* Footer Buttons */}
+            <div className="px-6 py-5 bg-zinc-50/50 border-t border-zinc-100 flex flex-col gap-3">
               <button 
                 onClick={handleSave}
-                disabled={isPending || !amount || !reason || !branchId}
-                className="w-full py-2.5 bg-zinc-900 text-white rounded-lg text-sm font-bold hover:bg-zinc-800 transition-shadow shadow-md active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={isPending || newStockStr === "" || !branchId}
+                className="w-full py-3.5 bg-black text-white rounded-xl text-sm font-bold hover:bg-zinc-800 transition-all active:scale-[0.98] disabled:opacity-20 flex items-center justify-center gap-2"
               >
-                {isPending ? "Procesando..." : "Confirmar Ajuste"}
+                {isPending ? "Sincronizando..." : "Confirmar Cambios"}
               </button>
               <button 
                 onClick={() => setIsOpen(false)}
-                disabled={isPending}
-                className="w-full py-2 text-zinc-500 text-[11px] font-bold uppercase tracking-wider hover:text-zinc-700 transition-colors"
+                className="w-full py-2 text-zinc-400 text-[11px] font-bold uppercase tracking-wider hover:text-black transition-colors"
               >
                 Cancelar
               </button>
