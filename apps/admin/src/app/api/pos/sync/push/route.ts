@@ -26,6 +26,7 @@ const pushSyncSchema = z.object({
       sucursal_id: z.string().uuid(),
       estado: z.enum(["ABIERTO", "CERRADO"]),
       monto_inicial: z.number().nonnegative(),
+      monto_final: z.number().nullable().optional(),
       total_ventas: z.number().nonnegative(),
       fecha_apertura: z.string().datetime(),
       fecha_cierre: z.string().datetime().nullable().optional()
@@ -134,12 +135,14 @@ export async function POST(req: Request) {
             sucursal_id: turno.sucursal_id,
             estado: turno.estado === "ABIERTO" ? EstadoTurno.ABIERTO : EstadoTurno.CERRADO,
             monto_inicial: turno.monto_inicial,
+            monto_final: turno.monto_final || null,
             total_ventas: turno.total_ventas,
             fecha_apertura: new Date(turno.fecha_apertura),
             fecha_cierre: turno.fecha_cierre ? new Date(turno.fecha_cierre) : null,
           },
           update: {
             estado: turno.estado === "ABIERTO" ? EstadoTurno.ABIERTO : EstadoTurno.CERRADO,
+            monto_final: turno.monto_final || null,
             total_ventas: turno.total_ventas,
             fecha_cierre: turno.fecha_cierre ? new Date(turno.fecha_cierre) : null,
           }

@@ -117,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sucursal_id: newShift.branchId,
             estado: 'ABIERTO',
             monto_inicial: newShift.initialAmount,
+            monto_final: null,
             total_ventas: 0,
             fecha_apertura: newShift.openedAt.toISOString(),
             fecha_cierre: null,
@@ -139,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await db.turnos.update(activeShift.id, {
             estado: 'CERRADO',
             fecha_cierre: new Date().toISOString(),
+            monto_final: physicalAmount,
             sync_status: 'PENDING'
         });
 
