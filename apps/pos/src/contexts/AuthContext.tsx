@@ -74,7 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return false;
         }
 
-        const branch = await db.branches.toCollection().first();
+        const branches = await db.branches.toArray();
+        // Ordenamos alfabéticamente para asegurar que Sucursal 1 sea seleccionada por defecto en testing
+        const branch = branches.sort((a,b) => a.nombre.localeCompare(b.nombre))[0];
 
         const authUser: User = {
             id: localUser.id,
@@ -117,12 +119,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sucursal_id: newShift.branchId,
             estado: 'ABIERTO',
             monto_inicial: newShift.initialAmount,
+            monto_final: null,
             total_ventas: 0,
             fecha_apertura: newShift.openedAt.toISOString(),
             fecha_cierre: null,
             sync_status: 'PENDING'
         });
 
+        const branch = await db.branches.get(branchId);
+        const updatedUser: User = { 
+            ...user, 
+            branchId, 
+            branchName: branch?.nombre || 'Sucursal Desconocida' 
+        };
+
+        setUser(updatedUser);
+        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+        
         setActiveShift(newShift);
         localStorage.setItem('pos_shift', JSON.stringify(newShift));
     };
@@ -139,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await db.turnos.update(activeShift.id, {
             estado: 'CERRADO',
             fecha_cierre: new Date().toISOString(),
+            monto_final: physicalAmount,
             sync_status: 'PENDING'
         });
 

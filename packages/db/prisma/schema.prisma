@@ -32,6 +32,7 @@ model Sucursal {
   id        String   @id @default(uuid())
   nombre    String
   direccion String?
+  activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt                  DateTime @updatedAt @default(now())
 
@@ -90,6 +91,7 @@ model Turno {
   sucursal_id    String
   estado         EstadoTurno @default(ABIERTO)
   monto_inicial  Decimal     @db.Decimal(10, 2)
+  monto_final    Decimal?    @db.Decimal(10, 2)
   total_ventas   Decimal     @default(0) @db.Decimal(10, 2)
   fecha_apertura DateTime    @default(now())
   fecha_cierre   DateTime?

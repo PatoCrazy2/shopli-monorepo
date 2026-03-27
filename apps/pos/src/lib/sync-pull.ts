@@ -8,6 +8,7 @@ export type SyncResult = {
 
 export type PullSyncResponse = {
   products?: any[];
+  inventory?: any[];
   users?: any[];
   branches?: any[];
   syncedAt?: string;
@@ -80,20 +81,21 @@ export async function pullFromCloud(): Promise<SyncResult> {
              costo: p.price,
              precio_publico: p.price,
              categoria: p.category,
-             isCritical: p.stock <= 5,
+             isCritical: false, // Ahora se puede calcular mediante cruce local
              isActive: true, // El endpoint solo devuelve productos activos
              updatedAt: p.updatedAt
           }));
           await db.products.bulkAdd(productsToAdd);
+        }
 
-          const defaultBranchId = data.branches && data.branches.length > 0 ? data.branches[0].id : 'default';
-
-          const invToAdd = data.products.map((p: any) => ({
-             id: crypto.randomUUID(),
-             sucursal_id: defaultBranchId, 
-             producto_id: p.id,
-             cantidad: p.stock,
-             updatedAt: p.updatedAt
+        // Inyectamos el stock disgregado real de Inventario_Sucursal
+        if (data.inventory && data.inventory.length > 0) {
+          const invToAdd = data.inventory.map((inv: any) => ({
+             id: inv.id,
+             sucursal_id: inv.branchId, 
+             producto_id: inv.productId,
+             cantidad: inv.stock,
+             updatedAt: inv.updatedAt
           }));
           await db.inventory.bulkAdd(invToAdd);
         }
@@ -132,23 +134,21 @@ export async function pullFromCloud(): Promise<SyncResult> {
               costo: p.price,
               precio_publico: p.price,
               categoria: p.category,
-              isCritical: p.stock <= 5,
+              isCritical: false,
               isActive: true, // El endpoint solo devuelve productos activos
               updatedAt: p.updatedAt
             }))
            );
-           
-           const currentBranch = await db.branches.toCollection().first();
-           const branchIdToUse = (data.branches && data.branches.length > 0) ? data.branches[0].id : (currentBranch?.id || 'default');
+        }
 
-           // Upsert inventory
+        if (data.inventory && data.inventory.length > 0) {
            await db.inventory.bulkPut(
-             data.products.map((p: any) => ({
-                id: p.id, // Forzamos ID a ser P.id para mantener unicidad en incremental
-                sucursal_id: branchIdToUse, 
-                producto_id: p.id,
-                cantidad: p.stock,
-                updatedAt: p.updatedAt
+             data.inventory.map((inv: any) => ({
+                id: inv.id, 
+                sucursal_id: inv.branchId, 
+                producto_id: inv.productId,
+                cantidad: inv.stock,
+                updatedAt: inv.updatedAt
              }))
            );
         }

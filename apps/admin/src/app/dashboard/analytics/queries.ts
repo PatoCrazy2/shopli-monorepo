@@ -14,11 +14,13 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
   }
 
   if (filters.startDate && filters.endDate) {
-    where.fecha = { gte: new Date(filters.startDate), lte: new Date(filters.endDate) };
+    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
+    where.fecha = { gte: s, lte: e };
   } else if (filters.startDate) {
-    where.fecha = { gte: new Date(filters.startDate) };
+    where.fecha = { gte: new Date(`${filters.startDate}T00:00:00.000-06:00`) };
   } else if (filters.endDate) {
-    where.fecha = { lte: new Date(filters.endDate) };
+    where.fecha = { lte: new Date(`${filters.endDate}T23:59:59.999-06:00`) };
   }
   if (filters.sucursalId) {
     where.sucursal_id = filters.sucursalId;
@@ -82,7 +84,13 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
     u.count += 1;
 
     // Dates
-    const dateStr = s.fecha.toISOString().split("T")[0];
+    // Agrupar por la fecha local de CDMX para que las ventas de la tarde/noche se asignen al día correcto
+    const dateStr = new Intl.DateTimeFormat('en-CA', { 
+      timeZone: 'America/Mexico_City', 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    }).format(s.fecha);
     if (!dateMap.has(dateStr)) {
       dateMap.set(dateStr, { rev: 0, count: 0 });
     }

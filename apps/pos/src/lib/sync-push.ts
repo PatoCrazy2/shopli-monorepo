@@ -43,6 +43,7 @@ export async function buildPushPayload() {
       sucursal_id: t.sucursal_id,
       estado: t.estado,
       monto_inicial: t.monto_inicial,
+      monto_final: t.monto_final,
       total_ventas: t.total_ventas,
       fecha_apertura: t.fecha_apertura,
       fecha_cierre: t.fecha_cierre

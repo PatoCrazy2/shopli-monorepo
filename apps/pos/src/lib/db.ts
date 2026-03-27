@@ -55,6 +55,7 @@ export interface LocalTurno {
   sucursal_id: string;
   estado: 'ABIERTO' | 'CERRADO';
   monto_inicial: number;
+  monto_final: number | null;
   total_ventas: number;
   fecha_apertura: string;
   fecha_cierre: string | null;

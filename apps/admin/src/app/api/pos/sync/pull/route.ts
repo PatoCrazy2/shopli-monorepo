@@ -15,6 +15,13 @@ export type SyncProduct = {
   name: string;
   price: number;
   category: string | null;
+  updatedAt: string;
+};
+
+export type SyncInventory = {
+  id: string;
+  branchId: string;
+  productId: string;
   stock: number;
   updatedAt: string;
 };
@@ -35,6 +42,7 @@ export type SyncBranch = {
 
 export type PullSyncResponse = {
   products: SyncProduct[];
+  inventory: SyncInventory[];
   users: SyncUser[];
   branches: SyncBranch[];
   syncedAt: string;
@@ -94,15 +102,15 @@ export async function GET(req: NextRequest) {
       : { role: { in: [Role.CAJERO, Role.ENCARGADO] } };
 
     // 1. Ejecutar las solicitudes en paralelo
-    const [productsResult, usersResult, branchesResult] = await Promise.all([
+    const [productsResult, inventoryResult, usersResult, branchesResult] = await Promise.all([
       db.producto.findMany({
         where: productsWhere,
         take: LIMIT + 1, // +1 para verificar si hay más páginas
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
         orderBy: { id: 'asc' },
-        include: {
-          inventario: true, // Incluimos inventario para calcular stock total
-        },
+      }),
+      db.inventario_Sucursal.findMany({
+        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
       }),
       db.user.findMany({
         where: usersWhere,
@@ -134,6 +142,9 @@ export async function GET(req: NextRequest) {
     productsToReturn.forEach(p => {
       if (p.updatedAt > maxDate) maxDate = p.updatedAt;
     });
+    inventoryResult.forEach(inv => {
+      if (inv.updatedAt > maxDate) maxDate = inv.updatedAt;
+    });
     usersResult.forEach(u => {
       if (u.updatedAt > maxDate) maxDate = u.updatedAt;
     });
@@ -150,21 +161,23 @@ export async function GET(req: NextRequest) {
 
     // 3. Serialización de las entidades
     const products: SyncProduct[] = productsToReturn.map((p) => {
-      // Cálculo del stock en caso de múltiples sucursales (suma total global)
-      // Nota: Si en el futuro cada terminal está casada con una Sucursal, este query debería
-      // usar el sucursal_id y filtrar solo ese inventario.
-      const totalStock = p.inventario.reduce((acc, current) => acc + current.cantidad, 0);
-
       return {
         id: p.id,
         sku: p.codigo_interno,
         name: p.nombre,
         price: Number(p.precio_publico), // Prisma transfiere decimal como typeof Prisma.Decimal Object/string
         category: p.categoria,
-        stock: totalStock,
         updatedAt: p.updatedAt.toISOString(),
       };
     });
+
+    const inventory: SyncInventory[] = inventoryResult.map((inv) => ({
+      id: inv.id,
+      branchId: inv.sucursal_id,
+      productId: inv.producto_id,
+      stock: inv.cantidad,
+      updatedAt: inv.updatedAt.toISOString(),
+    }));
 
     const users: SyncUser[] = usersResult.map((u) => ({
       id: u.id,
@@ -182,6 +195,7 @@ export async function GET(req: NextRequest) {
 
     const responseBody: PullSyncResponse = {
       products,
+      inventory,
       users,
       branches,
       syncedAt,

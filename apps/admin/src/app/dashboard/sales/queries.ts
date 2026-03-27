@@ -8,8 +8,10 @@ export async function getSales(filters: { sucursalId?: string; dateStr?: string 
   }
 
   if (filters.dateStr) {
-    const start = new Date(`${filters.dateStr}T00:00:00.000Z`);
-    const end = new Date(`${filters.dateStr}T23:59:59.999Z`);
+    // CDMX es UTC-6. Definimos el inicio del día (00:00:00) y fin del día (23:59:59)
+    // usando el offset explícito para que Prisma consulte correctamente en UTC.
+    const start = new Date(`${filters.dateStr}T00:00:00.000-06:00`);
+    const end = new Date(`${filters.dateStr}T23:59:59.999-06:00`);
     where.fecha = { gte: start, lte: end };
   }
 

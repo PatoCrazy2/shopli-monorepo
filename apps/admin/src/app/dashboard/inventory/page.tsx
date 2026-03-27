@@ -1,17 +1,21 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getInventory } from "./queries";
+import { getInventory, getBranches } from "./queries";
 import { QuickAdjustModal } from "./QuickAdjustModal";
+import { BranchFilter } from "./BranchFilter";
+import { TransferModal } from "./TransferModal";
 
 export const metadata = {
   title: "Inventario Global - ShopLI",
 };
 
-export default async function InventoryPage() {
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ branch?: string }> }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const products = await getInventory();
+  const { branch: branchId } = await searchParams;
+  const branches = await getBranches();
+  const products = await getInventory(branchId);
 
   // KPIs calculation
   const totalSkus = products.length;
@@ -35,12 +39,15 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventario Global</h1>
-          <p className="text-muted-foreground mt-2 text-zinc-500">
-            Vista general del inventario, valoración y alertas de reabastecimiento.
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div className="flex flex-col justify-center py-2">
+          <h1 className="text-3xl font-black tracking-tight text-black">Inventario de Stock</h1>
+          <p className="text-sm text-zinc-400 font-medium mt-1">
+            Control de existencias, movimientos entre sucursales y ajustes manuales.
           </p>
+        </div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <TransferModal products={products} branches={branches} />
         </div>
       </div>
 
@@ -90,8 +97,13 @@ export default async function InventoryPage() {
         />
       </div>
 
+      {/* Filter Bar */}
+      <div className="flex items-center gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 shadow-sm mt-8">
+        <BranchFilter branches={branches} />
+      </div>
+
       {/* Tabla de Datos */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm mt-8">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm mt-6">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-zinc-50 border-b border-zinc-200">
@@ -100,7 +112,7 @@ export default async function InventoryPage() {
                 <th className="px-4 py-3 font-semibold text-zinc-500 uppercase tracking-wider text-xs">Producto</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 uppercase tracking-wider text-xs">Categoría</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-right uppercase tracking-wider text-xs">Costo Unit.</th>
-                  <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-24 uppercase tracking-wider text-xs">Stock</th>
+                <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-24 uppercase tracking-wider text-xs">Stock</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-right uppercase tracking-wider text-xs">Valor P.</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-32 uppercase tracking-wider text-xs">Estado</th>
                 <th className="px-4 py-3 font-semibold text-zinc-500 text-center w-24 uppercase tracking-wider text-xs">Acciones</th>
@@ -135,8 +147,8 @@ export default async function InventoryPage() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset ${isNegative ? 'bg-rose-50 text-rose-700 ring-rose-200' :
-                            isLow ? 'bg-amber-50 text-amber-700 ring-amber-200' :
-                              'bg-zinc-50 text-zinc-700 ring-zinc-200 shadow-sm'
+                          isLow ? 'bg-amber-50 text-amber-700 ring-amber-200' :
+                            'bg-zinc-50 text-zinc-700 ring-zinc-200 shadow-sm'
                           }`}>
                           {p.totalStock}
                         </span>
@@ -154,9 +166,15 @@ export default async function InventoryPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <QuickAdjustModal 
-                          productId={p.id} 
-                          productName={p.nombre} 
+                        <QuickAdjustModal
+                          productId={p.id}
+                          productName={p.nombre}
+                          branches={branches}
+                          selectedBranchId={branchId}
+                          productShares={p.inventario.map(inv => ({
+                            sucursal_id: inv.sucursal_id,
+                            cantidad: inv.cantidad
+                          }))}
                         />
                       </td>
                     </tr>

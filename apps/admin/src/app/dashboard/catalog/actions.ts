@@ -10,7 +10,6 @@ const productSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   precio_publico: z.coerce.number().min(0.01, "El precio debe ser mayor a 0"),
   costo: z.coerce.number().min(0, "El costo no puede ser negativo"),
-  stock: z.coerce.number().min(0, "El stock no puede ser negativo").optional(),
 });
 
 export async function upsertProduct(formData: FormData) {
@@ -20,7 +19,6 @@ export async function upsertProduct(formData: FormData) {
     nombre: formData.get("nombre"),
     precio_publico: formData.get("precio_publico"),
     costo: formData.get("costo"),
-    stock: formData.get("stock"),
   });
 
   if (!parseResult.success) {
@@ -43,34 +41,7 @@ export async function upsertProduct(formData: FormData) {
         },
       });
 
-      // Actualizar stock si es necesario - simplificado (asume primera sucursal)
-      // En una versión más madura recibiríamos sucursal_id o habría un componente global de sucursal
-      if (data.stock !== undefined) {
-         const firstSucursal = await db.sucursal.findFirst();
-         if (firstSucursal) {
-             const existingInv = await db.inventario_Sucursal.findFirst({
-                 where: {
-                     sucursal_id: firstSucursal.id,
-                     producto_id: data.id
-                 }
-             });
-             if (existingInv) {
-                 await db.inventario_Sucursal.update({
-                     where: { id: existingInv.id },
-                     data: { cantidad: data.stock, updatedAt: new Date() }
-                 });
-             } else {
-                 await db.inventario_Sucursal.create({
-                     data: {
-                         sucursal_id: firstSucursal.id,
-                         producto_id: data.id,
-                         cantidad: data.stock
-                     }
-                 });
-             }
-         }
-      }
-
+      // Ya no actualizamos el stock desde aquí porque se maneja en Inventario
     } else {
       // Crear
       const newProduct = await db.producto.create({
@@ -84,17 +55,15 @@ export async function upsertProduct(formData: FormData) {
         },
       });
 
-      if (data.stock !== undefined) {
-         const firstSucursal = await db.sucursal.findFirst();
-         if (firstSucursal) {
-             await db.inventario_Sucursal.create({
-                 data: {
-                     sucursal_id: firstSucursal.id,
-                     producto_id: newProduct.id,
-                     cantidad: data.stock,
-                 }
-             });
-         }
+      const sucursales = await db.sucursal.findMany({ where: { activo: true } });
+      if (sucursales.length > 0) {
+        await db.inventario_Sucursal.createMany({
+          data: sucursales.map(s => ({
+            sucursal_id: s.id,
+            producto_id: newProduct.id,
+            cantidad: 0
+          }))
+        });
       }
     }
 
