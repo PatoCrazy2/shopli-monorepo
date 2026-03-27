@@ -21,9 +21,6 @@ export default async function CatalogPage({
     skip,
     take,
     orderBy: { nombre: "asc" },
-    include: {
-      inventario: true, // Para obtener el stock
-    },
   });
 
   const totalProducts = await db.producto.count({ where: whereClause });
@@ -43,12 +40,12 @@ export default async function CatalogPage({
 
         {/* Barra de Búsqueda */}
         <form method="GET" className="relative flex-1 w-full max-w-md mx-4">
-          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input 
+          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          <input
             type="text"
-            name="q" 
-            defaultValue={query} 
-            placeholder="Buscar productos por nombre..." 
+            name="q"
+            defaultValue={query}
+            placeholder="Buscar productos por nombre..."
             className="w-full h-10 pl-9 pr-4 rounded-lg border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black dark:border-zinc-800 dark:bg-black dark:focus:ring-white transition-shadow"
           />
         </form>
@@ -91,9 +88,6 @@ export default async function CatalogPage({
                 <th scope="col" className="px-6 py-4 font-medium text-right">
                   Costo
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">
-                  Stock
-                </th>
                 <th scope="col" className="px-6 py-4 font-medium text-center">
                   Estado
                 </th>
@@ -111,11 +105,6 @@ export default async function CatalogPage({
                 </tr>
               ) : (
                 products.map((product) => {
-                  const stockTotal = product.inventario.reduce(
-                    (acc, inv) => acc + inv.cantidad,
-                    0
-                  );
-                  const isNegativeStock = stockTotal < 0;
                   // Cast needed: isActive exists in DB but Prisma client type cache is stale
                   const isActive = (product as any).isActive as boolean;
 
@@ -136,22 +125,12 @@ export default async function CatalogPage({
                       <td className="px-6 py-4 text-right text-gray-400">
                         ${Number(product.costo).toFixed(2)}
                       </td>
-                      <td
-                        className={`px-6 py-4 text-right font-semibold ${
-                          isNegativeStock
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {stockTotal}
-                      </td>
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            isActive
-                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                          }`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isActive
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                            }`}
                         >
                           {isActive ? "Activo" : "Inactivo"}
                         </span>
@@ -173,11 +152,10 @@ export default async function CatalogPage({
                           >
                             <button
                               type="submit"
-                              className={`inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-bold uppercase tracking-wider transition-colors ${
-                                isActive
-                                  ? "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-900/50"
-                                  : "bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 border border-green-100 dark:border-green-900/50"
-                              }`}
+                              className={`inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-bold uppercase tracking-wider transition-colors ${isActive
+                                ? "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-900/50"
+                                : "bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 border border-green-100 dark:border-green-900/50"
+                                }`}
                             >
                               {isActive ? "Desactivar" : "Activar"}
                             </button>

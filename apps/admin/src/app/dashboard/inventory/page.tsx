@@ -1,17 +1,21 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getInventory } from "./queries";
+import { getInventory, getBranches } from "./queries";
 import { QuickAdjustModal } from "./QuickAdjustModal";
+import { BranchFilter } from "./BranchFilter";
+import { TransferModal } from "./TransferModal";
 
 export const metadata = {
   title: "Inventario Global - ShopLI",
 };
 
-export default async function InventoryPage() {
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ branch?: string }> }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const products = await getInventory();
+  const { branch: branchId } = await searchParams;
+  const branches = await getBranches();
+  const products = await getInventory(branchId);
 
   // KPIs calculation
   const totalSkus = products.length;
@@ -37,9 +41,9 @@ export default async function InventoryPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Inventario Global</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Inventario de Stock</h1>
           <p className="text-muted-foreground mt-2 text-zinc-500">
-            Vista general del inventario, valoración y alertas de reabastecimiento.
+            Control de existencias, movimientos entre sucursales y ajustes manuales.
           </p>
         </div>
       </div>
@@ -90,8 +94,18 @@ export default async function InventoryPage() {
         />
       </div>
 
+      {/* Actions Bar - Filter & Transfer */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 shadow-sm mt-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+          <BranchFilter branches={branches} />
+        </div>
+        <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
+          <TransferModal products={products} branches={branches} />
+        </div>
+      </div>
+
       {/* Tabla de Datos */}
-      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm mt-8">
+      <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm mt-6">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-zinc-50 border-b border-zinc-200">
@@ -157,6 +171,8 @@ export default async function InventoryPage() {
                         <QuickAdjustModal 
                           productId={p.id} 
                           productName={p.nombre} 
+                          branches={branches}
+                          selectedBranchId={branchId}
                         />
                       </td>
                     </tr>

@@ -6,33 +6,42 @@ import { adjustStock } from "./actions";
 interface QuickAdjustModalProps {
   productId: string;
   productName: string;
+  branches: { id: string; nombre: string }[];
+  selectedBranchId?: string;
 }
 
-export function QuickAdjustModal({ productId, productName }: QuickAdjustModalProps) {
+export function QuickAdjustModal({ productId, productName, branches, selectedBranchId }: QuickAdjustModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState<number | "">("");
   const [reason, setReason] = useState("");
+  const [branchId, setBranchId] = useState(selectedBranchId || "");
   const [isPending, startTransition] = useTransition();
 
   const handleSave = () => {
     const numericAmount = Number(amount);
-    if (!amount || isNaN(numericAmount) || numericAmount === 0) return;
+    if (!amount || isNaN(numericAmount) || numericAmount === 0 || !branchId) {
+      alert("Compruebe los campos requeridos (sucursal, cantidad)");
+      return;
+    }
     if (!reason.trim()) {
       alert("Por favor ingrese un motivo para el ajuste.");
       return;
     }
 
     startTransition(async () => {
-      const res = await adjustStock(productId, numericAmount, reason);
+      const res = await adjustStock(productId, numericAmount, reason, branchId);
       if (res.error) {
         alert(res.error);
       } else {
         setIsOpen(false);
         setAmount("");
         setReason("");
+        if (!selectedBranchId) setBranchId("");
       }
     });
   };
+
+  const selectedBranchName = branches.find(b => b.id === branchId)?.nombre;
 
   return (
     <>
@@ -44,69 +53,82 @@ export function QuickAdjustModal({ productId, productName }: QuickAdjustModalPro
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
-              <h2 className="text-lg font-bold text-zinc-900 tracking-tight">Ajuste de Inventario</h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-zinc-200">
+            <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/50">
+              <div>
+                <h2 className="text-base font-bold text-zinc-900 leading-tight">Ajuste Rápido</h2>
+                <p className="text-[11px] text-zinc-500 font-medium truncate max-w-[250px]">{productName}</p>
+              </div>
               <button 
                 onClick={() => setIsOpen(false)} 
                 className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
             
-            <div className="px-6 py-5 space-y-5">
-              <div>
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Producto</p>
-                <div className="font-semibold text-zinc-900 bg-white p-3 rounded-lg border border-zinc-200 shadow-sm">
-                  {productName}
+            <div className="p-5 space-y-4">
+              {!selectedBranchId ? (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Sucursal a afectar</label>
+                  <select 
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-zinc-900 appearance-none"
+                  >
+                    <option value="">Seleccione sucursal...</option>
+                    {branches.map(b => (
+                       <option key={b.id} value={b.id}>{b.nombre}</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
+              ) : (
+                <div className="p-2 bg-blue-50/50 border border-blue-100 rounded-lg flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  <span className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Sucursal: {selectedBranchName}</span>
+                </div>
+              )}
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-zinc-700">Cantidad a sumar o restar</label>
-                <input 
-                  type="number" 
-                  value={amount} 
-                  onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : "")}
-                  placeholder="Ej. 10 para agregar, -5 para restar"
-                  className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-shadow"
-                />
-                <p className="text-[11px] text-zinc-500 font-medium">Usa números negativos (-) para descontar del inventario.</p>
-              </div>
-
-              <div className="space-y-1.5 pt-1">
-                <label className="text-sm font-semibold text-zinc-700">Motivo del ajuste</label>
-                <input 
-                  type="text" 
-                  value={reason} 
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Ej. Llegó mercancía, Conteo físico final..."
-                  className="w-full px-3 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-shadow"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Cantidad (+/-)</label>
+                  <input 
+                    type="number" 
+                    value={amount} 
+                    onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : "")}
+                    placeholder="Ej. 5"
+                    autoFocus
+                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-zinc-900"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Motivo</label>
+                  <input 
+                    type="text" 
+                    value={reason} 
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Ej. Conteo"
+                    className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-lg text-sm focus:ring-2 focus:ring-zinc-900"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-zinc-50 border-t border-zinc-100 flex justify-end gap-3">
+            <div className="px-5 py-4 bg-zinc-50 border-t border-zinc-100 flex flex-col gap-2">
+              <button 
+                onClick={handleSave}
+                disabled={isPending || !amount || !reason || !branchId}
+                className="w-full py-2.5 bg-zinc-900 text-white rounded-lg text-sm font-bold hover:bg-zinc-800 transition-shadow shadow-md active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isPending ? "Procesando..." : "Confirmar Ajuste"}
+              </button>
               <button 
                 onClick={() => setIsOpen(false)}
                 disabled={isPending}
-                className="px-4 py-2 bg-white border border-zinc-200 text-zinc-700 rounded-lg text-sm font-bold hover:bg-zinc-100 transition-colors disabled:opacity-50"
+                className="w-full py-2 text-zinc-500 text-[11px] font-bold uppercase tracking-wider hover:text-zinc-700 transition-colors"
               >
                 Cancelar
-              </button>
-              <button 
-                onClick={handleSave}
-                disabled={isPending || !amount || !reason}
-                className="px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm font-bold hover:bg-zinc-800 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-              >
-                {isPending ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    Procesando...
-                  </>
-                ) : "Guardar Ajuste"}
               </button>
             </div>
           </div>

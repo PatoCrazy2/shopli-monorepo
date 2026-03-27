@@ -11,7 +11,6 @@ interface ProductFormProps {
     codigo_interno: string | null;
     precio_publico: number;
     costo: number;
-    stock: number;
   };
 }
 
@@ -113,20 +112,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
             defaultValue={initialData?.costo}
             className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 font-mono"
             placeholder="0.00"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
-            {initialData ? "Stock Actual" : "Stock Inicial"}
-          </label>
-          <input
-            name="stock"
-            type="number"
-            step="1"
-            defaultValue={initialData?.stock ?? 0}
-            className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 font-mono"
-            placeholder="0"
           />
         </div>
       </div>
