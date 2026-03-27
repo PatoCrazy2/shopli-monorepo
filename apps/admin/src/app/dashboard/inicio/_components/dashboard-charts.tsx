@@ -19,7 +19,7 @@ export function DashboardCharts({ data }: { data: ChartData[] }) {
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full mt-4">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={data}>
               <XAxis 
                 dataKey="date" 
