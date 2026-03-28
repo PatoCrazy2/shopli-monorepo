@@ -3,16 +3,14 @@
 import { useState } from "react";
 import { fetchAnalyticsData } from "../actions";
 import { AnalyticsFilters, AnalyticsData, InventoryAnalytics } from "../types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@repo/ui/card";
-import { Progress } from "@repo/ui/progress";
 import { 
-    AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
     ResponsiveContainer, PieChart, Pie, Cell, Legend 
 } from "recharts";
 import { 
     DollarSign, Percent, TrendingUp, Package, Search, 
     Users, Store, Calendar, ArrowRight, AlertTriangle, 
-    Activity, ChevronRight, ShoppingBag
+    Activity, ShoppingBag
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
@@ -56,44 +54,39 @@ export function AnalyticsClient({
     setFilters(prev => ({ ...prev, [key]: val || undefined }));
   };
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-
   return (
     <div className="space-y-8 pb-10">
-      {/* Search Header / Filters */}
-      <div className="relative group overflow-hidden rounded-2xl border border-white/10 p-0.5 transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-50 group-hover:opacity-100 transition-opacity" />
-        <div className="relative bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl rounded-[15px] p-6 flex flex-col md:flex-row justify-between items-end gap-6 shadow-2xl">
+      {/* Filters Header (Clean Premium Style) */}
+      <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-             <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5 px-1">
-                   <Calendar size={12} className="text-blue-500" />
+             <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-1.5 px-1">
                    Rango de Fechas
                 </label>
                 <div className="flex items-center gap-2">
                    <input 
                      type="date" 
-                     className="w-full text-xs p-2.5 border border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-white/5 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                     className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold transition-all"
                      value={filters.startDate || ""}
                      onChange={(e) => handleFilterChange("startDate", e.target.value)}
                    />
-                   <ArrowRight size={14} className="text-zinc-400 shrink-0" />
+                   <ArrowRight size={14} className="text-zinc-300 shrink-0" />
                    <input 
                      type="date" 
-                     className="w-full text-xs p-2.5 border border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-white/5 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                     className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold transition-all"
                      value={filters.endDate || ""}
                      onChange={(e) => handleFilterChange("endDate", e.target.value)}
                    />
                 </div>
              </div>
              
-             <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5 px-1">
-                   <Store size={12} className="text-emerald-500" />
+             <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-1.5 px-1">
                    Sucursal
                 </label>
                 <select 
-                  className="w-full text-xs p-2.5 border border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-white/5 focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none"
+                  className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold appearance-none transition-all"
                   value={filters.sucursalId || ""}
                   onChange={(e) => handleFilterChange("sucursalId", e.target.value)}
                 >
@@ -102,13 +95,12 @@ export function AnalyticsClient({
                 </select>
              </div>
              
-             <div className="space-y-2">
-                <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1.5 px-1">
-                   <Users size={12} className="text-amber-500" />
-                   Usuario / Cajero
+             <div className="space-y-1.5">
+                <label className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-1.5 px-1">
+                   Cajero / Staff
                 </label>
                 <select 
-                  className="w-full text-xs p-2.5 border border-zinc-200 dark:border-white/10 rounded-xl bg-zinc-50/50 dark:bg-white/5 focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none"
+                  className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold appearance-none transition-all"
                   value={filters.usuarioId || ""}
                   onChange={(e) => handleFilterChange("usuarioId", e.target.value)}
                 >
@@ -116,14 +108,14 @@ export function AnalyticsClient({
                    {options.usuarios.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                 </select>
              </div>
-
-             <div className="flex items-end">
+ 
+             <div className="flex items-end pt-5">
                 <button 
                   onClick={loadData}
                   disabled={loading}
-                  className="w-full h-[38px] bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="w-full h-11 bg-black text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg"
                 >
-                  <Search size={14} />
+                  <Search size={16} strokeWidth={3} />
                   {loading ? "PROCESANDO..." : "CALCULAR MÉTRICAS"}
                 </button>
              </div>
@@ -133,26 +125,26 @@ export function AnalyticsClient({
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl text-sm text-red-700 dark:text-red-400">
-          <AlertTriangle size={18} className="shrink-0" />
-          <div>
-            <span className="font-bold block">Error al cargar datos de analytics</span>
-            <span className="text-xs opacity-80">{error}</span>
+        <div className="flex items-center gap-4 p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl text-rose-700 dark:text-rose-400 shadow-sm animate-in shake duration-500">
+          <AlertTriangle size={20} className="shrink-0" />
+          <div className="flex flex-col">
+            <span className="font-black uppercase text-[10px] tracking-widest">Error de Análisis</span>
+            <span className="text-xs font-medium opacity-90 leading-tight">{error}</span>
           </div>
         </div>
       )}
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap items-center gap-1 p-1 bg-zinc-100/50 dark:bg-white/5 rounded-2xl w-fit border border-black/5 dark:border-white/5">
-         <TabButton active={activeTab === "resumen"} onClick={() => setActiveTab("resumen")} icon={<Activity size={14} />}>Dashboard Central</TabButton>
-         <TabButton active={activeTab === "ventas"} onClick={() => setActiveTab("ventas")} icon={<Store size={14} />}>Sucursales & Staff</TabButton>
-         <TabButton active={activeTab === "productos"} onClick={() => setActiveTab("productos")} icon={<ShoppingBag size={14} />}>Ventas por Producto</TabButton>
-         <TabButton active={activeTab === "inventario"} onClick={() => setActiveTab("inventario")} icon={<Package size={14} />}>Estado de Inventario</TabButton>
-         {loading && <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-blue-500 animate-pulse">Cargando...</span>}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white dark:bg-zinc-900 rounded-2xl w-fit border border-zinc-200 dark:border-zinc-800 shadow-sm">
+         <TabButton active={activeTab === "resumen"} onClick={() => setActiveTab("resumen")} icon={<Activity size={14} />}>Resumen Global</TabButton>
+         <TabButton active={activeTab === "ventas"} onClick={() => setActiveTab("ventas")} icon={<Store size={14} />}>Sucursales & Personal</TabButton>
+         <TabButton active={activeTab === "productos"} onClick={() => setActiveTab("productos")} icon={<ShoppingBag size={14} />}>Ventas x Producto</TabButton>
+         <TabButton active={activeTab === "inventario"} onClick={() => setActiveTab("inventario")} icon={<Package size={14} />}>Estado de Stock</TabButton>
+         {loading && <div className="ml-4 px-3 py-1 bg-black text-white text-[10px] font-black rounded-lg animate-pulse">CARGANDO...</div>}
          {!loading && data.summary.totalTransactions > 0 && (
-           <span className="ml-2 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full">
-             {data.summary.totalTransactions} ventas
-           </span>
+           <div className="ml-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-100 dark:border-emerald-900 tracking-tighter shadow-sm">
+             {data.summary.totalTransactions} VENTAS
+           </div>
          )}
       </div>
 
@@ -190,93 +182,77 @@ export function AnalyticsClient({
 
                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                  {/* Main Revenue Chart */}
-                 <Card className="lg:col-span-2 overflow-hidden border-none shadow-xl bg-white dark:bg-zinc-950">
-                   <div className="absolute top-0 right-0 p-6 opacity-10">
-                      <Activity size={120} />
+                 <div className="lg:col-span-2 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
+                   <div className="space-y-1 mb-6 text-zinc-900 dark:text-white">
+                      <h3 className="text-xl font-black tracking-tight flex items-center gap-2 uppercase italic leading-none">
+                        <TrendingUp size={24} className="text-emerald-500" strokeWidth={3} />
+                        Tendencia de Ingresos
+                      </h3>
+                      <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em]">Flujo de caja monetizado por fecha.</p>
                    </div>
-                   <CardHeader>
-                     <CardTitle className="text-lg flex items-center gap-2">
-                        <TrendingUp size={18} className="text-blue-500" />
-                        Tendencia de Ingresos Diarios
-                     </CardTitle>
-                     <CardDescription>Flujo de caja monetizado por fecha.</CardDescription>
-                   </CardHeader>
-                   <CardContent>
-                      <div className="h-[350px] w-full mt-4">
-                        {data.dateSales.length === 0 ? (
-                            <EmptyState />
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={data.dateSales}>
-                                <defs>
-                                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(128,128,128,0.1)" />
-                                <XAxis 
-                                  dataKey="date" 
-                                  stroke="#888888" 
-                                  fontSize={10} 
-                                  tickLine={false} 
-                                  axisLine={false} 
-                                  tickFormatter={(v) => v.split('-').slice(1).join('/')}
-                                />
-                                <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                <Tooltip 
-                                  contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '12px', fontSize: '12px', color: '#fff' }}
-                                  formatter={(value: any) => [`$${Number(value || 0).toFixed(2)}`, "Ingreso"]}
-                                />
-                                <Area type="monotone" dataKey="totalSales" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                        )}
-                      </div>
-                   </CardContent>
-                 </Card>
+                   
+                   <div className="h-[350px] w-full mt-4">
+                     {data.dateSales.length === 0 ? (
+                         <EmptyState />
+                     ) : (
+                         <ResponsiveContainer width="100%" height="100%">
+                           <AreaChart data={data.dateSales}>
+                             <defs>
+                               <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                               </linearGradient>
+                             </defs>
+                             <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                             <XAxis 
+                               dataKey="date" 
+                               stroke="#a1a1aa" 
+                               fontSize={10} 
+                               tickLine={false} 
+                               axisLine={false} 
+                               tickFormatter={(v) => v.split('-').slice(1).join('/')}
+                               fontFamily="monospace"
+                             />
+                             <YAxis stroke="#a1a1aa" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} fontFamily="monospace" />
+                             <Tooltip 
+                               contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', fontSize: '11px', color: '#fff', fontWeight: 'bold' }}
+                               formatter={(value: any) => [`$${Number(value || 0).toLocaleString()}`, "Ingreso"]}
+                             />
+                             <Area type="monotone" dataKey="totalSales" stroke="#000" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                           </AreaChart>
+                         </ResponsiveContainer>
+                     )}
+                   </div>
+                 </div>
 
                  {/* Categorias Pie Chart */}
-                 <Card className="border-none shadow-xl bg-white dark:bg-zinc-950">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Ventas por Categoría</CardTitle>
-                        <CardDescription>Distribución del volumen de ingreso.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[280px] w-full">
-                            {data.categorySales.length === 0 ? <EmptyState /> : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={data.categorySales}
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {data.categorySales.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                        <Legend verticalAlign="bottom" height={36}/>
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            )}
-                        </div>
-                        <div className="mt-4 space-y-2">
-                            {data.categorySales.slice(0, 3).map((cat, i) => (
-                                <div key={i} className="flex items-center justify-between text-xs">
-                                    <span className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                                        {cat.name}
-                                    </span>
-                                    <span className="font-semibold">${cat.value.toLocaleString()}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                 </Card>
+                 <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+                    <div className="space-y-1 mb-6 text-zinc-900 dark:text-white">
+                        <h3 className="text-xl font-black tracking-tight uppercase italic leading-none">Categorías</h3>
+                        <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em]">Distribución del volumen.</p>
+                    </div>
+                    <div className="h-[280px] w-full">
+                        {data.categorySales.length === 0 ? <EmptyState /> : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={data.categorySales}
+                                        innerRadius={70}
+                                        outerRadius={90}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                    >
+                                        {data.categorySales.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ borderRadius: '10px', fontSize: '10px' }} />
+                                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
+                 </div>
                </div>
              </div>
           )}
@@ -285,8 +261,8 @@ export function AnalyticsClient({
              <div className="grid gap-8 lg:grid-cols-2 animate-in fade-in zoom-in-95 duration-500">
                <ListCard 
                   title="Ranking de Sucursales" 
-                  desc="Consolidado de ventas por ubicación física."
-                  icon={<Store className="text-blue-500" size={18} />}
+                  desc="Ventas por ubicación física."
+                  icon={<Store className="text-zinc-400" size={18} />}
                   items={data.branchSales.map(v => ({ 
                     label: v.branchName, 
                     value: v.totalSales, 
@@ -298,7 +274,7 @@ export function AnalyticsClient({
                <ListCard 
                   title="Productividad por Staff" 
                   desc="Ventas firmadas por usuarios activos."
-                  icon={<Users className="text-emerald-500" size={18} />}
+                  icon={<Users className="text-zinc-400" size={18} />}
                   items={data.userSales.map(v => ({ 
                     label: v.userName, 
                     value: v.totalSales, 
@@ -311,55 +287,52 @@ export function AnalyticsClient({
           )}
 
           {activeTab === "productos" && (
-             <Card className="animate-in fade-in duration-500 border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-950">
-                <CardHeader className="bg-zinc-50 dark:bg-white/5 border-b border-zinc-100 dark:border-white/5">
-                   <CardTitle className="flex items-center gap-2 text-lg">
-                      <ShoppingBag size={20} className="text-amber-500" />
-                      Rendimiento de Productos (Top 15)
-                   </CardTitle>
-                   <CardDescription>Análisis de rentabilidad basado en el FIFO de precios históricos.</CardDescription>
-                </CardHeader>
-                <div className="overflow-x-auto p-0">
+             <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden animate-in fade-in duration-500">
+                <div className="p-6 border-b border-zinc-100 dark:border-white/5 bg-zinc-50/30 dark:bg-white/[0.02]">
+                   <h3 className="text-xl font-black tracking-tight flex items-center gap-3 italic uppercase">
+                      <ShoppingBag size={22} className="text-emerald-500" strokeWidth={3} />
+                      Rendimiento de Productos
+                   </h3>
+                   <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-1.5">Análisis de rentabilidad basado en ventas completadas.</p>
+                </div>
+                <div className="overflow-x-auto">
                    <table className="w-full text-sm text-left">
-                      <thead className="text-[10px] text-muted-foreground uppercase tracking-widest bg-zinc-50/50 dark:bg-white/5 font-bold">
-                         <tr>
-                            <th className="px-6 py-5">Producto</th>
-                            <th className="px-6 py-5">Categoría</th>
-                            <th className="px-6 py-5 text-right">Volumen</th>
-                            <th className="px-6 py-5 text-right">Ingreso Bruto</th>
-                            <th className="px-6 py-5 text-right">Margen Neto</th>
+                      <thead>
+                         <tr className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] bg-zinc-50/50 dark:bg-white/[0.02] font-black border-b border-zinc-100 dark:border-zinc-900">
+                            <th className="px-6 py-4">Producto</th>
+                            <th className="px-6 py-4">Categoría</th>
+                            <th className="px-6 py-4 text-right">Volumen</th>
+                            <th className="px-6 py-4 text-right">Ingreso Bruto</th>
+                            <th className="px-6 py-4 text-right">Margen</th>
                          </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
                          {data.topProducts.map((p, idx) => (
-                           <tr key={idx} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors cursor-default">
-                              <td className="px-6 py-4">
-                                <span className="font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-500 transition-colors uppercase text-xs tracking-tight">
-                                    {p.productName}
-                                </span>
+                           <tr key={idx} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
+                              <td className="px-6 py-4 text-zinc-900 dark:text-white font-black uppercase text-xs tracking-tight">
+                                {p.productName}
                               </td>
                               <td className="px-6 py-4">
-                                <span className="px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[10px] font-medium text-zinc-500">
+                                <span className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black uppercase text-zinc-500 tracking-wider">
                                     {p.category || "General"}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-right font-mono text-zinc-500">{p.unitsSold} <span className="text-[10px]">UND</span></td>
-                              <td className="px-6 py-4 text-right font-bold text-zinc-900 dark:text-zinc-200">${p.revenue.toLocaleString()}</td>
+                              <td className="px-6 py-4 text-right font-mono text-zinc-500 font-black">{p.unitsSold} <span className="text-[9px]">UND</span></td>
+                              <td className="px-6 py-4 text-right font-black text-zinc-950 dark:text-zinc-100 underline decoration-zinc-100 underline-offset-4 decoration-1">${p.revenue.toLocaleString()}</td>
                               <td className="px-6 py-4 text-right">
-                                 <div className="flex flex-col items-end">
-                                    <span className="text-emerald-500 font-bold">+${p.grossMargin.toLocaleString()}</span>
-                                    <span className="text-[10px] text-muted-foreground">Utilidad</span>
-                                 </div>
+                                 <span className="text-emerald-500 font-black text-xs ring-1 ring-emerald-100 px-2 py-0.5 rounded-lg bg-emerald-50/50">
+                                   +${p.grossMargin.toLocaleString()}
+                                 </span>
                               </td>
                            </tr>
                          ))}
                          {data.topProducts.length === 0 && (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium uppercase tracking-widest text-xs">Sin registros financieros</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-12 text-center text-zinc-400 font-black uppercase tracking-widest text-xs">Sin registros financieros</td></tr>
                          )}
                       </tbody>
                    </table>
                 </div>
-             </Card>
+             </div>
           )}
 
           {activeTab === "inventario" && (
@@ -392,47 +365,46 @@ export function AnalyticsClient({
                      />
                   </div>
 
-                  <Card className="border-none shadow-xl bg-white dark:bg-zinc-950">
-                    <CardHeader>
-                        <CardTitle>Auditoría de Patrimonio</CardTitle>
-                        <CardDescription>Resumen de activos circulantes (inventario mercancía).</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row items-center gap-10">
+                  <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+                    <div className="mb-6">
+                        <h3 className="text-xl font-black tracking-tight uppercase italic leading-none">Auditoría de Patrimonio</h3>
+                        <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] mt-1.5">Resumen de activos circulantes.</p>
+                    </div>
+                    <div className="flex flex-col md:flex-row items-center gap-10">
                         <div className="flex-1 space-y-4">
-                            <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
-                                <h4 className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Capacidad de Venta Estimada</h4>
-                                <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                            <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
+                                <h4 className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">Capacidad de Venta Estimada</h4>
+                                <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 font-medium">
                                     Este valor representa lo que has invertido en mercancía que está lista para ser vendida.
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
-                                    <span className="text-[10px] text-muted-foreground font-bold uppercase block mb-1">Items Únicos</span>
-                                    <span className="text-xl font-bold">{data.topProducts.length}</span>
+                                <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5">
+                                    <span className="text-[10px] text-zinc-400 font-black uppercase block mb-1 tracking-widest">Items Únicos</span>
+                                    <span className="text-2xl font-black text-zinc-900 dark:text-white leading-none">{data.topProducts.length}</span>
                                 </div>
-                                <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-100 dark:border-white/5">
-                                    <span className="text-[10px] text-muted-foreground font-bold uppercase block mb-1">En Alerta</span>
-                                    <span className="text-xl font-bold text-red-500">{initialInventory.lowStockItems}</span>
+                                <div className="p-4 bg-rose-50/50 dark:bg-rose-500/5 rounded-xl border border-rose-200 dark:border-rose-900/40">
+                                    <span className="text-[10px] text-rose-400 font-black uppercase block mb-1 tracking-widest">En Alerta</span>
+                                    <span className="text-2xl font-black text-rose-600 leading-none">{initialInventory.lowStockItems}</span>
                                 </div>
                             </div>
                         </div>
-                        <div className="w-[300px] h-[300px] shrink-0 relative flex items-center justify-center">
-                            <div className="absolute inset-0 bg-blue-500/10 blur-[100px] rounded-full" />
-                            <div className="relative text-center">
-                                <span className="text-4xl font-extrabold text-zinc-900 dark:text-white block">
+                        <div className="w-[260px] h-[260px] shrink-0 relative flex items-center justify-center">
+                            <div className="absolute inset-x-0 bottom-4 text-center">
+                                <span className="text-4xl font-black text-zinc-950 dark:text-white block leading-none">
                                     {((initialInventory.totalUnits / (initialInventory.totalUnits + 10)) * 100).toFixed(0)}%
                                 </span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase mt-2 block tracking-widest">
-                                    Nivel Salud Salud
+                                <span className="text-[9px] font-black text-zinc-400 uppercase mt-2 block tracking-[0.3em]">
+                                    Salud de Stock
                                 </span>
                             </div>
                             <svg className="absolute w-full h-full -rotate-90">
-                                <circle cx="150" cy="150" r="120" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-zinc-100 dark:text-zinc-800" />
-                                <circle cx="150" cy="150" r="120" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="753.9" strokeDashoffset={753.9 - (753.9 * 0.8)} className="text-blue-500 stroke-round" />
+                                <circle cx="130" cy="130" r="110" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-zinc-50 dark:text-zinc-900" />
+                                <circle cx="130" cy="130" r="110" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="691" strokeDashoffset={691 - (691 * 0.85)} className="text-zinc-950 dark:text-white stroke-round shadow-lg" />
                             </svg>
                         </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
               </div>
           )}
       </div>
@@ -445,10 +417,10 @@ function TabButton({ active, onClick, children, icon }: { active: boolean, onCli
     <button 
       onClick={onClick}
       className={cn(
-        "px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-xl flex items-center gap-2",
+        "px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all rounded-xl flex items-center gap-2",
         active 
-          ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10" 
-          : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+          ? "bg-black text-white shadow-lg scale-[1.02]" 
+          : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-white/5"
       )}
     >
       {icon}
@@ -457,79 +429,75 @@ function TabButton({ active, onClick, children, icon }: { active: boolean, onCli
   );
 }
 
-function MetricCard({ title, desc, value, icon, trend, isPositive, isNegative }: { 
+function MetricCard({ title, desc, value, icon, isPositive, isNegative }: { 
     title: string, 
     desc?: string, 
     value: string, 
     icon: React.ReactNode,
-    trend?: number,
     isPositive?: boolean,
     isNegative?: boolean
 }) {
   return (
-    <Card className="border-none shadow-xl bg-white dark:bg-zinc-950 group hover:-translate-y-1 transition-all duration-300">
-      <CardContent className="pt-6">
-         <div className="flex justify-between items-start">
-            <div className="space-y-1">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{title}</p>
-                <h3 className="text-2xl font-black tracking-tight text-zinc-950 dark:text-white">{value}</h3>
-            </div>
-            <div className="p-2 rounded-xl bg-zinc-50 dark:bg-white/5 group-hover:scale-110 transition-transform">
-                {icon}
-            </div>
-         </div>
-         <div className="mt-4 flex items-center justify-between">
-            {desc && <p className="text-[10px] text-zinc-400 font-medium">{desc}</p>}
-            {trend && (
-                <div className={cn(
-                    "px-1.5 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1",
-                    trend > 0 ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
-                )}>
-                    {trend > 0 ? "+" : ""}{trend}%
-                </div>
-            )}
-            {isNegative !== undefined && isNegative && (
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            )}
-         </div>
-      </CardContent>
-    </Card>
+    <div className={cn(
+      "bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm group hover:shadow-md transition-all hover:-translate-y-1",
+      isNegative && "border-rose-200 bg-rose-50/30",
+      isPositive && "border-emerald-200 bg-emerald-50/30"
+    )}>
+       <div className="flex justify-between items-start gap-4">
+          <div className="space-y-1 w-full">
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">{title}</p>
+              <div className="flex items-baseline gap-2">
+                <h3 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">{value}</h3>
+              </div>
+          </div>
+          <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 group-hover:scale-110 group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-sm">
+              {icon}
+          </div>
+       </div>
+       {desc && (
+         <p className="mt-4 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest leading-relaxed">
+           {desc}
+         </p>
+       )}
+    </div>
   );
 }
 
 function ListCard({ title, desc, items, maxVal, icon }: { title: string, desc: string, items: {label: string, value: number, sub: string, id: string}[], maxVal: number, icon: React.ReactNode }) {
   return (
-    <Card className="border-none shadow-2xl bg-white dark:bg-zinc-950 overflow-hidden">
-      <CardHeader className="border-b border-zinc-100 dark:border-white/5">
+    <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden transition-all hover:shadow-md h-full">
+      <div className="p-6 border-b border-zinc-100 dark:border-white/5 bg-zinc-50/30">
         <div className="flex items-center gap-3">
             {icon}
             <div>
-                <CardTitle className="text-lg">{title}</CardTitle>
-                <CardDescription className="text-xs">{desc}</CardDescription>
+                <h3 className="text-xl font-black tracking-tight text-zinc-900 dark:text-white uppercase italic leading-none">{title}</h3>
+                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-1.5">{desc}</p>
             </div>
         </div>
-      </CardHeader>
-      <CardContent className="pt-6">
+      </div>
+      <div className="p-6">
         <div className="space-y-8">
           {items.length === 0 ? (
             <EmptyState />
           ) : (
-             items.map((item, idx) => {
+             items.map((item) => {
                const percentage = maxVal > 0 ? (item.value / maxVal) * 100 : 0;
                return (
                  <div key={item.id} className="space-y-3 group">
                    <div className="flex items-end justify-between text-sm">
                      <div className="flex flex-col">
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100 uppercase text-xs tracking-tight group-hover:text-blue-500 transition-colors">
+                        <span className="font-black text-zinc-800 dark:text-zinc-100 uppercase text-xs tracking-tight group-hover:text-black transition-colors">
                             {item.label}
                         </span>
-                        <span className="text-[10px] font-medium text-muted-foreground">{item.sub}</span>
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mt-1">{item.sub}</span>
                      </div>
-                     <span className="font-mono text-xs font-bold">${item.value.toLocaleString()}</span>
+                     <span className="font-black text-sm text-zinc-950 dark:text-white underline underline-offset-4 decoration-emerald-200 decoration-4">
+                       ${item.value.toLocaleString()}
+                     </span>
                    </div>
-                   <div className="h-1.5 w-full bg-zinc-100 dark:bg-white/5 rounded-full overflow-hidden">
+                   <div className="h-2 w-full bg-zinc-50 dark:bg-white/5 rounded-full overflow-hidden shadow-inner border border-zinc-100 dark:border-zinc-900">
                        <div 
-                         className="h-full bg-blue-500 rounded-full group-hover:bg-emerald-500 transition-all duration-500" 
+                         className="h-full bg-black dark:bg-white rounded-full transition-all duration-1000 ease-out group-hover:bg-emerald-500" 
                          style={{ width: `${percentage}%` }}
                        />
                    </div>
@@ -538,16 +506,16 @@ function ListCard({ title, desc, items, maxVal, icon }: { title: string, desc: s
              })
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function EmptyState() {
     return (
-        <div className="h-full w-full flex flex-col items-center justify-center space-y-4 py-20 opacity-40">
-            <Activity size={48} className="text-zinc-300" />
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Sin datos registrados</p>
+        <div className="h-full w-full flex flex-col items-center justify-center space-y-4 py-20">
+            <Activity size={48} className="text-zinc-200 animate-pulse" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300">Sin datos registrados</p>
         </div>
     );
 }
