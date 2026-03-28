@@ -19,19 +19,21 @@ export default async function UsersPage() {
   const users = await getUsers();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Usuarios</h1>
-          <p className="text-muted-foreground mt-2">
-            Gestiona cajeros y encargados de tienda
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Usuarios</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+            Gestiona cajeros y encargados de tienda registrados en el sistema.
           </p>
         </div>
+        
         {role === "DUENO" && (
           <Link
             href="/dashboard/users/new"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-zinc-900 text-white hover:bg-zinc-900/90 h-10 py-2 px-4 shadow-sm"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-black px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
             Nuevo Usuario
           </Link>
         )}
