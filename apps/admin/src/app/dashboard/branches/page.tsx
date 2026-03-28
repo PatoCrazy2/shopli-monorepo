@@ -11,11 +11,11 @@ export default async function BranchesPage() {
   const sucursales = await getSucursales();
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-black">Sucursales</h1>
-          <p className="text-zinc-500 mt-2">
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Sucursales</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
             Gestión y alta de los puntos de venta físicos de la red ShopLI.
           </p>
         </div>
