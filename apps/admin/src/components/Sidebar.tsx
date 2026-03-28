@@ -106,7 +106,7 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string 
                     </div>
                     <button
                         onClick={() => signOut()}
-                        className="flex items-center gap-2 w-full px-2 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors duration-200 font-medium"
+                        className="flex items-center gap-2 w-full px-2 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors duration-200 font-medium cursor-pointer"
                     >
                         <LogOutIcon />
                         Cerrar Sesión

@@ -1,11 +1,11 @@
 import { db } from "@shopli/db";
 
 export async function getSales(filters: { sucursalId?: string; dateStr?: string }) {
-  const where: any = {};
-
-  if (filters.sucursalId) {
-    where.sucursal_id = filters.sucursalId;
-  }
+  if (!filters.sucursalId) return [];
+  
+  const where: any = {
+    sucursal_id: filters.sucursalId
+  };
 
   if (filters.dateStr) {
     // CDMX es UTC-6. Definimos el inicio del día (00:00:00) y fin del día (23:59:59)
