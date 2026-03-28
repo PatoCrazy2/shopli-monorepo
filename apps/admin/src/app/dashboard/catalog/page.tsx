@@ -91,7 +91,7 @@ export default async function CatalogPage({
                 <th scope="col" className="px-6 py-4 font-medium text-center">
                   Estado
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">
+                <th scope="col" className="px-6 py-4 font-medium text-center">
                   Acciones
                 </th>
               </tr>
@@ -135,8 +135,8 @@ export default async function CatalogPage({
                           {isActive ? "Activo" : "Inactivo"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Link
                             href={`/dashboard/catalog/${product.id}`}
                             className="inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700"
