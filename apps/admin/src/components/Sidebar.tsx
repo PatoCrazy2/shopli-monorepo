@@ -25,6 +25,7 @@ const NAV_LINKS = [
     { name: "Ventas", href: "/dashboard/sales", icon: ReceiptIcon },
     { name: "Cortes", href: "/dashboard/cuts", icon: WalletIcon },
     { name: "Inventario", href: "/dashboard/inventory", icon: LayersIcon },
+    { name: "Gastos", href: "/dashboard/gastos", icon: ReceiptIcon },
     { name: "Analítica", href: "/dashboard/analytics", icon: BarChartIcon },
 ];
 

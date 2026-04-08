@@ -13,11 +13,13 @@
     "@repo/ui": "workspace:^",
     "@shopli/db": "workspace:^",
     "bcryptjs": "^3.0.3",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "next-auth": "5.0.0-beta.30",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.72.1",
     "recharts": "^3.8.0",
     "zod": "^4.3.6"
   },
