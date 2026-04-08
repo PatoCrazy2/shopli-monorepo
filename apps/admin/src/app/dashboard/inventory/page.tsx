@@ -38,15 +38,16 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   });
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-        <div className="flex flex-col justify-center py-2">
-          <h1 className="text-3xl font-black tracking-tight text-black">Inventario de Stock</h1>
-          <p className="text-sm text-zinc-400 font-medium mt-1">
+    <div className="space-y-8 max-w-7xl mx-auto pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Inventario de Stock</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
             Control de existencias, movimientos entre sucursales y ajustes manuales.
           </p>
         </div>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
           <TransferModal products={products} branches={branches} />
         </div>
       </div>

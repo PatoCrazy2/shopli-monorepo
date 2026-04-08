@@ -27,48 +27,59 @@ export default async function CatalogPage({
   const totalPages = Math.ceil(totalProducts / take);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Catálogo
-          </h1>
-          <p className="text-gray-500 mt-1 dark:text-gray-400">
-            Gestiona los productos y el inventario disponible.
+    <div className="space-y-8">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+        <div className="space-y-1 min-w-fit">
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Catálogo</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+            Gestiona los productos e inventario global del sistema.
           </p>
         </div>
 
-        {/* Barra de Búsqueda */}
-        <form method="GET" className="relative flex-1 w-full max-w-md mx-4">
-          <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          <input
-            type="text"
-            name="q"
-            defaultValue={query}
-            placeholder="Buscar productos por nombre..."
-            className="w-full h-10 pl-9 pr-4 rounded-lg border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black dark:border-zinc-800 dark:bg-black dark:focus:ring-white transition-shadow"
-          />
-        </form>
+        <div className="flex flex-col md:flex-row items-center gap-4 flex-1 justify-end w-full">
+          {/* Barra de Búsqueda */}
+          <form method="GET" className="relative flex-1 w-full max-w-lg group">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-black transition-colors" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Buscar productos por nombre..."
+              className="w-full h-11 pl-11 pr-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm font-bold placeholder:text-zinc-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-black dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-white transition-all shadow-inner"
+            />
+          </form>
 
-        <Link
-          href="/dashboard/catalog/new"
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="mr-2 h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          <Link
+            href="/dashboard/catalog/new"
+            className="inline-flex h-11 w-full md:w-auto items-center justify-center rounded-xl bg-black px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
           >
-            <path d="M5 12h14"></path>
-            <path d="M12 5v14"></path>
-          </svg>
-          Nuevo Producto
-        </Link>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="mr-2 h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14"></path>
+              <path d="M12 5v14"></path>
+            </svg>
+            Nuevo Producto
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-black overflow-hidden relative">
@@ -91,7 +102,7 @@ export default async function CatalogPage({
                 <th scope="col" className="px-6 py-4 font-medium text-center">
                   Estado
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">
+                <th scope="col" className="px-6 py-4 font-medium text-center">
                   Acciones
                 </th>
               </tr>
@@ -135,8 +146,8 @@ export default async function CatalogPage({
                           {isActive ? "Activo" : "Inactivo"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Link
                             href={`/dashboard/catalog/${product.id}`}
                             className="inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700"

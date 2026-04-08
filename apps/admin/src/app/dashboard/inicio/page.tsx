@@ -10,9 +10,14 @@ export default async function DashboardInicioPage() {
   const data = await getDashboardData();
 
   return (
-    <div className="flex-1 space-y-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Resumen de Operaciones</h2>
+    <div className="flex-1 space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Resumen de Operaciones</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+            Vista general del rendimiento financiero y transaccional del día.
+          </p>
+        </div>
       </div>
       
       <div className="grid gap-4 md:grid-cols-3">
