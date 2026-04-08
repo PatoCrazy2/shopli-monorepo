@@ -57,69 +57,61 @@ export function AnalyticsClient({
   return (
     <div className="space-y-8 pb-10">
       {/* Filters Header (Clean Premium Style) */}
-      <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm relative overflow-hidden transition-all hover:shadow-md">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-             <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-1.5 px-1">
-                   Rango de Fechas
-                </label>
-                <div className="flex items-center gap-2">
-                   <input 
-                     type="date" 
-                     className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold transition-all"
-                     value={filters.startDate || ""}
-                     onChange={(e) => handleFilterChange("startDate", e.target.value)}
-                   />
-                   <ArrowRight size={14} className="text-zinc-300 shrink-0" />
-                   <input 
-                     type="date" 
-                     className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold transition-all"
-                     value={filters.endDate || ""}
-                     onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                   />
-                </div>
-             </div>
-             
-             <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-1.5 px-1">
-                   Sucursal
-                </label>
-                <select 
-                  className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold appearance-none transition-all"
-                  value={filters.sucursalId || ""}
-                  onChange={(e) => handleFilterChange("sucursalId", e.target.value)}
-                >
-                   <option value="">Consolidado Global</option>
-                   {options.sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                </select>
-             </div>
-             
-             <div className="space-y-1.5">
-                <label className="text-[10px] uppercase font-black tracking-[0.2em] text-zinc-400 flex items-center gap-1.5 px-1">
-                   Cajero / Staff
-                </label>
-                <select 
-                  className="w-full text-sm h-11 px-4 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50 dark:bg-zinc-900 focus:ring-2 focus:ring-black outline-none font-bold appearance-none transition-all"
-                  value={filters.usuarioId || ""}
-                  onChange={(e) => handleFilterChange("usuarioId", e.target.value)}
-                >
-                   <option value="">Todos los Usuarios</option>
-                   {options.usuarios.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
-                </select>
-             </div>
- 
-             <div className="flex items-end pt-5">
-                <button 
-                  onClick={loadData}
-                  disabled={loading}
-                  className="w-full h-11 bg-black text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg"
-                >
-                  <Search size={16} strokeWidth={3} />
-                  {loading ? "PROCESANDO..." : "CALCULAR MÉTRICAS"}
-                </button>
-             </div>
+      {/* Filters Header (Grid layout to prevent overlapping) */}
+      <div className="bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-end">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Rango de Fechas</label>
+            <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-2">
+              <input 
+                type="date" 
+                className="h-11 px-4 w-full rounded-xl border border-zinc-200 bg-zinc-50 font-black text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all"
+                value={filters.startDate || ""}
+                onChange={(e) => handleFilterChange("startDate", e.target.value)}
+              />
+              <span className="text-zinc-300 font-black">/</span>
+              <input 
+                type="date" 
+                className="h-11 px-4 w-full rounded-xl border border-zinc-200 bg-zinc-50 font-black text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all"
+                value={filters.endDate || ""}
+                onChange={(e) => handleFilterChange("endDate", e.target.value)}
+              />
+            </div>
           </div>
+          
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Sucursal</label>
+            <select 
+              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-black text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all appearance-none pr-10 relative"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
+              value={filters.sucursalId || ""}
+              onChange={(e) => handleFilterChange("sucursalId", e.target.value)}
+            >
+               <option value="">Consolidado Global</option>
+               {options.sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+            </select>
+          </div>
+          
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-1">Cajero / Staff</label>
+            <select 
+              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-black text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all appearance-none pr-10 relative"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
+              value={filters.usuarioId || ""}
+              onChange={(e) => handleFilterChange("usuarioId", e.target.value)}
+            >
+               <option value="">Todos los Usuarios</option>
+               {options.usuarios.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+            </select>
+          </div>
+
+          <button 
+            onClick={loadData}
+            disabled={loading}
+            className="h-11 px-6 bg-black text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+          >
+            {loading ? "PROCESANDO..." : "CALCULAR MÉTRICAS"}
+          </button>
         </div>
       </div>
 
@@ -134,16 +126,16 @@ export function AnalyticsClient({
         </div>
       )}
 
-      {/* Tabs Navigation */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white dark:bg-zinc-900 rounded-2xl w-fit border border-zinc-200 dark:border-zinc-800 shadow-sm">
+      {/* Tabs Navigation (Refined Premium Style) */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white dark:bg-zinc-950 rounded-2xl w-fit border border-zinc-200 dark:border-zinc-800 shadow-sm">
          <TabButton active={activeTab === "resumen"} onClick={() => setActiveTab("resumen")} icon={<Activity size={14} />}>Resumen Global</TabButton>
-         <TabButton active={activeTab === "ventas"} onClick={() => setActiveTab("ventas")} icon={<Store size={14} />}>Sucursales & Personal</TabButton>
-         <TabButton active={activeTab === "productos"} onClick={() => setActiveTab("productos")} icon={<ShoppingBag size={14} />}>Ventas x Producto</TabButton>
-         <TabButton active={activeTab === "inventario"} onClick={() => setActiveTab("inventario")} icon={<Package size={14} />}>Estado de Stock</TabButton>
-         {loading && <div className="ml-4 px-3 py-1 bg-black text-white text-[10px] font-black rounded-lg animate-pulse">CARGANDO...</div>}
+         <TabButton active={activeTab === "ventas"} onClick={() => setActiveTab("ventas")} icon={<Store size={14} />}>Sucursales & Staff</TabButton>
+         <TabButton active={activeTab === "productos"} onClick={() => setActiveTab("productos")} icon={<ShoppingBag size={14} />}>Rendimiento Mix</TabButton>
+         <TabButton active={activeTab === "inventario"} onClick={() => setActiveTab("inventario")} icon={<Package size={14} />}>Activos de Stock</TabButton>
+         {loading && <div className="ml-4 px-3 py-1 bg-black text-white text-[10px] font-black rounded-lg animate-pulse tracking-widest uppercase">Sincronizando...</div>}
          {!loading && data.summary.totalTransactions > 0 && (
-           <div className="ml-2 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black rounded-lg border border-emerald-100 dark:border-emerald-900 tracking-tighter shadow-sm">
-             {data.summary.totalTransactions} VENTAS
+           <div className="ml-2 px-3 py-1 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-400 text-[10px] font-black uppercase rounded-lg border border-zinc-100 dark:border-zinc-800 tracking-widest shadow-inner">
+             {data.summary.totalTransactions} Operaciones
            </div>
          )}
       </div>
@@ -287,47 +279,47 @@ export function AnalyticsClient({
           )}
 
           {activeTab === "productos" && (
-             <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden animate-in fade-in duration-500">
-                <div className="p-6 border-b border-zinc-100 dark:border-white/5 bg-zinc-50/30 dark:bg-white/[0.02]">
-                   <h3 className="text-xl font-black tracking-tight flex items-center gap-3 italic uppercase">
-                      <ShoppingBag size={22} className="text-emerald-500" strokeWidth={3} />
-                      Rendimiento de Productos
+             <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden animate-in fade-in duration-500 transition-all hover:shadow-xl">
+                <div className="p-8 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/30 dark:bg-zinc-900/10">
+                   <h3 className="text-2xl font-black tracking-tight flex items-center gap-3 text-zinc-900 dark:text-white">
+                      <ShoppingBag size={24} className="text-zinc-400" />
+                      Rendimiento del Mix Comercial
                    </h3>
-                   <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-1.5">Análisis de rentabilidad basado en ventas completadas.</p>
+                   <p className="text-zinc-500 dark:text-zinc-400 font-medium mt-1">Análisis de rentabilidad y volumen por producto individual.</p>
                 </div>
                 <div className="overflow-x-auto">
                    <table className="w-full text-sm text-left">
-                      <thead>
-                         <tr className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] bg-zinc-50/50 dark:bg-white/[0.02] font-black border-b border-zinc-100 dark:border-zinc-900">
-                            <th className="px-6 py-4">Producto</th>
-                            <th className="px-6 py-4">Categoría</th>
-                            <th className="px-6 py-4 text-right">Volumen</th>
-                            <th className="px-6 py-4 text-right">Ingreso Bruto</th>
-                            <th className="px-6 py-4 text-right">Margen</th>
+                      <thead className="bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-900">
+                         <tr className="text-[10px] text-zinc-400 uppercase tracking-widest font-black">
+                            <th className="px-8 py-4">Producto</th>
+                            <th className="px-8 py-4">Categoría</th>
+                            <th className="px-8 py-4 text-right">Volumen</th>
+                            <th className="px-8 py-4 text-right">Ingreso Bruto</th>
+                            <th className="px-8 py-4 text-right">Margen</th>
                          </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-100 dark:divide-white/5">
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900 bg-white dark:bg-zinc-950">
                          {data.topProducts.map((p, idx) => (
-                           <tr key={idx} className="group hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
-                              <td className="px-6 py-4 text-zinc-900 dark:text-white font-black uppercase text-xs tracking-tight">
+                           <tr key={idx} className="group hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors uppercase">
+                              <td className="px-8 py-5 text-zinc-900 dark:text-white font-black text-xs tracking-tight">
                                 {p.productName}
                               </td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-black uppercase text-zinc-500 tracking-wider">
+                              <td className="px-8 py-5">
+                                <span className="px-2 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 text-[9px] font-black tracking-widest text-zinc-500 border border-zinc-200 dark:border-zinc-800">
                                     {p.category || "General"}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-right font-mono text-zinc-500 font-black">{p.unitsSold} <span className="text-[9px]">UND</span></td>
-                              <td className="px-6 py-4 text-right font-black text-zinc-950 dark:text-zinc-100 underline decoration-zinc-100 underline-offset-4 decoration-1">${p.revenue.toLocaleString()}</td>
-                              <td className="px-6 py-4 text-right">
-                                 <span className="text-emerald-500 font-black text-xs ring-1 ring-emerald-100 px-2 py-0.5 rounded-lg bg-emerald-50/50">
+                              <td className="px-8 py-5 text-right font-bold text-zinc-500">{p.unitsSold} <span className="text-[9px] font-black opacity-50">PCS</span></td>
+                              <td className="px-8 py-5 text-right font-black text-zinc-900 dark:text-white">${p.revenue.toLocaleString()}</td>
+                              <td className="px-8 py-5 text-right">
+                                 <span className="text-emerald-600 dark:text-emerald-400 font-black text-xs px-2 py-1 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
                                    +${p.grossMargin.toLocaleString()}
                                  </span>
                               </td>
                            </tr>
                          ))}
                          {data.topProducts.length === 0 && (
-                            <tr><td colSpan={5} className="px-6 py-12 text-center text-zinc-400 font-black uppercase tracking-widest text-xs">Sin registros financieros</td></tr>
+                            <tr><td colSpan={5} className="px-8 py-20 text-center text-zinc-400 font-black tracking-widest text-xs uppercase bg-white dark:bg-zinc-950">Sin registros de ventas en este periodo</td></tr>
                          )}
                       </tbody>
                    </table>
@@ -365,42 +357,45 @@ export function AnalyticsClient({
                      />
                   </div>
 
-                  <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-                    <div className="mb-6">
-                        <h3 className="text-xl font-black tracking-tight uppercase italic leading-none">Auditoría de Patrimonio</h3>
-                        <p className="text-[10px] text-zinc-400 font-black uppercase tracking-[0.2em] mt-1.5">Resumen de activos circulantes.</p>
+                  <div className="bg-white dark:bg-zinc-950 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-xl relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500" />
+                    
+                    <div className="mb-8">
+                        <h3 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">Auditoría de Patrimonio</h3>
+                        <p className="text-zinc-500 dark:text-zinc-400 font-medium">Resumen consolidado de activos circulantes y salud de stock.</p>
                     </div>
-                    <div className="flex flex-col md:flex-row items-center gap-10">
-                        <div className="flex-1 space-y-4">
-                            <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
-                                <h4 className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">Capacidad de Venta Estimada</h4>
-                                <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 font-medium">
-                                    Este valor representa lo que has invertido en mercancía que está lista para ser vendida.
+                    <div className="flex flex-col lg:flex-row items-center gap-12">
+                        <div className="flex-1 space-y-6 w-full">
+                            <div className="p-6 rounded-2xl bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/20">
+                                <h4 className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest mb-2">Capacidad de Venta Estimada</h4>
+                                <p className="text-sm text-blue-600 dark:text-blue-300 font-medium leading-relaxed">
+                                    Este valor representa la inversión activa en mercancía disponible para desplazamiento inmediato en piso de venta.
                                 </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-xl border border-zinc-200 dark:border-white/5">
-                                    <span className="text-[10px] text-zinc-400 font-black uppercase block mb-1 tracking-widest">Items Únicos</span>
-                                    <span className="text-2xl font-black text-zinc-900 dark:text-white leading-none">{data.topProducts.length}</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="p-6 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                    <span className="text-[10px] text-zinc-400 font-black uppercase block mb-1 tracking-widest">Catálogo Activo</span>
+                                    <span className="text-3xl font-black text-zinc-900 dark:text-white leading-none">{data.topProducts.length} <span className="text-sm text-zinc-400 italic">SKUs</span></span>
                                 </div>
-                                <div className="p-4 bg-rose-50/50 dark:bg-rose-500/5 rounded-xl border border-rose-200 dark:border-rose-900/40">
-                                    <span className="text-[10px] text-rose-400 font-black uppercase block mb-1 tracking-widest">En Alerta</span>
-                                    <span className="text-2xl font-black text-rose-600 leading-none">{initialInventory.lowStockItems}</span>
+                                <div className="p-6 bg-rose-50/50 dark:bg-rose-500/5 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                                    <span className="text-[10px] text-rose-400 font-black uppercase block mb-1 tracking-widest">En Alerta Crítica</span>
+                                    <span className="text-3xl font-black text-rose-600 leading-none">{initialInventory.lowStockItems} <span className="text-sm text-rose-400 italic">Items</span></span>
                                 </div>
                             </div>
                         </div>
-                        <div className="w-[260px] h-[260px] shrink-0 relative flex items-center justify-center">
-                            <div className="absolute inset-x-0 bottom-4 text-center">
-                                <span className="text-4xl font-black text-zinc-950 dark:text-white block leading-none">
+                        <div className="w-[280px] h-[280px] shrink-0 relative flex items-center justify-center group">
+                            <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-900 rounded-full scale-90 blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                            <div className="absolute flex flex-col items-center justify-center text-center z-10">
+                                <span className="text-5xl font-black text-zinc-900 dark:text-white block tracking-tighter">
                                     {((initialInventory.totalUnits / (initialInventory.totalUnits + 10)) * 100).toFixed(0)}%
                                 </span>
-                                <span className="text-[9px] font-black text-zinc-400 uppercase mt-2 block tracking-[0.3em]">
+                                <span className="text-[9px] font-black text-zinc-400 uppercase mt-2 block tracking-widest">
                                     Salud de Stock
                                 </span>
                             </div>
-                            <svg className="absolute w-full h-full -rotate-90">
-                                <circle cx="130" cy="130" r="110" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-zinc-50 dark:text-zinc-900" />
-                                <circle cx="130" cy="130" r="110" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="691" strokeDashoffset={691 - (691 * 0.85)} className="text-zinc-950 dark:text-white stroke-round shadow-lg" />
+                            <svg className="absolute w-full h-full -rotate-90 drop-shadow-2xl">
+                                <circle cx="140" cy="140" r="120" stroke="currentColor" strokeWidth="16" fill="transparent" className="text-zinc-50 dark:text-zinc-900" />
+                                <circle cx="140" cy="140" r="120" stroke="currentColor" strokeWidth="16" fill="transparent" strokeDasharray="754" strokeDashoffset={754 - (754 * 0.85)} className="text-zinc-900 dark:text-white stroke-round shadow-lg transition-all duration-1000" />
                             </svg>
                         </div>
                     </div>
@@ -417,13 +412,13 @@ function TabButton({ active, onClick, children, icon }: { active: boolean, onCli
     <button 
       onClick={onClick}
       className={cn(
-        "px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all rounded-xl flex items-center gap-2",
+        "px-6 py-3 text-[10px] font-black uppercase tracking-widest transition-all rounded-xl flex items-center gap-2.5",
         active 
-          ? "bg-black text-white shadow-lg scale-[1.02]" 
-          : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100/50 dark:hover:bg-white/5"
+          ? "bg-black text-white shadow-xl scale-[1.02] ring-1 ring-black" 
+          : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900"
       )}
     >
-      {icon}
+      <span className={cn("transition-transform duration-300", active && "scale-110")}>{icon}</span>
       <span className="hidden sm:inline">{children}</span>
     </button>
   );
@@ -439,23 +434,27 @@ function MetricCard({ title, desc, value, icon, isPositive, isNegative }: {
 }) {
   return (
     <div className={cn(
-      "bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm group hover:shadow-md transition-all hover:-translate-y-1",
-      isNegative && "border-rose-200 bg-rose-50/30",
-      isPositive && "border-emerald-200 bg-emerald-50/30"
+      "bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all relative overflow-hidden",
     )}>
+       {/* Status Indicator Bar (Cuts Style) */}
+       <div className={cn(
+         "absolute left-0 top-0 bottom-0 w-1.5 transition-colors",
+         isPositive ? "bg-emerald-500" : isNegative ? "bg-rose-500" : "bg-zinc-300 dark:bg-zinc-700 group-hover:bg-black dark:group-hover:bg-white"
+       )} />
+
        <div className="flex justify-between items-start gap-4">
           <div className="space-y-1 w-full">
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">{title}</p>
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none">{title}</p>
               <div className="flex items-baseline gap-2">
-                <h3 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">{value}</h3>
+                <h3 className="text-4xl font-black tracking-tighter text-zinc-900 dark:text-white leading-none">{value}</h3>
               </div>
           </div>
-          <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 group-hover:scale-110 group-hover:bg-zinc-900 group-hover:text-white transition-all shadow-sm">
+          <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 group-hover:bg-zinc-900 dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all shadow-sm">
               {icon}
           </div>
        </div>
        {desc && (
-         <p className="mt-4 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-widest leading-relaxed">
+         <p className="mt-4 text-[11px] text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
            {desc}
          </p>
        )}
@@ -465,13 +464,15 @@ function MetricCard({ title, desc, value, icon, isPositive, isNegative }: {
 
 function ListCard({ title, desc, items, maxVal, icon }: { title: string, desc: string, items: {label: string, value: number, sub: string, id: string}[], maxVal: number, icon: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden transition-all hover:shadow-md h-full">
-      <div className="p-6 border-b border-zinc-100 dark:border-white/5 bg-zinc-50/30">
-        <div className="flex items-center gap-3">
-            {icon}
+    <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
+      <div className="p-8 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/30 dark:bg-zinc-900/10">
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-900 text-white flex items-center justify-center shadow-lg">
+                {icon}
+            </div>
             <div>
-                <h3 className="text-xl font-black tracking-tight text-zinc-900 dark:text-white uppercase italic leading-none">{title}</h3>
-                <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-1.5">{desc}</p>
+                <h3 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-white uppercase italic">{title}</h3>
+                <p className="text-zinc-500 dark:text-zinc-400 font-medium text-sm">{desc}</p>
             </div>
         </div>
       </div>
