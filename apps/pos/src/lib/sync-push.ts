@@ -8,6 +8,7 @@ export type PushResult = {
     turnos: number;
     ventas: number;
     auditorias: number;
+    gastos: number;
   };
 };
 
@@ -16,6 +17,7 @@ export async function buildPushPayload() {
   const pendingTurnos = await db.turnos.where('sync_status').equals('PENDING').toArray();
   const pendingSales = await db.sales.where('sync_status').equals('PENDING').toArray();
   const pendingAudits = await db.audits.where('sync_status').equals('PENDING').toArray();
+  const pendingGastos = await db.gastos.where('sync_status').equals('PENDING').toArray();
 
   // Enriquecemos cada venta con sus detalles asociados mediante una consulta adicional a sale_details
   const ventas = await Promise.all(
@@ -58,7 +60,18 @@ export async function buildPushPayload() {
       items: a.items // Los items están embebidos en la entidad local gracias al diseño offline
   }));
 
-  return { turnos, ventas, auditorias };
+  const gastos = pendingGastos.map(g => ({
+      id: g.id,
+      turno_id: g.turno_id,
+      sucursal_id: g.sucursal_id,
+      categoria: g.categoria,
+      monto: g.monto,
+      descripcion: g.descripcion,
+      fecha: g.fecha,
+      proveedor_id: g.proveedor_id
+  }));
+
+  return { turnos, ventas, auditorias, gastos };
 }
 
 export async function pushToCloud(): Promise<PushResult> {
@@ -71,8 +84,8 @@ export async function pushToCloud(): Promise<PushResult> {
     const payload = await buildPushPayload();
     
     // Optimizamos cortando la sincronización si no hay nada pendiente
-    if (payload.turnos.length === 0 && payload.ventas.length === 0 && payload.auditorias.length === 0) {
-       return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0 } };
+    if (payload.turnos.length === 0 && payload.ventas.length === 0 && payload.auditorias.length === 0 && payload.gastos.length === 0) {
+       return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0 } };
     }
 
     const secret = import.meta.env.VITE_POS_SYNC_SECRET || '';
@@ -88,9 +101,9 @@ export async function pushToCloud(): Promise<PushResult> {
 
     // Reconciliación Local (ACK). Si es 200 OK, procedemos a marcar como 'SYNCED'
     if (data.success && data.procesados) {
-       const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [] } = data.procesados;
+       const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [], gastos: procGastos = [] } = data.procesados;
        
-       await db.transaction('rw', db.turnos, db.sales, db.audits, async () => {
+       await db.transaction('rw', db.turnos, db.sales, db.audits, db.gastos, async () => {
           // Operaciones masivas usando Dexie modify() lo cual es muy performance friendly.
           if (procTurnos.length > 0) {
              await db.turnos.where('id').anyOf(procTurnos).modify({ sync_status: 'SYNCED' });
@@ -101,6 +114,9 @@ export async function pushToCloud(): Promise<PushResult> {
           if (procAuditorias.length > 0) {
              await db.audits.where('id').anyOf(procAuditorias).modify({ sync_status: 'SYNCED' });
           }
+          if (procGastos.length > 0) {
+             await db.gastos.where('id').anyOf(procGastos).modify({ sync_status: 'SYNCED' });
+          }
        });
 
        return {
@@ -108,7 +124,8 @@ export async function pushToCloud(): Promise<PushResult> {
          pushed: {
            turnos: procTurnos.length,
            ventas: procVentas.length,
-           auditorias: procAuditorias.length
+           auditorias: procAuditorias.length,
+           gastos: procGastos.length
          }
        };
     } else {

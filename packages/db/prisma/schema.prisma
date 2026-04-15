@@ -39,6 +39,7 @@ model Sucursal {
   inventario Inventario_Sucursal[]
   turnos     Turno[]
   ventas     Venta[]
+  gastos     Gasto[]
 }
 
 model Proveedor {
@@ -49,6 +50,7 @@ model Proveedor {
   updatedAt                  DateTime @updatedAt @default(now())
 
   productos Producto[]
+  gastos    Gasto[]
 }
 
 model Producto {
@@ -99,6 +101,7 @@ model Turno {
   usuario        User        @relation(fields: [usuario_id], references: [id])
   sucursal       Sucursal    @relation(fields: [sucursal_id], references: [id], onDelete: Restrict)
   ventas         Venta[]
+  gastos         Gasto[]
   auditorias     InventoryAudit[]
 }
 
@@ -171,4 +174,30 @@ model AuditItem {
 
   audit           InventoryAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
   producto        Producto       @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+enum GastoCategoria {
+  NOMINA
+  RENTA
+  VARIABLE
+  MERCANCIA
+  CAJA_CHICA
+}
+
+model Gasto {
+  id           String         @id @default(uuid())
+  turno_id     String
+  sucursal_id  String
+  categoria    GastoCategoria
+  monto        Decimal        @db.Decimal(10, 2)
+  descripcion  String
+  fecha        DateTime       @default(now())
+  proveedor_id String?
+  sync_status  SyncStatus     @default(PENDING)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  sucursal  Sucursal   @relation(fields: [sucursal_id], references: [id])
+  turno     Turno      @relation(fields: [turno_id], references: [id])
+  proveedor Proveedor? @relation(fields: [proveedor_id], references: [id])
 }

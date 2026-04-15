@@ -91,6 +91,18 @@ export interface LocalAudit {
   sync_status: 'PENDING' | 'SYNCED';
 }
 
+export interface LocalGasto {
+  id: string; // UUID
+  turno_id: string;
+  sucursal_id: string;
+  categoria: 'NOMINA' | 'RENTA' | 'VARIABLE' | 'MERCANCIA' | 'CAJA_CHICA';
+  monto: number;
+  descripcion: string;
+  fecha: string; // ISO String
+  proveedor_id: string | null;
+  sync_status: 'PENDING' | 'SYNCED';
+}
+
 export class ShopLIPOSDatabase extends Dexie {
   users!: EntityTable<LocalUser, 'id'>;
   branches!: EntityTable<LocalBranch, 'id'>;
@@ -101,11 +113,12 @@ export class ShopLIPOSDatabase extends Dexie {
   sale_details!: EntityTable<LocalSaleDetail, 'id'>;
   inventory!: EntityTable<LocalInventory, 'id'>;
   audits!: EntityTable<LocalAudit, 'id'>;
+  gastos!: EntityTable<LocalGasto, 'id'>;
   meta!: EntityTable<LocalMeta, 'key'>;
 
   constructor() {
     super('ShopLIPOS');
-    this.version(8).stores({
+    this.version(10).stores({
       users: 'id, role, pin',
       branches: 'id',
       products: 'id, codigo_interno, categoria',
@@ -115,6 +128,7 @@ export class ShopLIPOSDatabase extends Dexie {
       sale_details: 'id, venta_id, producto_id',
       inventory: 'id, sucursal_id, producto_id, [sucursal_id+producto_id]',
       audits: 'id, shiftId, sync_status',
+      gastos: 'id, turno_id, sucursal_id, sync_status',
       meta: 'key',
     });
   }

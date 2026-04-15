@@ -10,7 +10,9 @@ export default function CloseRegisterScreen() {
         initialAmount,
         totalSales,
         expectedAmount,
+        totalExpenses,
         difference,
+        error,
         handleCloseShift,
     } = useCloseRegister();
 
@@ -36,6 +38,10 @@ export default function CloseRegisterScreen() {
                     <div className="flex justify-between items-center text-lg relative before:absolute before:border-b-2 before:border-dotted before:border-gray-300 before:w-full before:-top-2">
                         <span className="text-gray-600 font-medium">Ventas en Efectivo</span>
                         <span className="font-semibold text-gray-900">+ ${totalSales.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-lg">
+                        <span className="text-gray-600 font-medium">Gastos Caja Chica</span>
+                        <span className="font-semibold text-red-600">- ${totalExpenses.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-xl bg-white p-3 rounded-lg border border-gray-200 mt-2">
                         <span className="text-gray-800 font-bold">Total Esperado</span>
@@ -84,6 +90,14 @@ export default function CloseRegisterScreen() {
                         <span className="font-bold text-2xl">
                             {difference > 0 ? '+' : ''}{difference.toFixed(2)}
                         </span>
+                    </div>
+                )}
+
+                {/* Mensaje de Error de Validación */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 flex items-center gap-3 rounded-r-lg">
+                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                        <span className="text-sm font-bold">{error}</span>
                     </div>
                 )}
 

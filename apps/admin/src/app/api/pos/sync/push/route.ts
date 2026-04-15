@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, SyncStatus, EstadoTurno, EstadoVenta } from "@shopli/db";
+import { db, SyncStatus, EstadoTurno, EstadoVenta, GastoCategoria } from "@shopli/db";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 
@@ -12,6 +12,7 @@ export type PushSyncResponse = {
     turnos: string[];
     ventas: string[];
     auditorias: string[];
+    gastos: string[];
   };
 };
 
@@ -70,6 +71,18 @@ const pushSyncSchema = z.object({
         })
       )
     })
+  ).default([]),
+  gastos: z.array(
+    z.object({
+      id: z.string().uuid(),
+      turno_id: z.string().uuid(),
+      sucursal_id: z.string().uuid(),
+      categoria: z.string(),
+      monto: z.number().positive(),
+      descripcion: z.string(),
+      fecha: z.string().datetime(),
+      proveedor_id: z.string().uuid().optional().nullable(),
+    })
   ).default([])
 });
 
@@ -114,12 +127,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { turnos, ventas, auditorias } = parseResult.data;
+    const { turnos, ventas, auditorias, gastos } = parseResult.data;
 
     const procesados = {
       turnos: [] as string[],
       ventas: [] as string[],
-      auditorias: [] as string[]
+      auditorias: [] as string[],
+      gastos: [] as string[]
     };
 
     // 2. Transaccionalidad: Implementa un db.$transaction de Prisma. Todo el lote debe procesarse de forma atómica.
@@ -245,6 +259,30 @@ export async function POST(req: Request) {
           });
         }
         procesados.ventas.push(venta.id);
+      }
+
+      // 2.4 Para gastos: Upsert.
+      for (const gasto of gastos) {
+        await tx.gasto.upsert({
+          where: { id: gasto.id },
+          create: {
+            id: gasto.id,
+            turno_id: gasto.turno_id,
+            sucursal_id: gasto.sucursal_id,
+            categoria: gasto.categoria as GastoCategoria,
+            monto: gasto.monto,
+            descripcion: gasto.descripcion,
+            fecha: new Date(gasto.fecha),
+            proveedor_id: gasto.proveedor_id || null,
+            sync_status: SyncStatus.SYNCED
+          },
+          update: {
+            monto: gasto.monto,
+            descripcion: gasto.descripcion,
+            sync_status: SyncStatus.SYNCED
+          }
+        });
+        procesados.gastos.push(gasto.id);
       }
 
     });

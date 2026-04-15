@@ -42,18 +42,18 @@ https://...
 Small businesses often rely on unstable internet connections and lack tools to:
 
 - Operate without connectivity
-- Track real profitability (not just sales)
-- Manage inventory and finances in one place
+- Track real profitability (sales - expenses - COGS)
+- Manage inventory, finances, and operational costs in one place
 
-Most POS systems fail in offline scenarios or lack financial insights.
+Most POS systems fail in offline scenarios or lack comprehensive expense tracking.
 
 ## Solution
 
 ShopLI is an **offline-first POS system** that:
 
-- ✅ Allows sales **without internet connection**
+- ✅ Allows sales & expense records **without internet connection**
 - 🔄 **Syncs data automatically** when online
-- 📊 Provides **real-time financial insights** (profit, costs, inventory)
+- 📊 Provides **real-time financial insights** (net profit, costs, gastos)
 - 🏪 Supports **multi-branch operations**
 
 ---
@@ -136,9 +136,10 @@ shopli/
 ### Owner — Real-Time Business Intelligence
 
 ```
-Admin Dashboard  →  Financial Reports (all branches)
-                →  Profit margin per product (precio_publico - costo)
+Admin Dashboard  →  Financial Reports & Balance (all branches)
+                →  Net Profit Calculation (Sales - Expenses - COGS)
                 →  Inventory audit trail (InventoryAudit + AuditItem)
+                →  Expense categorization (Nomina, Renta, Variable)
                 →  User & supplier management
 ```
 
@@ -164,16 +165,18 @@ Admin Dashboard  →  Financial Reports (all branches)
 ## Features
 
 ### 🛒 Point of Sale (POS)
-- **Offline-first sales** — sell when internet is down, sync when it's back
+- **Offline-first sales & expenses** — operate when internet is down
+- **Petty cash management** — track small daily outgoings (caja chica)
 - **Barcode / internal code search** — fast product lookup
 - **Shift management** — open/close cash register with initial float
 - **Multi-cashier on single device** — PIN-based quick session switching
-- **Subtle connectivity indicator** — traffic-light dot (🟢 / 🟡 / 🔴), never intrusive
+- **Subtle connectivity indicator** — traffic-light dot (🟢 / 🟡 / 🔴)
 - **Blocking success modal** — cashier must confirm each completed sale
 
 ### 📊 Admin Dashboard
-- **Consolidated financial reports** — across all branches
-- **Real profit tracking** — `price - cost` margin per product, per period
+- **Consolidated balance & utility** — net profit tracking across all branches
+- **Operational expense registry** — log rent, payroll, and fixed costs
+- **Real profit tracking** — `price - cost - expenses` margin calc
 - **Inventory management** — per-branch stock levels via `Inventario_Sucursal`
 - **Inventory audit log** — discrepancy tracking with reason codes
 - **User management** — create cashiers, managers; assign PINs
@@ -204,6 +207,7 @@ Inventario_Sucursal → Stock per branch per product (@@unique)
 Turno          → Cashier shift (ABIERTO | CERRADO)
 Venta          → Sale (sync_status: PENDING | SYNCED)
 Detalle_Venta  → Line items with historical unit price
+Gasto          → Operational expenses (fixed or variable)
 InventoryAudit → Audit session per shift
 AuditItem      → Discrepancy record per product
 Proveedor      → Supplier contact linked to products

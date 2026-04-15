@@ -40,11 +40,23 @@ export type SyncBranch = {
   updatedAt: string;
 };
 
+export type SyncGasto = {
+  id: string;
+  branchId: string;
+  category: string;
+  amount: number;
+  description: string;
+  date: string;
+  providerId: string | null;
+  updatedAt: string;
+};
+
 export type PullSyncResponse = {
   products: SyncProduct[];
   inventory: SyncInventory[];
   users: SyncUser[];
   branches: SyncBranch[];
+  gastos: SyncGasto[];
   syncedAt: string;
   nextCursor?: string;
 };
@@ -101,13 +113,13 @@ export async function GET(req: NextRequest) {
       ? { updatedAt: { gt: updatedAfterDate }, role: { in: [Role.CAJERO, Role.ENCARGADO] } } 
       : { role: { in: [Role.CAJERO, Role.ENCARGADO] } };
 
-    // 1. Ejecutar las solicitudes en paralelo
-    const [productsResult, inventoryResult, usersResult, branchesResult] = await Promise.all([
+    // 1. Ejecutar las solicitudes en paralelo con tipado explícito
+    const [productsResult, inventoryResult, usersResult, branchesResult, gastosResult] = await Promise.all([
       db.producto.findMany({
         where: productsWhere,
-        take: LIMIT + 1, // +1 para verificar si hay más páginas
+        take: LIMIT + 1,
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-        orderBy: { id: 'asc' },
+        orderBy: { id: "asc" },
       }),
       db.inventario_Sucursal.findMany({
         where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
@@ -123,6 +135,9 @@ export async function GET(req: NextRequest) {
         }
       }),
       db.sucursal.findMany({
+        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
+      }),
+      db.gasto.findMany({
         where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
       })
     ]);
@@ -150,6 +165,9 @@ export async function GET(req: NextRequest) {
     });
     branchesResult.forEach(b => {
       if (b.updatedAt > maxDate) maxDate = b.updatedAt;
+    });
+    gastosResult.forEach(g => {
+      if (g.updatedAt > maxDate) maxDate = g.updatedAt;
     });
 
     // Si no hubo cambios y no existía un updatedAfter, emitiremos el tiempo del servidor actual.
@@ -193,11 +211,23 @@ export async function GET(req: NextRequest) {
       updatedAt: b.updatedAt.toISOString(),
     }));
 
+    const gastos: SyncGasto[] = gastosResult.map((g) => ({
+      id: g.id,
+      branchId: g.sucursal_id,
+      category: g.categoria,
+      amount: Number(g.monto),
+      description: g.descripcion,
+      date: g.fecha.toISOString(),
+      providerId: g.proveedor_id,
+      updatedAt: g.updatedAt.toISOString(),
+    }));
+
     const responseBody: PullSyncResponse = {
       products,
       inventory,
       users,
       branches,
+      gastos,
       syncedAt,
       ...(nextCursor && { nextCursor }),
     };

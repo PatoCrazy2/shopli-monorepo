@@ -49,13 +49,23 @@ export interface CategoryPerformance {
     color: string;
 }
 
+export interface MonthlyBalance {
+  month: string;
+  revenue: number;
+  fixedExpenses: number;
+  variableExpenses: number;
+  profit: number;
+}
+
 export interface AnalyticsData {
   summary: {
     totalRevenue: number;
     totalTransactions: number;
     averageTicket: number;
     totalCosts: number;
+    totalExpenses: number; // Gastos operativos
     grossProfit: number;
+    netProfit: number; // GrossProfit - TotalExpenses
     marginPercent: number;
   };
   branchSales: BranchSale[];
@@ -63,6 +73,8 @@ export interface AnalyticsData {
   dateSales: DateSale[];
   topProducts: ProductPerformance[];
   categorySales: CategoryPerformance[];
+  expensesByCategory: CategoryPerformance[];
+  monthlyBalance: MonthlyBalance[];
 }
 
 export interface InventoryAnalytics {
