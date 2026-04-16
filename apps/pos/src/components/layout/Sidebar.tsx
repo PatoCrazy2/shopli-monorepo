@@ -13,6 +13,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { path: "/", label: "Ventas", icon: ShoppingCart },
         { path: "/historial-ventas", label: "Historial de Ventas", icon: History },
         { path: "/inventario", label: "Inventario", icon: Package },
+        { path: "/auditoria-dinamica", label: "Auditoría Dinámica", icon: Package },
         { path: "/corte-caja", label: "Corte de Caja", icon: Wallet },
     ];
 
