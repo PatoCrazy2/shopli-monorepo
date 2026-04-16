@@ -8,6 +8,7 @@
         "db:generate": "prisma generate",
         "db:push": "prisma db push",
         "db:migrate": "prisma migrate dev",
+        "db:seed": "prisma db seed",
         "lint": "eslint \"src/**/*.ts*\"",
         "clean": "rm -rf .turbo node_modules"
     },
