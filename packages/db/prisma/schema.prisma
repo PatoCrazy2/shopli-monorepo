@@ -209,6 +209,7 @@ model DynamicAudit {
   sucursalId String
   status     AuditStatus @default(OPEN)
   startedAt  DateTime    @default(now())
+  isApplied  Boolean     @default(false)
   
   sucursal   Sucursal    @relation(fields: [sucursalId], references: [id])
   items      DynamicAuditItem[]

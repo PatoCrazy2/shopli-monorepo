@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package } from "lucide-react";
 import { db } from "../../lib/db";
+import { useAuth } from "../../contexts/AuthContext";
 import type { LocalProduct, LocalDynamicAuditItem } from "../../lib/db";
 
 export default function DynamicAuditPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [products, setProducts] = useState<LocalProduct[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [countedAmount, setCountedAmount] = useState<string>("");
@@ -29,6 +31,11 @@ export default function DynamicAuditPage() {
     }, []);
 
     const handleStartAudit = async () => {
+        if (!user?.branchId) {
+            alert("No se pudo determinar la sucursal activa. Por favor reinicia sesión.");
+            return;
+        }
+
         const allProducts = await db.products.toArray();
         setProducts(allProducts);
 
@@ -39,6 +46,7 @@ export default function DynamicAuditPage() {
         await db.transaction('rw', db.meta, db.dynamicAudits, async () => {
             await db.dynamicAudits.add({
                 id: newAuditId,
+                branchId: user.branchId,
                 startedAt: new Date().toISOString(),
                 sync_status: 'PENDING'
             });

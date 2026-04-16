@@ -115,6 +115,7 @@ export interface LocalDynamicAuditItem {
 
 export interface LocalDynamicAudit {
   id: string; // UUID
+  branchId: string; // Branch associated with the audit
   startedAt: string; // ISOString
   sync_status: 'PENDING' | 'SYNCED';
 }
@@ -136,7 +137,7 @@ export class ShopLIPOSDatabase extends Dexie {
 
   constructor() {
     super('ShopLIPOS');
-    this.version(12).stores({
+    this.version(13).stores({
       users: 'id, role, pin',
       branches: 'id',
       products: 'id, codigo_interno, categoria',
@@ -148,7 +149,7 @@ export class ShopLIPOSDatabase extends Dexie {
       audits: 'id, shiftId, sync_status',
       gastos: 'id, turno_id, sucursal_id, sync_status',
       dynamicAuditItems: 'id, auditId, productId, [auditId+productId], sync_status',
-      dynamicAudits: 'id, sync_status',
+      dynamicAudits: 'id, branchId, sync_status',
       meta: 'key',
     });
   }

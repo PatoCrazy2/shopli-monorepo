@@ -80,7 +80,7 @@ export async function buildPushPayload() {
       const items = await db.dynamicAuditItems.where('auditId').equals(da.id).toArray();
       return {
         id: da.id,
-        sucursal_id: branchId,
+        sucursal_id: da.branchId,
         startedAt: da.startedAt,
         items: items.map(item => ({
           productId: item.productId,

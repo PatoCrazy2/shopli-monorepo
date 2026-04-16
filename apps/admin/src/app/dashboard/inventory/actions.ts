@@ -190,3 +190,51 @@ export async function createDynamicAudit(sucursalId: string) {
     return { error: "Error al crear la auditoría dinámica." };
   }
 }
+
+export async function applyAuditAdjustments(auditId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("No autorizado");
+
+  try {
+    const audit = await db.dynamicAudit.findUnique({
+      where: { id: auditId },
+      include: { items: true }
+    });
+
+    if (!audit) throw new Error("Auditoría no encontrada");
+    // Ensure that it's closed
+    if (audit.status !== 'CLOSED') throw new Error("La auditoría debe estar cerrada para aplicar ajustes.");
+    if (audit.isApplied) throw new Error("Los ajustes de esta auditoría ya fueron aplicados.");
+
+    await db.$transaction(async (tx) => {
+      // Aplicar cada diferencia al inventario
+      for (const item of audit.items) {
+        if (item.difference && item.difference !== 0) {
+          await tx.inventario_Sucursal.update({
+            where: {
+              sucursal_id_producto_id: {
+                sucursal_id: audit.sucursalId,
+                producto_id: item.productId,
+              }
+            },
+            data: {
+              cantidad: { increment: item.difference }
+            }
+          });
+        }
+      }
+
+      // Marcar como aplicada
+      await tx.dynamicAudit.update({
+        where: { id: auditId },
+        data: { isApplied: true }
+      });
+    });
+
+    revalidatePath(`/dashboard/inventory/audits/${auditId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error applying audit adjustments:", error);
+    return { error: error.message || "Error al aplicar los ajustes." };
+  }
+}

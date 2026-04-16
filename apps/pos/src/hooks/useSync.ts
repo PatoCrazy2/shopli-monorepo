@@ -29,12 +29,12 @@ export function useSync() {
 
       // 2. Si hay usuario autenticado y transacciones pendientes que subir
       if (user?.id && pendingCount > 0) {
-        const result = await pushToCloud(user.id);
+        const result = await pushToCloud();
         
-        if (result.offline) {
+        if (!result.success && result.reason === 'offline') {
           setLastError("Sin conexión con el servidor principal.");
-        } else if (result.failed > 0) {
-          setLastError(`${result.failed} operacion(es) no pudieron enviarse a la nube.`);
+        } else if (!result.success) {
+          setLastError(`Error de sincronización: ${result.reason || "Desconocido"}.`);
         }
       }
 
