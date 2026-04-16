@@ -133,6 +133,20 @@ shopli/
 8. Inventory deducted at branch level (Inventario_Sucursal)
 ```
 
+### Cashier — Sequential Blind Audit
+
+```
+1. Start Dynamic Audit  →  2. Sequential product display
+        ↓
+3. "Blind" counting (no expected stock shown)
+        ↓
+4. Finalize local count  →  5. Sync to server
+        ↓
+6. Server reconciles counts vs. local sales during audit period
+        ↓
+7. Owner reviews discrepancies & applies stock adjustments
+```
+
 ### Owner — Real-Time Business Intelligence
 
 ```
@@ -170,6 +184,7 @@ Admin Dashboard  →  Financial Reports & Balance (all branches)
 - **Barcode / internal code search** — fast product lookup
 - **Shift management** — open/close cash register with initial float
 - **Multi-cashier on single device** — PIN-based quick session switching
+- **Sequential Dynamic Audit** — blind counting flow for forced accuracy
 - **Subtle connectivity indicator** — traffic-light dot (🟢 / 🟡 / 🔴)
 - **Blocking success modal** — cashier must confirm each completed sale
 
@@ -178,6 +193,7 @@ Admin Dashboard  →  Financial Reports & Balance (all branches)
 - **Operational expense registry** — log rent, payroll, and fixed costs
 - **Real profit tracking** — `price - cost - expenses` margin calc
 - **Inventory management** — per-branch stock levels via `Inventario_Sucursal`
+- **Dynamic Audit Reporting** — KPI tracking (Product precision, financial impact)
 - **Inventory audit log** — discrepancy tracking with reason codes
 - **User management** — create cashiers, managers; assign PINs
 - **Supplier directory** — contact info linked to products
@@ -208,7 +224,9 @@ Turno          → Cashier shift (ABIERTO | CERRADO)
 Venta          → Sale (sync_status: PENDING | SYNCED)
 Detalle_Venta  → Line items with historical unit price
 Gasto          → Operational expenses (fixed or variable)
-InventoryAudit → Audit session per shift
+DynamicAudit   → Offline-initiated inventory reconciliation
+DynamicAuditItem → Counted vs Expected vs Differences
+InventoryAudit → Static audit session per shift
 AuditItem      → Discrepancy record per product
 Proveedor      → Supplier contact linked to products
 ```
