@@ -13,6 +13,7 @@ export type PushSyncResponse = {
     ventas: string[];
     auditorias: string[];
     gastos: string[];
+    auditoriasDinamicas: string[];
   };
 };
 
@@ -83,6 +84,20 @@ const pushSyncSchema = z.object({
       fecha: z.string().datetime(),
       proveedor_id: z.string().uuid().optional().nullable(),
     })
+  ).default([]),
+  auditoriasDinamicas: z.array(
+    z.object({
+      id: z.string().uuid(),
+      sucursal_id: z.string().uuid(),
+      startedAt: z.string().datetime(),
+      items: z.array(
+        z.object({
+          productId: z.string().uuid(),
+          countedQuantity: z.number().int().nullable(),
+          countedAt: z.string().datetime().nullable()
+        })
+      )
+    })
   ).default([])
 });
 
@@ -127,13 +142,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const { turnos, ventas, auditorias, gastos } = parseResult.data;
+    const { turnos, ventas, auditorias, gastos, auditoriasDinamicas } = parseResult.data;
 
     const procesados = {
       turnos: [] as string[],
       ventas: [] as string[],
       auditorias: [] as string[],
-      gastos: [] as string[]
+      gastos: [] as string[],
+      auditoriasDinamicas: [] as string[]
     };
 
     // 2. Transaccionalidad: Implementa un db.$transaction de Prisma. Todo el lote debe procesarse de forma atómica.
@@ -283,6 +299,123 @@ export async function POST(req: Request) {
           }
         });
         procesados.gastos.push(gasto.id);
+      }
+
+            // 2.5 Para auditorías dinámicas: Reconciliación
+      for (const da of auditoriasDinamicas) {
+        // En este flujo offline-first directo, el POS es quien inicializa la auditoría
+        // Revisamos si la auditoría enviada por el POS ya existe en la DB central
+        let dbAudit = await tx.dynamicAudit.findUnique({
+          where: { id: da.id },
+          include: { items: true }
+        });
+
+        // Si la auditoria no existe, la creamos
+        if (!dbAudit) {
+          dbAudit = await tx.dynamicAudit.create({
+            data: {
+              id: da.id, // Forzamos el uso del UUID que genero el POS para mantener sincronia
+              sucursalId: da.sucursal_id,
+              status: 'OPEN',
+              startedAt: new Date(da.startedAt), // Usamos el tiempo exacto en que POS la inicio
+            },
+            include: { items: true }
+          });
+        }
+
+        // Si la auditoria no tiene items (es nueva o se quedó a medias en un sync anterior), hacemos el Snapshot
+        if (dbAudit && dbAudit.items.length === 0) {
+          // Snapshot del inventario actual en el servidor al momento de recibir la primera sync
+          const branchInventory = await tx.inventario_Sucursal.findMany({
+            where: { sucursal_id: dbAudit.sucursalId },
+            select: { producto_id: true, cantidad: true }
+          });
+
+          if (branchInventory.length > 0) {
+            await tx.dynamicAuditItem.createMany({
+              data: branchInventory.map(item => ({
+                id: crypto.randomUUID(), // id para prisma
+                auditId: dbAudit!.id,
+                productId: item.producto_id,
+                initialStock: item.cantidad // Lo que la base de datos cree que hay
+              }))
+            });
+            
+            // Recargar con los items recien creados para que el procesamiento de conteos funcione
+            dbAudit = await tx.dynamicAudit.findUnique({
+              where: { id: da.id },
+              include: { items: true }
+            }) || dbAudit;
+          }
+        }
+
+        if (dbAudit && dbAudit.items.length > 0) {
+          for (const item of da.items) {
+            // Solo procesamos si el POS mandó un conteo real (no nulo)
+            if (item.countedQuantity === null || !item.countedAt) continue;
+
+            const dbItem = dbAudit.items.find(i => i.productId === item.productId);
+            // Si el POS manda un item que ni existia en el snapshot
+            if (!dbItem) continue; 
+
+            const newCountedAt = new Date(item.countedAt);
+            
+            // Idempotencia: Solo actualizamos si es un conteo más reciente o si no había sido procesado
+            if (!dbItem.countedAt || newCountedAt.getTime() > dbItem.countedAt.getTime()) {
+              
+              // Paso A: Sumar ventas desde que inició la auditoría (startedAt) hasta que se contó el producto
+              const sales = await tx.detalle_Venta.aggregate({
+                _sum: { cantidad: true },
+                where: {
+                  producto_id: item.productId,
+                  venta: {
+                    sucursal_id: dbAudit.sucursalId,
+                    fecha: {
+                      gte: dbAudit.startedAt,
+                      lte: newCountedAt
+                    },
+                    estado: 'COMPLETADA'
+                  }
+                }
+              });
+
+              const soldQty = sales._sum.cantidad || 0;
+              
+              // Paso B: expected = initialStock - sum(ventas_encontradas)
+              const expected = dbItem.initialStock - soldQty;
+              
+              // Paso C: difference = countedQuantity - expected
+              const difference = item.countedQuantity - expected;
+
+              // Actualizar el Item de Auditoría
+              await tx.dynamicAuditItem.update({
+                where: { id: dbItem.id },
+                data: {
+                  countedQuantity: item.countedQuantity,
+                  countedAt: newCountedAt,
+                  expectedAtCount: expected,
+                  difference: difference
+                }
+              });
+            }
+          }
+
+          // Validamos nuevamente consultando la DB para checar el progreso (si todos los items del snapshot ya tienen contado)
+          if (dbAudit.status !== 'CLOSED') {
+             const currentAuditItems = await tx.dynamicAuditItem.findMany({ where: { auditId: dbAudit.id } });
+             if (currentAuditItems.length > 0 && currentAuditItems.every(i => i.countedQuantity !== null)) {
+               await tx.dynamicAudit.update({
+                 where: { id: dbAudit.id },
+                 data: { status: 'CLOSED' }
+               });
+             }
+          }
+        }
+
+        
+        // Marcamos la auditoria local del POS como procesada independiente de si existía en backend.
+        // Eso permite liberar la cola offline.
+        procesados.auditoriasDinamicas.push(da.id);
       }
 
     });

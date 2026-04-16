@@ -123,13 +123,11 @@ describe('pushToCloud integration', () => {
     expect(initialSalesCount).toBe(1);
 
     // 2. Ejecutar la función pushToCloud()
-    const result = await pushToCloud(cashierId);
+    const result = await pushToCloud();
 
-    // 3. Aserción de la respuesta (PushSyncResponse)
-    expect(result.pushed).toBe(1);
-    expect(result.failed).toBe(0);
-    // El proxy responde los sub-resultados
-    // No retorna el payload entero sino { pushed, failed, errors } segun nuestro sync.ts
+    // 3. Aserción de la respuesta (PushResult)
+    expect(result.success).toBe(true);
+    expect(result.pushed?.ventas).toBe(1);
 
     // 4. Aserción en Prisma (PostgreSQL) verificando que existe
     const serverSale = await prisma.venta.findUnique({
@@ -144,9 +142,10 @@ describe('pushToCloud integration', () => {
     expect(serverSale?.detalles[0].producto_id).toBe(productId);
     expect(serverSale?.detalles[0].cantidad).toBe(2);
 
-    // 5. Aserción final en Dexie verificando que fue eliminada localmente
-    const finalSalesCount = await db.sales.count();
-    expect(finalSalesCount).toBe(0);
+    // 5. Aserción final en Dexie verificando que fue actualizado a SYNCED
+    const finalSale = await db.sales.get(localSaleId);
+    expect(finalSale).not.toBeUndefined();
+    expect(finalSale?.sync_status).toBe('SYNCED');
     const finalDetailsCount = await db.sale_details.count();
     expect(finalDetailsCount).toBe(0);
   });

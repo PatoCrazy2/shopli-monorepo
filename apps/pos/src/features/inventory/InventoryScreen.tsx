@@ -1,11 +1,21 @@
 import { useState } from "react";
-import { Search, AlertTriangle, PackageSearch } from "lucide-react";
+import { Search, AlertTriangle, PackageSearch, Lock } from "lucide-react";
 import { useInventory } from "./hooks/useInventory";
-
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../lib/db";
+import { Link } from "react-router-dom";
 export default function InventoryScreen() {
-    const { products } = useInventory();
     const [searchTerm, setSearchTerm] = useState("");
+    const { products } = useInventory();
     const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+
+    const isAuditActive = useLiveQuery(
+        async () => {
+            const activeAudit = await db.meta.get('active_audit_id');
+            return !!activeAudit;
+        },
+        []
+    );
 
     // Filtrado
     const filteredProducts = products.filter(p => {
@@ -13,6 +23,29 @@ export default function InventoryScreen() {
         const matchesLowStock = showLowStockOnly ? p.stock <= 5 : true;
         return matchesName && matchesLowStock;
     });
+
+    if (isAuditActive) {
+        return (
+            <div className="flex flex-col w-full h-full bg-gray-50 items-center justify-center p-6 text-center">
+                <div className="max-w-md bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Lock className="w-10 h-10 text-red-600" />
+                    </div>
+                    <h1 className="text-3xl font-black text-gray-900 mb-4">Acceso Restringido</h1>
+                    <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+                        No puedes consultar el inventario mientras hay una **Auditoría Dinámica** en curso.
+                        Esto garantiza la integridad del conteo ciego.
+                    </p>
+                    <Link
+                        to="/auditoria-dinamica"
+                        className="inline-flex items-center justify-center w-full h-14 bg-black text-white rounded-lg font-bold text-lg hover:bg-zinc-800 transition-colors"
+                    >
+                        Volver a la Auditoría
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-50 p-6 overflow-hidden">

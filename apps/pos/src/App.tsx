@@ -8,6 +8,7 @@ import CloseRegisterScreen from './features/sales/CloseRegisterScreen';
 import SalesHistoryScreen from './features/sales/SalesHistoryScreen';
 import InventoryScreen from './features/inventory/InventoryScreen';
 import InventoryAuditWizard from './features/inventory/InventoryAuditWizard';
+import DynamicAuditPage from './features/inventory/DynamicAuditPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -76,6 +77,7 @@ function AppRoutes() {
         <Route path="historial-ventas" element={<SalesHistoryScreen />} />
         <Route path="inventario" element={<InventoryScreen />} />
         <Route path="auditoria-cierre" element={<InventoryAuditWizard />} />
+        <Route path="auditoria-dinamica" element={<DynamicAuditPage />} />
       </Route>
     </Routes>
   );

@@ -40,6 +40,7 @@ model Sucursal {
   turnos     Turno[]
   ventas     Venta[]
   gastos     Gasto[]
+  dynamicAudits DynamicAudit[]
 }
 
 model Proveedor {
@@ -71,6 +72,7 @@ model Producto {
   inventario     Inventario_Sucursal[]
   detalle_ventas Detalle_Venta[]
   auditorias     AuditItem[]
+  dynamicAudits  DynamicAuditItem[]
 }
 
 model Inventario_Sucursal {
@@ -200,4 +202,34 @@ model Gasto {
   sucursal  Sucursal   @relation(fields: [sucursal_id], references: [id])
   turno     Turno      @relation(fields: [turno_id], references: [id])
   proveedor Proveedor? @relation(fields: [proveedor_id], references: [id])
+}
+
+model DynamicAudit {
+  id         String      @id @default(uuid())
+  sucursalId String
+  status     AuditStatus @default(OPEN)
+  startedAt  DateTime    @default(now())
+  isApplied  Boolean     @default(false)
+  
+  sucursal   Sucursal    @relation(fields: [sucursalId], references: [id])
+  items      DynamicAuditItem[]
+}
+
+model DynamicAuditItem {
+  id              String   @id @default(uuid())
+  auditId         String
+  productId       String
+  initialStock    Int      // stock en el momento de iniciar
+  countedQuantity Int?     // Opcional hasta que se sincronice el conteo
+  countedAt       DateTime? // ISOString del POS (opcional hasta reporte)
+  expectedAtCount Int?     // Calculado al momento del reporte (opcional hasta reporte)
+  difference      Int?     // Calculado al momento del reporte (opcional hasta reporte)
+
+  audit           DynamicAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  producto        Producto     @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+enum AuditStatus {
+  OPEN
+  CLOSED
 }

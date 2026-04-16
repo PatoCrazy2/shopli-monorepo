@@ -7,7 +7,9 @@ async function main() {
   console.log("Seed: Iniciando limpieza y siembra...");
 
   // Limpiar tablas (en orden inverso de relaciones)
-  await prisma.detalle_Venta.deleteMany();
+  // Las tablas se eliminarán al borrar la base de datos completa.  
+  // Limpiar tablas (en orden inverso de relaciones)
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE "Detalle_Venta" CASCADE;`);
   await prisma.venta.deleteMany();
   await prisma.auditItem.deleteMany();
   await prisma.inventoryAudit.deleteMany();

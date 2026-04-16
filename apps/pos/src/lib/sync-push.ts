@@ -18,6 +18,7 @@ export async function buildPushPayload() {
   const pendingSales = await db.sales.where('sync_status').equals('PENDING').toArray();
   const pendingAudits = await db.audits.where('sync_status').equals('PENDING').toArray();
   const pendingGastos = await db.gastos.where('sync_status').equals('PENDING').toArray();
+  const pendingDynamicAudits = await db.dynamicAudits.where('sync_status').equals('PENDING').toArray();
 
   // Enriquecemos cada venta con sus detalles asociados mediante una consulta adicional a sale_details
   const ventas = await Promise.all(
@@ -71,7 +72,26 @@ export async function buildPushPayload() {
       proveedor_id: g.proveedor_id
   }));
 
-  return { turnos, ventas, auditorias, gastos };
+  const branchInfo = await db.branches.limit(1).first();
+  const branchId = branchInfo ? branchInfo.id : '';
+
+  const auditoriasDinamicas = await Promise.all(
+    pendingDynamicAudits.map(async (da) => {
+      const items = await db.dynamicAuditItems.where('auditId').equals(da.id).toArray();
+      return {
+        id: da.id,
+        sucursal_id: da.branchId,
+        startedAt: da.startedAt,
+        items: items.map(item => ({
+          productId: item.productId,
+          countedQuantity: item.countedQuantity,
+          countedAt: item.countedAt,
+        }))
+      };
+    })
+  );
+
+  return { turnos, ventas, auditorias, gastos, auditoriasDinamicas };
 }
 
 export async function pushToCloud(): Promise<PushResult> {
@@ -84,8 +104,8 @@ export async function pushToCloud(): Promise<PushResult> {
     const payload = await buildPushPayload();
     
     // Optimizamos cortando la sincronización si no hay nada pendiente
-    if (payload.turnos.length === 0 && payload.ventas.length === 0 && payload.auditorias.length === 0 && payload.gastos.length === 0) {
-       return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0 } };
+    if (payload.turnos.length === 0 && payload.ventas.length === 0 && payload.auditorias.length === 0 && payload.gastos.length === 0 && payload.auditoriasDinamicas.length === 0) {
+       return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0 } }; // Also we can add auditoriasDinamicas here if needed
     }
 
     const secret = import.meta.env.VITE_POS_SYNC_SECRET || '';
@@ -101,9 +121,9 @@ export async function pushToCloud(): Promise<PushResult> {
 
     // Reconciliación Local (ACK). Si es 200 OK, procedemos a marcar como 'SYNCED'
     if (data.success && data.procesados) {
-       const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [], gastos: procGastos = [] } = data.procesados;
+       const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [], gastos: procGastos = [], auditoriasDinamicas: procAuditoriasDinamicas = [] } = data.procesados;
        
-       await db.transaction('rw', db.turnos, db.sales, db.audits, db.gastos, async () => {
+       await db.transaction('rw', [db.turnos, db.sales, db.audits, db.gastos, db.dynamicAudits, db.dynamicAuditItems], async () => {
           // Operaciones masivas usando Dexie modify() lo cual es muy performance friendly.
           if (procTurnos.length > 0) {
              await db.turnos.where('id').anyOf(procTurnos).modify({ sync_status: 'SYNCED' });
@@ -116,6 +136,15 @@ export async function pushToCloud(): Promise<PushResult> {
           }
           if (procGastos.length > 0) {
              await db.gastos.where('id').anyOf(procGastos).modify({ sync_status: 'SYNCED' });
+          }
+          if (procAuditoriasDinamicas.length > 0) {
+             // Marca las cabeceras como SYNCED
+             await db.dynamicAudits.where('id').anyOf(procAuditoriasDinamicas).modify({ sync_status: 'SYNCED' });
+             // Marca todos los items de esas auditorias como SYNCED
+             const itemsPorActualizar = await db.dynamicAuditItems.where('auditId').anyOf(procAuditoriasDinamicas).primaryKeys();
+             if (itemsPorActualizar.length > 0) {
+               await db.dynamicAuditItems.where('id').anyOf(itemsPorActualizar).modify({ sync_status: 'SYNCED' });
+             }
           }
        });
 
