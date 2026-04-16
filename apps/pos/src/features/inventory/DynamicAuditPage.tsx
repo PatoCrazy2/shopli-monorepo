@@ -36,7 +36,14 @@ export default function DynamicAuditPage() {
         setAuditId(newAuditId);
         setIsStarted(true);
         
-        await db.meta.put({ key: 'active_audit_id', value: newAuditId });
+        await db.transaction('rw', db.meta, db.dynamicAudits, async () => {
+            await db.dynamicAudits.add({
+                id: newAuditId,
+                startedAt: new Date().toISOString(),
+                sync_status: 'PENDING'
+            });
+            await db.meta.put({ key: 'active_audit_id', value: newAuditId });
+        });
     };
 
     // Fetch existing count if we navigate back

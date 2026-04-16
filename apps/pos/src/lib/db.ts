@@ -113,6 +113,12 @@ export interface LocalDynamicAuditItem {
   sync_status: 'PENDING' | 'SYNCED';
 }
 
+export interface LocalDynamicAudit {
+  id: string; // UUID
+  startedAt: string; // ISOString
+  sync_status: 'PENDING' | 'SYNCED';
+}
+
 export class ShopLIPOSDatabase extends Dexie {
   users!: EntityTable<LocalUser, 'id'>;
   branches!: EntityTable<LocalBranch, 'id'>;
@@ -125,11 +131,12 @@ export class ShopLIPOSDatabase extends Dexie {
   audits!: EntityTable<LocalAudit, 'id'>;
   gastos!: EntityTable<LocalGasto, 'id'>;
   dynamicAuditItems!: EntityTable<LocalDynamicAuditItem, 'id'>;
+  dynamicAudits!: EntityTable<LocalDynamicAudit, 'id'>;
   meta!: EntityTable<LocalMeta, 'key'>;
 
   constructor() {
     super('ShopLIPOS');
-    this.version(11).stores({
+    this.version(12).stores({
       users: 'id, role, pin',
       branches: 'id',
       products: 'id, codigo_interno, categoria',
@@ -140,7 +147,8 @@ export class ShopLIPOSDatabase extends Dexie {
       inventory: 'id, sucursal_id, producto_id, [sucursal_id+producto_id]',
       audits: 'id, shiftId, sync_status',
       gastos: 'id, turno_id, sucursal_id, sync_status',
-      dynamicAuditItems: 'id, auditId, productId, sync_status',
+      dynamicAuditItems: 'id, auditId, productId, [auditId+productId], sync_status',
+      dynamicAudits: 'id, sync_status',
       meta: 'key',
     });
   }
