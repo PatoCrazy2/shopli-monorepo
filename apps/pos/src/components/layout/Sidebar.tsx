@@ -1,5 +1,7 @@
 import { NavLink } from "react-router-dom";
-import { ShoppingCart, Package, Wallet, History, X } from "lucide-react";
+import { ShoppingCart, Package, Wallet, History, X, Lock } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../lib/db";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -7,12 +9,25 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+    const isAuditActive = useLiveQuery(
+        async () => {
+            const activeAudit = await db.meta.get('active_audit_id');
+            return !!activeAudit;
+        },
+        []
+    );
+
     if (!isOpen) return null;
 
     const navItems = [
         { path: "/", label: "Ventas", icon: ShoppingCart },
         { path: "/historial-ventas", label: "Historial de Ventas", icon: History },
-        { path: "/inventario", label: "Inventario", icon: Package },
+        { 
+            path: "/inventario", 
+            label: "Inventario", 
+            icon: Package,
+            disabled: isAuditActive 
+        },
         { path: "/auditoria-dinamica", label: "Auditoría Dinámica", icon: Package },
         { path: "/corte-caja", label: "Corte de Caja", icon: Wallet },
     ];
@@ -40,16 +55,30 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
-                            to={item.path}
-                            onClick={onClose}
+                            to={item.disabled ? "#" : item.path}
+                            onClick={(e) => {
+                                if (item.disabled) {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                onClose();
+                            }}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-4 rounded-md text-base font-medium min-h-[3rem] transition-none ${isActive
-                                    ? "bg-black text-white"
-                                    : "text-gray-700 hover:bg-gray-100"
+                                `flex items-center gap-3 px-3 py-4 rounded-md text-base font-medium min-h-[3rem] transition-none 
+                                ${item.disabled 
+                                    ? "opacity-50 cursor-not-allowed bg-gray-50 text-gray-400" 
+                                    : isActive
+                                        ? "bg-black text-white"
+                                        : "text-gray-700 hover:bg-gray-100"
                                 }`
                             }
                         >
-                            <item.icon className="w-5 h-5" />
+                            <div className="relative">
+                                <item.icon className="w-5 h-5" />
+                                {item.disabled && (
+                                    <Lock className="w-3 h-3 absolute -top-1 -right-1 text-red-500" />
+                                )}
+                            </div>
                             {item.label}
                         </NavLink>
                     ))}

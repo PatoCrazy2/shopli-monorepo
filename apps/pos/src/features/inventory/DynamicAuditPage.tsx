@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Package } from "lucide-react";
 import { db } from "../../lib/db";
 import type { LocalProduct, LocalDynamicAuditItem } from "../../lib/db";
 
@@ -9,20 +10,34 @@ export default function DynamicAuditPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [countedAmount, setCountedAmount] = useState<string>("");
     const [auditId, setAuditId] = useState<string>("");
+    const [isStarted, setIsStarted] = useState(false);
     
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Initialize Audit
+    // Check if an audit is already in progress when mounting
     useEffect(() => {
-        const initAudit = async () => {
-            const allProducts = await db.products.toArray();
-            setProducts(allProducts);
-            
-            // Assume we create a local UUID for the audit if not passed
-            setAuditId(crypto.randomUUID());
+        const checkExisting = async () => {
+            const activeId = await db.meta.get('active_audit_id');
+            if (activeId) {
+                setAuditId(activeId.value);
+                setIsStarted(true);
+                const allProducts = await db.products.toArray();
+                setProducts(allProducts);
+            }
         };
-        initAudit();
+        checkExisting();
     }, []);
+
+    const handleStartAudit = async () => {
+        const allProducts = await db.products.toArray();
+        setProducts(allProducts);
+
+        const newAuditId = crypto.randomUUID();
+        setAuditId(newAuditId);
+        setIsStarted(true);
+        
+        await db.meta.put({ key: 'active_audit_id', value: newAuditId });
+    };
 
     // Fetch existing count if we navigate back
     useEffect(() => {
@@ -79,7 +94,8 @@ export default function DynamicAuditPage() {
         if (currentIndex < products.length - 1) {
             setCurrentIndex(prev => prev + 1);
         } else {
-            // Completion logic can go here
+            // Finalize: Clear the active audit block
+            await db.meta.delete('active_audit_id');
             navigate("/inventario");
         }
     };
@@ -89,6 +105,31 @@ export default function DynamicAuditPage() {
             setCurrentIndex(prev => prev - 1);
         }
     };
+
+    if (!isStarted) {
+        return (
+            <div className="flex flex-col w-full h-full bg-gray-50 items-center justify-center p-6 text-center">
+                <div className="max-w-md bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
+                    <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Package className="w-10 h-10 text-white" />
+                    </div>
+                    <h1 className="text-3xl font-black text-gray-900 mb-4">Auditoría Dinámica</h1>
+                    <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+                        Estás por iniciar un proceso de **conteo ciego**. Una vez que inicies, el acceso al inventario quedará bloqueado hasta que finalices.
+                    </p>
+                    <button
+                        onClick={handleStartAudit}
+                        className="flex items-center justify-center w-full h-16 bg-black text-white rounded-xl font-bold text-xl hover:bg-zinc-800 transition-all shadow-lg active:scale-95"
+                    >
+                        Iniciar Auditoría
+                    </button>
+                    <p className="mt-4 text-sm text-gray-400 font-medium italic">
+                        * Asegúrate de tener tiempo para completar el conteo.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     if (products.length === 0) {
         return <div className="p-6 text-center text-gray-500">Cargando productos...</div>;
