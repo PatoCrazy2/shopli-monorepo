@@ -329,7 +329,7 @@ export function AnalyticsClient({
                                         <Pie data={data.expensesByCategory} innerRadius={80} outerRadius={100} paddingAngle={4} dataKey="value">
                                             {data.expensesByCategory.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
                                         </Pie>
-                                        <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Total']} />
+                                        <Tooltip formatter={(value: any) => [`$${(value || 0).toLocaleString()}`, 'Total']} />
                                         <Legend verticalAlign="bottom" height={36} iconType="circle" />
                                     </PieChart>
                                 </ResponsiveContainer>

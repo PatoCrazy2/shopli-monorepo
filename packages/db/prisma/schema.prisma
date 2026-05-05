@@ -191,7 +191,7 @@ enum GastoCategoria {
 
 model Gasto {
   id           String         @id @default(uuid())
-  turno_id     String
+  turno_id     String?
   sucursal_id  String
   categoria    GastoCategoria
   monto        Decimal        @db.Decimal(10, 2)
@@ -203,7 +203,7 @@ model Gasto {
   updatedAt    DateTime       @updatedAt
 
   sucursal  Sucursal   @relation(fields: [sucursal_id], references: [id])
-  turno     Turno      @relation(fields: [turno_id], references: [id])
+  turno     Turno?     @relation(fields: [turno_id], references: [id])
   proveedor Proveedor? @relation(fields: [proveedor_id], references: [id])
 }
 

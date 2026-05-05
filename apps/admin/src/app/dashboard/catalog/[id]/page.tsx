@@ -33,7 +33,6 @@ export default async function ProductPage({
             codigo_interno: product.codigo_interno,
             precio_publico: Number(product.precio_publico),
             costo: Number(product.costo),
-            stock: stockTotal,
         };
     }
 
