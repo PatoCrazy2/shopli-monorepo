@@ -1,4 +1,4 @@
-import { ArrowLeft, RefreshCw, Landmark, User, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Landmark, User, Calendar } from 'lucide-react';
 import { useOpenRegister } from './hooks/useOpenRegister';
 
 export default function OpenRegisterScreen() {

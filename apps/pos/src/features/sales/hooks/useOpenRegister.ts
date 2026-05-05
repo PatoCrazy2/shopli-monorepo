@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { db, type LocalBranch } from '../../../lib/db';
@@ -52,7 +52,7 @@ export function useOpenRegister() {
         }
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         setError(null);
 
@@ -77,7 +77,7 @@ export function useOpenRegister() {
         navigate('/', { replace: true });
     };
 
-    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleAmountChange = (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         // Solo permite números y un punto decimal
         if (val === '' || /^\d*\.?\d*$/.test(val)) {
