@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boolean> | void }) {
@@ -18,7 +18,7 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
         setPin((prev) => prev.slice(0, -1));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (pin.length > 0) {
             setIsSyncing(true);

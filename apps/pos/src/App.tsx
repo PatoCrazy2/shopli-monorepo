@@ -1,4 +1,4 @@
-import React from 'react';
+import { type ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginForm } from './features/auth/LoginForm';
 import MainLayout from './components/layout/MainLayout';
@@ -13,14 +13,14 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
 // Componente para proteger rutas que requieren autenticación PERO no necesariamente turno abierto
-export function RequireAuth({ children }: { children: React.ReactNode }) {
+export function RequireAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 // Componente para proteger la pantalla de ventas: REQUIERE turno abierto
-function RequireOpenShift({ children }: { children: React.ReactNode }) {
+function RequireOpenShift({ children }: { children: ReactNode }) {
   const { isAuthenticated, hasActiveShift } = useAuth();
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -30,7 +30,7 @@ function RequireOpenShift({ children }: { children: React.ReactNode }) {
 }
 
 // Componente para evitar que usuarios con turno abierto entren a "abrir caja"
-function RequireNoOpenShift({ children }: { children: React.ReactNode }) {
+function RequireNoOpenShift({ children }: { children: ReactNode }) {
   const { isAuthenticated, hasActiveShift } = useAuth();
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;

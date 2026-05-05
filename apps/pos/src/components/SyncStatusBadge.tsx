@@ -1,4 +1,3 @@
-import React from 'react';
 import { Cloud, CloudOff, CloudUpload, Loader2 } from 'lucide-react';
 import { useSync } from '../hooks/useSync';
 
