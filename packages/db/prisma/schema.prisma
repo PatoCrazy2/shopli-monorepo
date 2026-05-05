@@ -20,6 +20,7 @@ model User {
   updatedAt  DateTime @updatedAt @default(now())
 
   turnos     Turno[]
+  movimientos MovimientoInventario[]
 }
 
 enum Role {
@@ -41,6 +42,7 @@ model Sucursal {
   ventas     Venta[]
   gastos     Gasto[]
   dynamicAudits DynamicAudit[]
+  movimientos MovimientoInventario[]
 }
 
 model Proveedor {
@@ -73,6 +75,7 @@ model Producto {
   detalle_ventas Detalle_Venta[]
   auditorias     AuditItem[]
   dynamicAudits  DynamicAuditItem[]
+  movimientos    MovimientoInventario[]
 }
 
 model Inventario_Sucursal {
@@ -227,6 +230,30 @@ model DynamicAuditItem {
 
   audit           DynamicAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
   producto        Producto     @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+model MovimientoInventario {
+  id              String         @id @default(uuid())
+  producto_id     String
+  sucursal_id     String
+  cantidad        Int            // Puede ser positivo o negativo
+  tipo            TipoMovimiento
+  motivo          String?
+  usuario_id      String
+  referencia_id   String?        // ID de la sucursal origen/destino en transferencias, o ID de auditoría
+  fecha           DateTime       @default(now())
+  
+  producto        Producto       @relation(fields: [producto_id], references: [id])
+  sucursal        Sucursal       @relation(fields: [sucursal_id], references: [id])
+  usuario         User           @relation(fields: [usuario_id], references: [id])
+}
+
+enum TipoMovimiento {
+  INGRESO
+  EGRESO
+  AJUSTE
+  TRANSFERENCIA_ENTRADA
+  TRANSFERENCIA_SALIDA
 }
 
 enum AuditStatus {

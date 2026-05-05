@@ -85,6 +85,19 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
           resolved: true, // Ya se afectó la base de datos local
         }
       });
+
+      // c) Log en MovimientoInventario (Nuevo Historial Centralizado)
+      await tx.movimientoInventario.create({
+        data: {
+          producto_id: productId,
+          sucursal_id: sucursalId,
+          cantidad: amountToAdd,
+          tipo: amountToAdd > 0 ? "INGRESO" : "EGRESO",
+          motivo: reason,
+          usuario_id: userId,
+          referencia_id: audit.id
+        }
+      });
     });
 
     revalidatePath('/dashboard/inventory');
@@ -130,6 +143,47 @@ export async function transferStock(data: { type: 'TRANSFER' | 'INGRESS', produc
         where: { id: destInv.id },
         data: { cantidad: { increment: data.amount }, updatedAt: new Date() }
       });
+
+      // Log Movements
+      const userId = session.user!.id;
+      if (data.type === 'TRANSFER' && data.fromBranchId) {
+        // Salida de origen
+        await tx.movimientoInventario.create({
+          data: {
+            producto_id: data.productId,
+            sucursal_id: data.fromBranchId,
+            cantidad: -data.amount,
+            tipo: "TRANSFERENCIA_SALIDA",
+            motivo: data.reason,
+            usuario_id: userId,
+            referencia_id: data.toBranchId
+          }
+        });
+        // Entrada a destino
+        await tx.movimientoInventario.create({
+          data: {
+            producto_id: data.productId,
+            sucursal_id: data.toBranchId,
+            cantidad: data.amount,
+            tipo: "TRANSFERENCIA_ENTRADA",
+            motivo: data.reason,
+            usuario_id: userId,
+            referencia_id: data.fromBranchId
+          }
+        });
+      } else {
+        // Ingreso directo (Mercancía/Ajuste)
+        await tx.movimientoInventario.create({
+          data: {
+            producto_id: data.productId,
+            sucursal_id: data.toBranchId,
+            cantidad: data.amount,
+            tipo: "INGRESO",
+            motivo: data.reason,
+            usuario_id: userId
+          }
+        });
+      }
     });
 
     revalidatePath('/dashboard/inventory');

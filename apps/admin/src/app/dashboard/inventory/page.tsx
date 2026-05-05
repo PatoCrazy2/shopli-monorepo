@@ -4,6 +4,8 @@ import { getInventory, getBranches } from "./queries";
 import { QuickAdjustModal } from "./QuickAdjustModal";
 import { BranchFilter } from "./BranchFilter";
 import { TransferModal } from "./TransferModal";
+import Link from "next/link";
+import { History } from "lucide-react";
 
 export const metadata = {
   title: "Inventario Global - ShopLI",
@@ -46,7 +48,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
             Control de existencias, movimientos entre sucursales y ajustes manuales.
           </p>
         </div>
-        
+
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <TransferModal products={products} branches={branches} />
         </div>
@@ -99,8 +101,16 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 shadow-sm mt-8">
+      <div className="flex items-center justify-between gap-4 bg-zinc-50 p-4 rounded-xl border border-zinc-200 shadow-sm mt-8">
         <BranchFilter branches={branches} />
+
+        <Link
+          href="/dashboard/inventory/history"
+          className="inline-flex h-10 items-center justify-center rounded-xl bg-white border border-zinc-200 px-5 text-sm font-bold text-zinc-900 transition-all hover:bg-zinc-100 shadow-sm active:scale-95"
+        >
+          <History className="mr-2 w-4 h-4 text-zinc-500" />
+          Ver Historial
+        </Link>
       </div>
 
       {/* Tabla de Datos */}
