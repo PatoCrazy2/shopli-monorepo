@@ -114,3 +114,112 @@ export async function searchProducts(query: string) {
     return [];
   }
 }
+export async function importCatalogAction(products: any[]) {
+  try {
+    const results = {
+      created: 0,
+      updated: 0,
+      errors: 0,
+    };
+
+    // Usamos una transacción para asegurar integridad, 
+    // pero procesamos uno por uno para manejar errores individuales si es necesario
+    // o simplemente usamos un bucle.
+    for (const item of products) {
+      try {
+        let proveedor_id = null;
+
+        // 1. Manejar Proveedor
+        if (item.proveedor) {
+          const provName = item.proveedor.trim();
+          let prov = await db.proveedor.findUnique({
+            where: { nombre: provName }
+          });
+
+          if (!prov) {
+            prov = await db.proveedor.create({
+              data: { nombre: provName }
+            });
+          }
+          proveedor_id = prov.id;
+        }
+
+        // 2. Preparar datos
+        const productData = {
+          nombre: item.nombre,
+          precio_publico: parseFloat(item.precio_publico) || 0,
+          costo: parseFloat(item.costo) || 0,
+          categoria: item.categoria || null,
+          proveedor_id,
+          isActive: true,
+          updatedAt: new Date(),
+        };
+
+        const initialStock = parseInt(item.stock, 10) || 0;
+
+        // 3. Upsert por codigo_interno
+        if (item.codigo_interno) {
+          const existing = await db.producto.findUnique({
+            where: { codigo_interno: item.codigo_interno }
+          });
+
+          if (existing) {
+            await db.producto.update({
+              where: { id: existing.id },
+              data: productData
+            });
+            results.updated++;
+          } else {
+            const newProduct = await db.producto.create({
+              data: {
+                ...productData,
+                codigo_interno: item.codigo_interno
+              }
+            });
+            
+            // Si hay stock inicial, lo creamos para todas las sucursales (opcional)
+            if (initialStock > 0) {
+              const sucursales = await db.sucursal.findMany({ where: { activo: true } });
+              await db.inventario_Sucursal.createMany({
+                data: sucursales.map(s => ({
+                  sucursal_id: s.id,
+                  producto_id: newProduct.id,
+                  cantidad: initialStock
+                }))
+              });
+            }
+            
+            results.created++;
+          }
+        } else {
+          // Si no hay código interno, creamos uno nuevo siempre
+          const newProduct = await db.producto.create({
+            data: productData
+          });
+
+          if (initialStock > 0) {
+            const sucursales = await db.sucursal.findMany({ where: { activo: true } });
+            await db.inventario_Sucursal.createMany({
+              data: sucursales.map(s => ({
+                sucursal_id: s.id,
+                producto_id: newProduct.id,
+                cantidad: initialStock
+              }))
+            });
+          }
+
+          results.created++;
+        }
+      } catch (e) {
+        console.error("Error importing item:", item, e);
+        results.errors++;
+      }
+    }
+
+    revalidatePath("/dashboard/catalog");
+    return { success: true, results };
+  } catch (error) {
+    console.error("Critical error in importCatalogAction:", error);
+    return { error: "Error crítico durante la importación" };
+  }
+}
