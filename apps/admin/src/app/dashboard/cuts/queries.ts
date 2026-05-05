@@ -1,17 +1,17 @@
 import { db } from "@shopli/db";
 
 export async function getCuts(sucursalId?: string, date?: string) {
-  if (!sucursalId) return [];
+  const where: any = {};
 
-  const where: any = {
-    sucursal_id: sucursalId,
-  };
+  if (sucursalId) {
+    where.sucursal_id = sucursalId;
+  }
 
   if (date) {
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
+    // Para filtrar por el día completo sin problemas de zona horaria,
+    // creamos el rango gte y lte para el string YYYY-MM-DD
+    const startDate = new Date(`${date}T00:00:00`);
+    const endDate = new Date(`${date}T23:59:59`);
 
     where.fecha_apertura = {
       gte: startDate,
@@ -22,6 +22,7 @@ export async function getCuts(sucursalId?: string, date?: string) {
   return await db.turno.findMany({
     where,
     orderBy: { fecha_apertura: "desc" },
+    take: date ? undefined : 20, // Si no hay fecha, traemos los últimos 20
     include: {
       usuario: { select: { name: true } },
       sucursal: { select: { nombre: true } },

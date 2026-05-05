@@ -1,6 +1,7 @@
 import { db } from "@shopli/db";
 import Link from "next/link";
 import { toggleProduct } from "./actions";
+import { ImportCatalogModal } from "./_components/ImportCatalogModal";
 
 // RSC
 export default async function CatalogPage({
@@ -60,25 +61,29 @@ export default async function CatalogPage({
             />
           </form>
 
-          <Link
-            href="/dashboard/catalog/new"
-            className="inline-flex h-11 w-full md:w-auto items-center justify-center rounded-xl bg-black px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="mr-2 h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <ImportCatalogModal />
+            
+            <Link
+              href="/dashboard/catalog/new"
+              className="inline-flex h-11 flex-1 md:flex-initial items-center justify-center rounded-xl bg-black px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
             >
-              <path d="M5 12h14"></path>
-              <path d="M12 5v14"></path>
-            </svg>
-            Nuevo Producto
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="mr-2 h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14"></path>
+              </svg>
+              Nuevo Producto
+            </Link>
+          </div>
         </div>
       </div>
 
