@@ -30,7 +30,10 @@ export function useNetworkSync() {
     
     // Polling contínuo si la app está abierta
     const intervalId = setInterval(() => {
-        if (navigator.onLine) pullFromCloud();
+        if (navigator.onLine) {
+            pullFromCloud();
+            pushToCloud(); // Agregamos push automático cada X minutos
+        }
     }, intervalMs);
 
     // Focus Listener: Gatillo cada vez que minimizan/abren la app o encienden pantalla

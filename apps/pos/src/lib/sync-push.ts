@@ -106,14 +106,12 @@ export async function pushToCloud(): Promise<PushResult> {
        return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0 } }; // Also we can add auditoriasDinamicas here if needed
     }
 
-    const secret = import.meta.env.VITE_POS_SYNC_SECRET || '';
+    const secret = import.meta.env.VITE_SYNC_SECRET || import.meta.env.VITE_POS_SYNC_SECRET || '';
     
-    // Hacemos el fetch POST al BFF con el secret injectado por headers a través del proxy
+    // Hacemos el fetch POST al BFF con el secret injectado por query param (más robusto para CORS)
     const data = await apiClient<any>('pos/sync/push', {
       method: 'POST',
-      headers: {
-        'x-pos-sync-secret': secret
-      },
+      params: { secret },
       body: payload
     });
 
