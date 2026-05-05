@@ -1,3 +1,4 @@
+import { LogOut, RefreshCw } from 'lucide-react';
 import { useOpenRegister } from './hooks/useOpenRegister';
 
 export default function OpenRegisterScreen() {
@@ -12,6 +13,7 @@ export default function OpenRegisterScreen() {
         handleAmountChange,
         handleBlur,
         handleSubmit,
+        logout,
     } = useOpenRegister();
 
     if (!user) return null; // Should be handled by route guard
@@ -27,7 +29,14 @@ export default function OpenRegisterScreen() {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-6">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-                <div className="mb-8 text-center">
+                <div className="mb-8 text-center relative">
+                    <button 
+                        onClick={logout}
+                        className="absolute -top-2 -left-2 p-2 text-gray-400 hover:text-black transition-colors"
+                        title="Cerrar Sesión"
+                    >
+                        <LogOut className="w-6 h-6" />
+                    </button>
                     <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Apertura de Caja</h1>
                     <p className="text-gray-500">Inicia tu turno para comenzar a cobrar.</p>
                 </div>
@@ -110,6 +119,10 @@ export default function OpenRegisterScreen() {
                             Abrir Caja
                         </button>
                     </form>
+                    <div className="pt-4 flex items-center justify-center gap-2 text-xs text-gray-400 font-medium">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Sincronizando catálogo en segundo plano...</span>
+                    </div>
                 </div>
             </div>
         </div>

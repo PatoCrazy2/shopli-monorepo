@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { db, type LocalBranch } from '../../../lib/db';
+import { pullFromCloud } from '../../../lib/sync';
 
 export function useOpenRegister() {
-    const { user, openShift, hasActiveShift } = useAuth();
+    const { user, openShift, hasActiveShift, logout } = useAuth();
     const navigate = useNavigate();
 
     const [initialAmount, setInitialAmount] = useState('');
@@ -43,6 +44,13 @@ export function useOpenRegister() {
 
         fetchBranches();
     }, [hasActiveShift, navigate, user?.branchId]);
+
+    // Pull automático al cargar la pantalla para asegurar catálogo fresco
+    useEffect(() => {
+        if (navigator.onLine) {
+            pullFromCloud();
+        }
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -97,5 +105,6 @@ export function useOpenRegister() {
         handleAmountChange,
         handleBlur,
         handleSubmit,
+        logout,
     };
 }
