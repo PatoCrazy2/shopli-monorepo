@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "prisma generate --schema=../../packages/db/prisma/schema.prisma && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -34,6 +34,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "fake-indexeddb": "^6.2.5",
     "globals": "^16.5.0",
+    "prisma": "^5.22.0",
     "tailwindcss": "^4",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
