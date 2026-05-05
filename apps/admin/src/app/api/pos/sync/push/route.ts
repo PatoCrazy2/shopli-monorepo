@@ -107,7 +107,7 @@ const pushSyncSchema = z.object({
 export async function POST(req: Request) {
   try {
     // Validación de autenticación: acepta secret del POS via header O query param
-    const validPosSecret = process.env.POS_SYNC_SECRET;
+    const validPosSecret = process.env.POS_SYNC_SECRET || process.env.VITE_SYNC_SECRET;
     const posSecretHeader = req.headers.get("x-pos-sync-secret");
     
     // Fallback URL parse explicitly for secret query param if preferred over header

@@ -70,8 +70,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     // Validación de autenticación: acepta secret del POS via header O query param
-    // Los query params no requieren CORS preflight — más compatible con browsers
-    const validPosSecret = process.env.POS_SYNC_SECRET;
+    const validPosSecret = process.env.POS_SYNC_SECRET || process.env.VITE_SYNC_SECRET;
     const posSecretHeader = req.headers.get("x-pos-sync-secret");
     const posSecretQuery = searchParams.get("secret");
     const isPosAuthorized =
