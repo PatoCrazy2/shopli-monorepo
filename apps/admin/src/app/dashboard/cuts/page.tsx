@@ -15,7 +15,7 @@ export default async function CutsPage({
 
   const params = await searchParams;
   const sucursalId = params.sucursal;
-  const date = params.date || new Date().toISOString().split('T')[0];
+  const date = params.date; // Remove default to today
 
   const [turnos, sucursales] = await Promise.all([
     getCuts(sucursalId, date),
@@ -47,11 +47,10 @@ export default async function CutsPage({
             <select
               name="sucursal"
               defaultValue={sucursalId || ""}
-              required
-              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all appearance-none pr-10 relative"
+              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all appearance-none pr-10 relative min-w-[180px]"
               style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
             >
-              <option value="" disabled>Seleccionar sucursal...</option>
+              <option value="">Todas las sucursales</option>
               {sucursales.map(s => (
                 <option key={s.id} value={s.id}>{s.nombre}</option>
               ))}
@@ -63,7 +62,7 @@ export default async function CutsPage({
             <input
               type="date"
               name="date"
-              defaultValue={date}
+              defaultValue={date || ""}
               className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all"
             />
           </div>
@@ -75,7 +74,7 @@ export default async function CutsPage({
             Filtrar
           </button>
 
-          {sucursalId && (
+          {(sucursalId || date) && (
             <Link
               href="/dashboard/cuts"
               className="h-11 mt-auto px-4 flex items-center justify-center bg-zinc-100 text-zinc-600 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all"
@@ -87,24 +86,18 @@ export default async function CutsPage({
       </div>
 
       <div className="flex flex-col gap-6">
-        {!sucursalId ? (
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-24 flex flex-col items-center justify-center text-center shadow-sm">
-            <div className="w-20 h-20 bg-zinc-50 dark:bg-zinc-900 rounded-full flex items-center justify-center mb-6 ring-1 ring-zinc-100 dark:ring-zinc-800 shadow-inner">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" /><path d="M18 12a2 2 0 0 0 0 4h4v-4Z" /></svg>
-            </div>
-            <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Selecciona una sucursal</h2>
-            <p className="text-zinc-500 max-w-xs mt-2 font-medium">
-              Para visualizar los cortes de caja y auditorías, primero debes elegir una sucursal en el panel superior.
-            </p>
-          </div>
-        ) : turnos.length === 0 ? (
+        {turnos.length === 0 ? (
           <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-24 flex flex-col items-center justify-center text-center shadow-sm">
             <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-amber-100 dark:ring-amber-900/30">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
             </div>
-            <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Sin registros para esta fecha</h2>
+            <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
+              {date ? "Sin registros para esta fecha" : "Sin cortes registrados"}
+            </h2>
             <p className="text-zinc-500 max-w-xs mt-2 font-medium">
-              No se encontraron turnos abiertos o cerrados en la sucursal seleccionada para el día indicado.
+              {date 
+                ? "No se encontraron turnos abiertos o cerrados para el día indicado."
+                : "Aún no se han generado cortes de caja en el sistema."}
             </p>
           </div>
         ) : (
