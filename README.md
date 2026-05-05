@@ -193,6 +193,8 @@ Admin Dashboard  →  Financial Reports & Balance (all branches)
 - **Operational expense registry** — log rent, payroll, and fixed costs
 - **Real profit tracking** — `price - cost - expenses` margin calc
 - **Inventory management** — per-branch stock levels via `Inventario_Sucursal`
+- **Bulk Catalog Import** — intelligent CSV/Excel parser with auto-header detection and data sanitization
+- **Centralized Stock History** — detailed audit trail of entries, adjustments, and transfers
 - **Dynamic Audit Reporting** — KPI tracking (Product precision, financial impact)
 - **Inventory audit log** — discrepancy tracking with reason codes
 - **User management** — create cashiers, managers; assign PINs
@@ -228,6 +230,7 @@ DynamicAudit   → Offline-initiated inventory reconciliation
 DynamicAuditItem → Counted vs Expected vs Differences
 InventoryAudit → Static audit session per shift
 AuditItem      → Discrepancy record per product
+MovimientoInventario → Centralized log for entry, adjustment, and transfer
 Proveedor      → Supplier contact linked to products
 ```
 
