@@ -72,8 +72,6 @@ export async function buildPushPayload() {
       proveedor_id: g.proveedor_id
   }));
 
-  const branchInfo = await db.branches.limit(1).first();
-  const branchId = branchInfo ? branchInfo.id : '';
 
   const auditoriasDinamicas = await Promise.all(
     pendingDynamicAudits.map(async (da) => {

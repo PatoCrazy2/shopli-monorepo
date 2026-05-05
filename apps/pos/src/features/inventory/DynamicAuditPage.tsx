@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package } from "lucide-react";
 import { db } from "../../lib/db";
 import { useAuth } from "../../contexts/AuthContext";
-import type { LocalProduct, LocalDynamicAuditItem } from "../../lib/db";
+import type { LocalProduct } from "../../lib/db";
 
 export default function DynamicAuditPage() {
     const navigate = useNavigate();
