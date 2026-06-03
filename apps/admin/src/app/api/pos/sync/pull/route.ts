@@ -134,7 +134,10 @@ export async function GET(req: NextRequest) {
         }
       }),
       db.sucursal.findMany({
-        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
+        where: {
+          activo: true,
+          ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {})
+        },
       }),
       db.gasto.findMany({
         where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},

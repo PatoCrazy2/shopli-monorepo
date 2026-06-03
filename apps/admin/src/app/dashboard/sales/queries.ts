@@ -39,6 +39,7 @@ export async function getSales(filters: { sucursalId?: string; dateStr?: string 
 
 export async function getSucursales() {
   return await db.sucursal.findMany({
+    where: { activo: true },
     select: { id: true, nombre: true },
   });
 }
