@@ -238,17 +238,22 @@ export async function POST(req: Request) {
           // Solución Delta (Inventario): decrementa stock central sin sobrescribir con cálculos locales
           if (venta.estado === 'COMPLETADA') {
             for (const detalle of venta.detalles) {
-               await tx.inventario_Sucursal.update({
+               await tx.inventario_Sucursal.upsert({
                  where: {
                    sucursal_id_producto_id: {
                      sucursal_id: venta.sucursal_id,
                      producto_id: detalle.producto_id
                    }
                  },
-                 data: {
+                 update: {
                    cantidad: {
                      decrement: detalle.cantidad
                    }
+                 },
+                 create: {
+                   sucursal_id: venta.sucursal_id,
+                   producto_id: detalle.producto_id,
+                   cantidad: -detalle.cantidad
                  }
                });
             }
