@@ -26,6 +26,8 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
         trySync();
     }, []);
 
+    const [searchQuery, setSearchQuery] = useState("");
+
     const products = useLiveQuery(async () => {
         if (!user) return [];
         const allProducts = await db.products.toArray();
@@ -37,19 +39,29 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
         });
     }, [user]) ?? [];
 
+    const filteredProducts = products.filter(p => {
+        const query = searchQuery.toLowerCase().trim();
+        if (!query) return true;
+        const nameMatches = p.nombre.toLowerCase().includes(query);
+        const codeMatches = p.codigo_interno ? p.codigo_interno.toLowerCase().includes(query) : false;
+        return nameMatches || codeMatches;
+    });
+
     return (
         <>
             <div className="mb-4 sm:mb-6 shrink-0 flex gap-2">
                 <input
                     type="text"
-                    placeholder="Buscar producto..."
+                    placeholder="Buscar producto por nombre o código..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1 h-12 sm:h-14 px-3 sm:px-4 text-base sm:text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400 bg-white"
                     autoFocus
                 />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-24">
-                {products.length === 0 && (
+                {filteredProducts.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center p-12 text-gray-500">
                         {isSyncing ? (
                             <>
@@ -58,14 +70,14 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
                             </>
                         ) : (
                             <>
-                                <p>No hay productos en el catálogo local.</p>
-                                <p className="text-sm mt-1 text-gray-400">Verifica tu conexión al servidor y vuelve a intentarlo.</p>
+                                <p>No se encontraron productos.</p>
+                                <p className="text-sm mt-1 text-gray-400">Intenta buscar con otros términos.</p>
                             </>
                         )}
                     </div>
                 )}
                 
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                     <button
                         key={product.id}
                         onClick={() => onAddToCart(product.id)}
