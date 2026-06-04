@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import { db } from '../lib/db';
 import bcrypt from 'bcryptjs';
-import { pullFromCloud } from '../lib/sync';
+import { pullFromCloud, pushToCloud } from '../lib/sync';
 
 
 export interface User {
@@ -138,6 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         setActiveShift(newShift);
         localStorage.setItem('pos_shift', JSON.stringify(newShift));
+
+        if (navigator.onLine) {
+            pushToCloud().catch(err => console.error("Error pushing shift open immediately:", err));
+        }
     };
 
     const closeShift = async (physicalAmount: number) => {
@@ -159,6 +163,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setActiveShift(null);
         localStorage.removeItem('pos_shift');
         console.log('Shift closed. Physical amount recorded:', physicalAmount, closedShift);
+
+        if (navigator.onLine) {
+            pushToCloud().catch(err => console.error("Error pushing shift close immediately:", err));
+        }
     };
 
     return (

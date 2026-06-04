@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, type LocalSale, type LocalSaleDetail, type LocalCartItem } from "../../../lib/db";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNetworkSync } from "../../../hooks/useNetworkSync";
+import { pushToCloud } from "../../../lib/sync";
 // Imports eliminados
 
 export function useSalesHistory() {
@@ -74,6 +75,10 @@ export function useSalesHistory() {
 
             // Registrar el intento de Background Sync de inmediato si estamos en entorno productivo/PWA
             await registerBackgroundSync();
+
+            if (navigator.onLine) {
+                pushToCloud().catch(err => console.error("Error pushing sale immediately:", err));
+            }
 
             return newSale;
         } catch (error) {

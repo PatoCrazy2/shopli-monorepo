@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../../lib/db';
 import { useAuth } from '../../../contexts/AuthContext';
+import { pushToCloud } from '../../../lib/sync';
 
 export function useExpenses() {
     const { activeShift, user } = useAuth();
@@ -31,6 +32,10 @@ export function useExpenses() {
             proveedor_id: null,
             sync_status: 'PENDING'
         });
+
+        if (navigator.onLine) {
+            pushToCloud().catch(err => console.error("Error pushing expense immediately:", err));
+        }
 
         return id;
     };
