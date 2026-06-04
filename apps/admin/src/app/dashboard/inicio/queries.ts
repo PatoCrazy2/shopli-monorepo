@@ -1,10 +1,11 @@
 import { db } from "@shopli/db";
 
-// Limites de fecha del día actual
 function getTodayBounds() {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const cdmxDateStr = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Mexico_City",
+  }); // Retorna YYYY-MM-DD en la zona horaria de CDMX
+  const start = new Date(`${cdmxDateStr}T00:00:00.000-06:00`);
+  const end = new Date(`${cdmxDateStr}T23:59:59.999-06:00`);
   return { start, end };
 }
 
@@ -57,9 +58,11 @@ export async function getDashboardData() {
   });
 
   // 4. Ventas agrupadas de los últimos 7 días
-  const sevenDaysAgo = new Date();
+  const todayCdmxStr = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/Mexico_City",
+  });
+  const sevenDaysAgo = new Date(`${todayCdmxStr}T00:00:00.000-06:00`);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
 
   const ventas7DiasQuery = await db.venta.findMany({
     where: {
@@ -76,15 +79,15 @@ export async function getDashboardData() {
 
   const chartDataMap = new Map<string, number>();
   for(let i=6; i>=0; i--) {
-     const d = new Date();
+     const d = new Date(`${todayCdmxStr}T12:00:00.000-06:00`);
      d.setDate(d.getDate() - i);
      // format: vie 19
-     const label = d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
+     const label = d.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", timeZone: "America/Mexico_City" });
      chartDataMap.set(label, 0);
   }
 
   ventas7DiasQuery.forEach(v => {
-     const label = v.fecha.toLocaleDateString("es-MX", { weekday: "short", day: "numeric" });
+     const label = v.fecha.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", timeZone: "America/Mexico_City" });
      if (chartDataMap.has(label)) {
         chartDataMap.set(label, chartDataMap.get(label)! + Number(v.total));
      }
