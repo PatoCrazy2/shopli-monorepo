@@ -22,9 +22,6 @@ export default function OpenRegisterScreen() {
     const dateFormatter = new Intl.DateTimeFormat('es-MX', {
         year: 'numeric', month: 'long', day: 'numeric',
     });
-    const timeFormatter = new Intl.DateTimeFormat('es-MX', {
-        hour: '2-digit', minute: '2-digit'
-    });
 
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans text-black">
