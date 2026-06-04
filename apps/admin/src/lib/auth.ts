@@ -5,7 +5,7 @@ import { db, Role } from "@shopli/db";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db as any),
   session: { strategy: "jwt" },
   providers: [
     CredentialsProvider({

@@ -4,6 +4,7 @@ import { getCuts } from "./queries";
 import { resolveAuditItem } from "./actions";
 import { getSucursales } from "../branches/queries";
 import Link from "next/link";
+import CutsAutoRefresh from "./CutsAutoRefresh";
 
 export default async function CutsPage({
   searchParams,
@@ -32,6 +33,7 @@ export default async function CutsPage({
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20">
+      <CutsAutoRefresh />
       {/* Header & Filters */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="space-y-1">
