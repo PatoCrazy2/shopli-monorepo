@@ -11,14 +11,28 @@ export default async function AuditsListPage({
   searchParams: Promise<{ sucursalId?: string }> 
 }) {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user?.empresa_id) redirect("/login");
+  const empresaId = session.user.empresa_id;
 
   const resolvedSearchParams = await searchParams;
   const sucursalId = resolvedSearchParams.sucursalId;
 
+  // Si envían un sucursalId específico, verificar pertenencia
+  if (sucursalId) {
+    const sucursalVal = await db.sucursal.findUnique({
+      where: { id: sucursalId },
+      select: { empresa_id: true }
+    });
+    if (!sucursalVal || sucursalVal.empresa_id !== empresaId) {
+      redirect("/dashboard/audits");
+    }
+  }
+
   const [audits, sucursales] = await Promise.all([
     db.dynamicAudit.findMany({
-      where: sucursalId ? { sucursalId } : undefined,
+      where: sucursalId 
+        ? { sucursalId, sucursal: { empresa_id: empresaId } } 
+        : { sucursal: { empresa_id: empresaId } },
       include: {
         sucursal: true,
         _count: {
@@ -30,6 +44,7 @@ export default async function AuditsListPage({
       }
     }),
     db.sucursal.findMany({
+      where: { empresa_id: empresaId, activo: true },
       select: { id: true, nombre: true }
     })
   ]);
