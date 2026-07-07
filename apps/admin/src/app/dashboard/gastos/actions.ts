@@ -13,13 +13,23 @@ export async function createGasto(data: {
   proveedor_id?: string | null;
 }) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user?.empresa_id) return { error: "No autorizado" };
+  const empresaId = session.user.empresa_id;
 
   const role = session.user.role as Role;
 
   // Validación de seguridad por rol
   if (role === Role.CAJERO && data.categoria !== GastoCategoria.CAJA_CHICA) {
     return { error: "Los cajeros solo pueden registrar gastos de Caja Chica" };
+  }
+
+  // Validar pertenencia de la sucursal
+  const sucursal = await db.sucursal.findUnique({
+    where: { id: data.sucursal_id },
+    select: { empresa_id: true }
+  });
+  if (!sucursal || sucursal.empresa_id !== empresaId) {
+    return { error: "No autorizado" };
   }
 
   try {
@@ -52,7 +62,8 @@ export async function updateGasto(id: string, data: {
   proveedor_id?: string | null;
 }) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user?.empresa_id) return { error: "No autorizado" };
+  const empresaId = session.user.empresa_id;
 
   const role = session.user.role as Role;
   
@@ -62,6 +73,26 @@ export async function updateGasto(id: string, data: {
 
   if (data.categoria && data.categoria !== GastoCategoria.CAJA_CHICA && role !== Role.DUENO && role !== Role.ENCARGADO) {
     return { error: "No tiene permisos para asignar esta categoría" };
+  }
+
+  // Validar propiedad del gasto existente
+  const existingGasto = await db.gasto.findUnique({
+    where: { id },
+    include: { sucursal: true }
+  });
+  if (!existingGasto || existingGasto.sucursal.empresa_id !== empresaId) {
+    return { error: "No autorizado" };
+  }
+
+  // Si se cambia de sucursal, validar que la nueva sucursal pertenezca a la empresa
+  if (data.sucursal_id) {
+    const sucursal = await db.sucursal.findUnique({
+      where: { id: data.sucursal_id },
+      select: { empresa_id: true }
+    });
+    if (!sucursal || sucursal.empresa_id !== empresaId) {
+      return { error: "No autorizado" };
+    }
   }
 
   try {
@@ -83,12 +114,22 @@ export async function updateGasto(id: string, data: {
 
 export async function deleteGasto(id: string) {
   const session = await auth();
-  if (!session?.user) return { error: "No autorizado" };
+  if (!session?.user?.empresa_id) return { error: "No autorizado" };
+  const empresaId = session.user.empresa_id;
 
   const role = session.user.role as Role;
 
   if (role !== Role.DUENO && role !== Role.ENCARGADO) {
     return { error: "No tiene permisos para eliminar gastos" };
+  }
+
+  // Validar propiedad del gasto existente
+  const existingGasto = await db.gasto.findUnique({
+    where: { id },
+    include: { sucursal: true }
+  });
+  if (!existingGasto || existingGasto.sucursal.empresa_id !== empresaId) {
+    return { error: "No autorizado" };
   }
 
   try {

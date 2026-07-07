@@ -1,11 +1,29 @@
 import { db } from "@shopli/db";
+import { auth } from "@/lib/auth";
 
 export async function getInventory(sucursalId?: string) {
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  const empresaId = session.user.empresa_id;
+
+  if (sucursalId) {
+    const sucursal = await db.sucursal.findUnique({
+      where: { id: sucursalId },
+      select: { empresa_id: true }
+    });
+    if (!sucursal || sucursal.empresa_id !== empresaId) {
+      throw new Error("No autorizado");
+    }
+  }
+
   const productos = await db.producto.findMany({
-    where: { isActive: true }, // Asumiendo que solo queremos activos
+    where: { 
+      isActive: true,
+      empresa_id: empresaId 
+    },
     include: {
       inventario: {
-        where: sucursalId ? { sucursal_id: sucursalId } : undefined,
+        where: sucursalId ? { sucursal_id: sucursalId } : { sucursal: { empresa_id: empresaId } },
         include: {
           sucursal: { select: { nombre: true, id: true } }
         }
@@ -26,8 +44,14 @@ export async function getInventory(sucursalId?: string) {
 }
 
 export async function getBranches() {
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+
   return await db.sucursal.findMany({
-    where: { activo: true },
+    where: { 
+      activo: true, 
+      empresa_id: session.user.empresa_id 
+    },
     orderBy: { nombre: 'asc'}
   });
 }
