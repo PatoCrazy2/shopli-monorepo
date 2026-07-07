@@ -30,11 +30,22 @@ async function main() {
     },
   });
 
-  // 1. Configuración de Usuario Dueño (Admin Maestro)
-  // Usamos variables de entorno para seguridad en producción
+  // 0. Crear Empresas por defecto
+  const empresaA = await prisma.empresa.create({
+    data: {
+      nombre: "Empresa Coca-Cola",
+    },
+  });
+
+  const empresaB = await prisma.empresa.create({
+    data: {
+      nombre: "Empresa Pepsi",
+    },
+  });
+
+  // 1. Configuración de Usuario Dueño (Admin Maestro) de Empresa A
   const adminEmail = process.env.ADMIN_EMAIL || "admin@shopli.com";
   const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-  
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
   const dueno = await prisma.user.create({
@@ -42,33 +53,109 @@ async function main() {
       email: adminEmail,
       name: "Administrador Maestro",
       role: Role.DUENO,
-      pin_hash: passwordHash, // Auth.js usará este campo para la contraseña
-      empresa_id: empresa.id,
+      pin_hash: passwordHash,
+      empresa_id: empresaA.id,
     },
   });
 
-  // 2. Crear una Sucursal de prueba
-  const sucursal = await prisma.sucursal.create({
+  // 2. Sucursales de prueba
+  const sucursalA = await prisma.sucursal.create({
     data: {
-      nombre: "Sucursal Centro",
-      direccion: "Calle Principal 123",
-      empresa_id: empresa.id,
+      nombre: "Sucursal Centro A",
+      direccion: "Calle Coca-Cola 123",
+      empresa_id: empresaA.id,
     },
   });
 
-  // 3. Crear un Cajero de prueba (PIN: 1234)
-  const cajeroPinHash = await bcrypt.hash("1234", 10);
-  await prisma.user.create({
+  const sucursalB = await prisma.sucursal.create({
     data: {
-      email: "cajero@shopli.com",
-      name: "Juan Cajero",
+      nombre: "Sucursal Centro B",
+      direccion: "Calle Pepsi 456",
+      empresa_id: empresaB.id,
+    },
+  });
+
+  // 3. Cajeros de prueba (PIN: 1111 y 2222)
+  const pinHashA = await bcrypt.hash("1111", 10);
+  const cajeroA = await prisma.user.create({
+    data: {
+      email: "cajeroa@shopli.com",
+      name: "Cajero Coca-Cola",
       role: Role.CAJERO,
-      pin_hash: cajeroPinHash,
-      empresa_id: empresa.id,
+      pin_hash: pinHashA,
+      empresa_id: empresaA.id,
     },
   });
 
-  console.log("Seed: Usuario administrativo maestro, sucursal y cajero configurados correctamente.");
+  const pinHashB = await bcrypt.hash("2222", 10);
+  const cajeroB = await prisma.user.create({
+    data: {
+      email: "cajerob@shopli.com",
+      name: "Cajero Pepsi",
+      role: Role.CAJERO,
+      pin_hash: pinHashB,
+      empresa_id: empresaB.id,
+    },
+  });
+
+  // 4. Productos de prueba
+  // Empresa A (Coca-Cola)
+  const prodA1 = await prisma.producto.create({
+    data: {
+      nombre: "Coca-Cola Original 600ml",
+      codigo_interno: "COCA600",
+      costo: 15.00,
+      precio_publico: 20.00,
+      categoria: "Refrescos",
+      empresa_id: empresaA.id,
+    },
+  });
+
+  const prodA2 = await prisma.producto.create({
+    data: {
+      nombre: "Sprite 600ml",
+      codigo_interno: "SPRITE600",
+      costo: 14.00,
+      precio_publico: 18.00,
+      categoria: "Refrescos",
+      empresa_id: empresaA.id,
+    },
+  });
+
+  // Empresa B (Pepsi)
+  const prodB1 = await prisma.producto.create({
+    data: {
+      nombre: "Pepsi Black 600ml",
+      codigo_interno: "PEPSI600",
+      costo: 13.00,
+      precio_publico: 19.00,
+      categoria: "Refrescos",
+      empresa_id: empresaB.id,
+    },
+  });
+
+  const prodB2 = await prisma.producto.create({
+    data: {
+      nombre: "Mirinda 600ml",
+      codigo_interno: "MIRINDA600",
+      costo: 12.00,
+      precio_publico: 17.00,
+      categoria: "Refrescos",
+      empresa_id: empresaB.id,
+    },
+  });
+
+  // 5. Inventario en Sucursales
+  await prisma.inventario_Sucursal.createMany({
+    data: [
+      { sucursal_id: sucursalA.id, producto_id: prodA1.id, cantidad: 50 },
+      { sucursal_id: sucursalA.id, producto_id: prodA2.id, cantidad: 30 },
+      { sucursal_id: sucursalB.id, producto_id: prodB1.id, cantidad: 45 },
+      { sucursal_id: sucursalB.id, producto_id: prodB2.id, cantidad: 25 },
+    ],
+  });
+
+  console.log("Seed: Empresas, Sucursales, Cajeros y Productos con inventario configurados correctamente.");
   console.log("Seed: ¡Base de datos lista para producción!");
 }
 
