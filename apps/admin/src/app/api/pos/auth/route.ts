@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     const result = posAuthSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error.errors[0]?.message || "Datos inválidos" },
+        { error: result.error.issues[0]?.message || "Datos inválidos" },
         { status: 400, headers: responseHeaders }
       );
     }

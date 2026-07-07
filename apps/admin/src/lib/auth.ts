@@ -40,6 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             name: user.name,
             role: user.role,
+            empresa_id: user.empresa_id,
           };
         }
 
@@ -52,6 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.empresa_id = user.empresa_id;
       }
       return token;
     },
@@ -59,6 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        session.user.empresa_id = token.empresa_id as string;
       }
       return session;
     },

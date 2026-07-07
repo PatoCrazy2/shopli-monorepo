@@ -2,6 +2,7 @@ import { db } from "@shopli/db";
 import Link from "next/link";
 import { toggleProduct } from "./actions";
 import { ImportCatalogModal } from "./_components/ImportCatalogModal";
+import { auth } from "@/lib/auth";
 
 // RSC
 export default async function CatalogPage({
@@ -9,13 +10,22 @@ export default async function CatalogPage({
 }: {
   searchParams: Promise<{ page?: string; q?: string }>;
 }) {
+  const session = await auth();
+  if (!session?.user?.empresa_id) {
+    throw new Error("No autorizado");
+  }
+  const empresaId = session.user.empresa_id;
+
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
   const query = params.q || "";
   const take = 20;
   const skip = (page - 1) * take;
 
-  const whereClause = query ? { nombre: { contains: query, mode: "insensitive" as const } } : {};
+  const whereClause = {
+    empresa_id: empresaId,
+    ...(query ? { nombre: { contains: query, mode: "insensitive" as const } } : {})
+  };
 
   const products = await db.producto.findMany({
     where: whereClause,
