@@ -9,10 +9,12 @@ export type PosAuthResponse = {
   name: string | null;
   email: string;
   role: string;
+  empresa_id: string;
 };
 
-// Validación con Zod: PIN de 4 dígitos numéricos exactos
+// Validación con Zod: email opcional y PIN de 4 dígitos numéricos exactos
 const posAuthSchema = z.object({
+  email: z.string().email("Email inválido"),
   pin: z.string().length(4, "PIN inválido").regex(/^\d+$/, "PIN inválido"),
 });
 
@@ -62,18 +64,17 @@ export async function POST(req: Request) {
     const result = posAuthSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
-        { error: "PIN inválido" },
-        { status: 401, headers: responseHeaders }
+        { error: result.error.errors[0]?.message || "Datos inválidos" },
+        { status: 400, headers: responseHeaders }
       );
     }
 
-    const { pin } = result.data;
+    const { email, pin } = result.data;
 
-    // 4. Buscar en la base de datos a los usuarios con rol CAJERO o ENCARGADO
-    // Nota: El modelo de Base de Datos actual no cuenta con campo "status" ni "isActive".
-    // Si se agrega en el futuro, debería agregarse un filtro de tipo `isActive: true` aquí.
-    const users = await db.user.findMany({
+    // 4. Buscar al usuario específico por email
+    const user = await db.user.findUnique({
       where: {
+        email,
         role: {
           in: [Role.CAJERO, Role.ENCARGADO],
         },
@@ -84,42 +85,36 @@ export async function POST(req: Request) {
          email: true,
          role: true,
          pin_hash: true,
-         // status: true // <- Descomentar si se agrega status en DB para el if posterior de status 403
+         empresa_id: true,
       }
     });
 
-    // 5. Comparar el PIN con los hashes almacenados
-    for (const user of users) {
-      if (user.pin_hash) {
-        const match = await bcrypt.compare(pin, user.pin_hash);
-        
-        if (match) {
-          // Chequeo de estatus inactivo (Comentado porque falta en base de datos)
-          // if (!user.status || user.status !== 'ACTIVO') {
-          //   return NextResponse.json(
-          //     { error: "Usuario deshabilitado" },
-          //     { status: 403, headers: responseHeaders }
-          //   );
-          // }
-
-          const responseData: PosAuthResponse = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-          };
-          
-          return NextResponse.json(responseData, { status: 200, headers: responseHeaders });
-        }
-      }
+    if (!user || !user.pin_hash) {
+      return NextResponse.json(
+        { error: "Credenciales inválidas" },
+        { status: 401, headers: responseHeaders }
+      );
     }
 
-    // 6. Ningún hash coincidió
-    // No revelamos si el usuario existe o si es el error genérico
-    return NextResponse.json(
-      { error: "PIN inválido" },
-      { status: 401, headers: responseHeaders }
-    );
+    // 5. Comparar el PIN con el hash almacenado
+    const match = await bcrypt.compare(pin, user.pin_hash);
+    if (!match) {
+      return NextResponse.json(
+        { error: "Credenciales inválidas" },
+        { status: 401, headers: responseHeaders }
+      );
+    }
+
+    const responseData: PosAuthResponse = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      empresa_id: user.empresa_id,
+    };
+    
+    return NextResponse.json(responseData, { status: 200, headers: responseHeaders });
+
   } catch (error) {
     console.error("Error in POST /api/pos/auth:", error);
     return NextResponse.json(

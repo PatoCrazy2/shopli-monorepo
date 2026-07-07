@@ -29,7 +29,7 @@ interface AuthContextType {
     activeShift: Shift | null;
     isAuthenticated: boolean;
     hasActiveShift: boolean;
-    login: (pin: string) => Promise<boolean>;
+    login: (pin: string, email?: string) => Promise<boolean>;
     logout: () => void;
     openShift: (initialAmount: number, branchId: string) => Promise<void>;
     closeShift: (physicalAmount: number) => Promise<void>;
@@ -48,24 +48,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return saved ? JSON.parse(saved) : null;
     });
 
-    const login = async (pin: string): Promise<boolean> => {
-        // Enforce online pull to get freshest users and branches
-        if (navigator.onLine) {
-            console.log("Intentando pull de base de datos desde la nube local first...");
-            await pullFromCloud();
-        }
-
-        // Obtenemos todos los usuarios con rol de POS y comparamos el PIN con bcrypt
-        const allUsers = await db.users
-            .where('role').anyOf(['CAJERO', 'ENCARGADO'])
-            .toArray();
-
-        // En un entorno local-first offline el PIN debe haber sido guardado previemente como un hash bcrypt (via pullFromCloud).
+    const login = async (pin: string, email?: string): Promise<boolean> => {
         let localUser = null;
-        for (const u of allUsers) {
-            if (u.pin && await bcrypt.compare(pin, u.pin)) {
-                localUser = u;
-                break;
+
+        if (email) {
+            // Login inicial online para configurar la empresa del dispositivo
+            if (!navigator.onLine) {
+                console.warn('Se requiere conexión a internet para el login inicial.');
+                return false;
+            }
+
+            try {
+                const response = await fetch('/api/pos/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, pin })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    console.warn('Error en login online:', err.error);
+                    return false;
+                }
+
+                const data = await response.json();
+                
+                // Guardar empresaId en db.meta antes del pull
+                await db.meta.put({ key: 'empresaId', value: data.empresa_id });
+
+                // Hacemos el pull para descargar el catálogo de esa empresa
+                await pullFromCloud();
+
+                // Ahora buscamos al usuario localmente ya guardado en IndexedDB
+                localUser = await db.users.get(data.id);
+            } catch (error) {
+                console.error('Error durante el login online inicial:', error);
+                return false;
+            }
+        } else {
+            // Login offline-first regular por PIN
+            if (navigator.onLine) {
+                console.log("Intentando pull de base de datos desde la nube local first...");
+                try {
+                    await pullFromCloud();
+                } catch (e) {
+                    console.warn('Error silencioso al jalar catálogo durante el login:', e);
+                }
+            }
+
+            // Obtenemos todos los usuarios con rol de POS y comparamos el PIN con bcrypt
+            const allUsers = await db.users
+                .where('role').anyOf(['CAJERO', 'ENCARGADO'])
+                .toArray();
+
+            // En un entorno local-first offline el PIN debe haber sido guardado previemente como un hash bcrypt (via pullFromCloud).
+            for (const u of allUsers) {
+                if (u.pin && await bcrypt.compare(pin, u.pin)) {
+                    localUser = u;
+                    break;
+                }
             }
         }
 
