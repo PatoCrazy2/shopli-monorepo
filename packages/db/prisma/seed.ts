@@ -47,7 +47,28 @@ async function main() {
     },
   });
 
-  console.log("Seed: Usuario administrativo maestro configurado correctamente.");
+  // 2. Crear una Sucursal de prueba
+  const sucursal = await prisma.sucursal.create({
+    data: {
+      nombre: "Sucursal Centro",
+      direccion: "Calle Principal 123",
+      empresa_id: empresa.id,
+    },
+  });
+
+  // 3. Crear un Cajero de prueba (PIN: 1234)
+  const cajeroPinHash = await bcrypt.hash("1234", 10);
+  await prisma.user.create({
+    data: {
+      email: "cajero@shopli.com",
+      name: "Juan Cajero",
+      role: Role.CAJERO,
+      pin_hash: cajeroPinHash,
+      empresa_id: empresa.id,
+    },
+  });
+
+  console.log("Seed: Usuario administrativo maestro, sucursal y cajero configurados correctamente.");
   console.log("Seed: ¡Base de datos lista para producción!");
 }
 
