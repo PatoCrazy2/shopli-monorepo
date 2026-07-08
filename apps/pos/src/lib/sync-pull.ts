@@ -88,6 +88,8 @@ export async function pullFromCloud(): Promise<SyncResult> {
              descripcion: null,
              costo: p.price,
              precio_publico: p.price,
+             precio_mayoreo: p.precioMayoreo ? Number(p.precioMayoreo) : null,
+             min_cantidad_mayoreo: p.minCantidadMayoreo ? Number(p.minCantidadMayoreo) : null,
              categoria: p.category,
              isCritical: false, // Ahora se puede calcular mediante cruce local
              isActive: true, // El endpoint solo devuelve productos activos
@@ -141,6 +143,8 @@ export async function pullFromCloud(): Promise<SyncResult> {
               descripcion: null,
               costo: p.price,
               precio_publico: p.price,
+              precio_mayoreo: p.precioMayoreo ? Number(p.precioMayoreo) : null,
+              min_cantidad_mayoreo: p.minCantidadMayoreo ? Number(p.minCantidadMayoreo) : null,
               categoria: p.category,
               isCritical: false,
               isActive: true, // El endpoint solo devuelve productos activos

@@ -46,7 +46,9 @@ const pushSyncSchema = z.object({
         z.object({
           producto_id: z.string().uuid(),
           cantidad: z.number().positive().int(),
-          precio_unitario_historico: z.number().nonnegative()
+          precio_unitario_historico: z.number().nonnegative(),
+          descuento_manual: z.number().nonnegative().optional().default(0),
+          nota_descuento: z.string().nullable().optional()
         })
       ).min(1)
     })
@@ -342,7 +344,9 @@ export async function POST(req: Request) {
                 create: venta.detalles.map(d => ({
                   producto_id: d.producto_id,
                   cantidad: d.cantidad,
-                  precio_unitario_historico: d.precio_unitario_historico
+                  precio_unitario_historico: d.precio_unitario_historico,
+                  descuento_manual: d.descuento_manual,
+                  nota_descuento: d.nota_descuento
                 }))
               }
             }

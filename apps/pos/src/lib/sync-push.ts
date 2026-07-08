@@ -34,7 +34,9 @@ export async function buildPushPayload() {
         detalles: details.map(d => ({
           producto_id: d.producto_id,
           cantidad: d.cantidad,
-          precio_unitario_historico: d.precio_unitario_historico
+          precio_unitario_historico: d.precio_unitario_historico,
+          descuento_manual: d.descuento_manual || 0,
+          nota_descuento: d.nota_descuento || null
         }))
       };
     })
