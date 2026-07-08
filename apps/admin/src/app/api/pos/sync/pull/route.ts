@@ -61,9 +61,16 @@ export type PullSyncResponse = {
   nextCursor?: string;
 };
 
-// ==========================================
-// Lógica del Endpoint
-// ==========================================
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, PATCH, DELETE",
+      "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-pos-sync-secret",
+    },
+  });
+}
 
 export async function GET(req: NextRequest) {
   try {

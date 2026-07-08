@@ -41,10 +41,22 @@ function rateLimit(ip: string): boolean {
   return true;
 }
 
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, PATCH, DELETE",
+      "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-pos-sync-secret",
+    },
+  });
+}
+
 export async function POST(req: Request) {
   // Configurar los headers de caché y seguridad
   const responseHeaders = new Headers({
     "Cache-Control": "no-store",
+    "Access-Control-Allow-Origin": "*",
   });
 
   try {
@@ -71,12 +83,12 @@ export async function POST(req: Request) {
 
     const { email, pin } = result.data;
 
-    // 4. Buscar al usuario específico por email
+    // 4. Buscar al usuario específico por email (CAJERO, ENCARGADO, DUENO)
     const user = await db.user.findUnique({
       where: {
         email,
         role: {
-          in: [Role.CAJERO, Role.ENCARGADO],
+          in: [Role.CAJERO, Role.ENCARGADO, Role.DUENO],
         },
       },
       select: {
