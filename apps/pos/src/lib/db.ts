@@ -180,3 +180,14 @@ export async function clearLocalData(): Promise<void> {
   });
   await db.meta.clear();
 }
+
+/**
+ * Redondea un número con decimales a entero.
+ * Si la parte decimal es >= 0.6, redondea hacia arriba (ceil).
+ * De lo contrario, redondea hacia abajo (floor).
+ */
+export function roundCustom(value: number): number {
+  const floorVal = Math.floor(value);
+  const decimal = value - floorVal;
+  return decimal >= 0.6 ? Math.ceil(value) : floorVal;
+}

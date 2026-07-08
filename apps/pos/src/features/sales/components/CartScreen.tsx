@@ -3,7 +3,7 @@ import { ArrowLeft, Trash2, Plus, Minus, AlertTriangle, Tag, X } from 'lucide-re
 import type { CartItem } from '../types/cart.types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../../lib/db';
+import { db, roundCustom } from '../../../lib/db';
 
 interface CartScreenProps {
     cartItems: CartItem[];
@@ -54,7 +54,7 @@ export default function CartScreen({
                            selectedItemForDiscount.precio_mayoreo !== null && 
                            selectedItemForDiscount.quantity >= selectedItemForDiscount.min_cantidad_mayoreo;
         const basePrice = hasMayoreo ? (selectedItemForDiscount.precio_mayoreo as number) : selectedItemForDiscount.price;
-        const maxAllowed = basePrice * selectedItemForDiscount.quantity;
+        const maxAllowed = roundCustom(basePrice * selectedItemForDiscount.quantity);
 
         if (discountNum > maxAllowed) {
             setErrorMsg(`El descuento no puede superar el subtotal del ítem ($${maxAllowed}.00).`);
@@ -95,7 +95,7 @@ export default function CartScreen({
                                        item.precio_mayoreo !== null && 
                                        item.quantity >= item.min_cantidad_mayoreo;
                     const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
-                    const itemTotal = (basePrice * item.quantity) - (item.descuento_manual || 0);
+                    const itemTotal = roundCustom(basePrice * item.quantity) - (item.descuento_manual || 0);
 
                     return (
                     <div key={item.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border shadow-sm rounded-xl transition-colors gap-3 sm:gap-0 ${stockIsLow ? 'bg-amber-50/30 border-amber-200' : 'bg-white border-gray-100'}`}>

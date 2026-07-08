@@ -11,6 +11,14 @@ const productSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   precio_publico: z.coerce.number().min(0.01, "El precio debe ser mayor a 0"),
   costo: z.coerce.number().min(0, "El costo no puede ser negativo"),
+  precio_mayoreo: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? null : val),
+    z.coerce.number().min(0.01, "El precio de mayoreo debe ser mayor a 0").nullable().optional()
+  ),
+  min_cantidad_mayoreo: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? null : val),
+    z.coerce.number().int().min(2, "La cantidad mínima debe ser al menos 2").nullable().optional()
+  ),
 });
 
 export async function upsertProduct(formData: FormData) {
@@ -20,6 +28,8 @@ export async function upsertProduct(formData: FormData) {
     nombre: formData.get("nombre"),
     precio_publico: formData.get("precio_publico"),
     costo: formData.get("costo"),
+    precio_mayoreo: formData.get("precio_mayoreo"),
+    min_cantidad_mayoreo: formData.get("min_cantidad_mayoreo"),
   });
 
   if (!parseResult.success) {
@@ -50,6 +60,8 @@ export async function upsertProduct(formData: FormData) {
           codigo_interno: data.codigo_interno || null,
           precio_publico: data.precio_publico,
           costo: data.costo,
+          precio_mayoreo: data.precio_mayoreo ?? null,
+          min_cantidad_mayoreo: data.min_cantidad_mayoreo ?? null,
           updatedAt: new Date(),
         },
       });
@@ -63,6 +75,8 @@ export async function upsertProduct(formData: FormData) {
           codigo_interno: data.codigo_interno || null,
           precio_publico: data.precio_publico,
           costo: data.costo,
+          precio_mayoreo: data.precio_mayoreo ?? null,
+          min_cantidad_mayoreo: data.min_cantidad_mayoreo ?? null,
           empresa_id: empresaId,
           // UpdatedAt is automatically set by Prisma, but we force it just in case
           updatedAt: new Date(),

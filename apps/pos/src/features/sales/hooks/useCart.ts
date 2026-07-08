@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type LocalCartItem } from "../../../lib/db";
+import { db, type LocalCartItem, roundCustom } from "../../../lib/db";
 
 export function useCart() {
     const [showCart, setShowCart] = useState(false);
@@ -63,7 +63,8 @@ export function useCart() {
                            item.precio_mayoreo !== null && 
                            item.quantity >= item.min_cantidad_mayoreo;
         const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
-        return acc + (basePrice * item.quantity) - (item.descuento_manual || 0);
+        const subtotal = roundCustom(basePrice * item.quantity);
+        return acc + subtotal - (item.descuento_manual || 0);
     }, 0);
 
     const totalItems = cartItems.reduce((acc: number, item: LocalCartItem) => acc + item.quantity, 0);
