@@ -22,14 +22,22 @@ export function useSalesHistory() {
 
         const saleId = crypto.randomUUID();
 
-        const detalles: LocalSaleDetail[] = items.map(item => ({
-             id: crypto.randomUUID(),
-             venta_id: saleId,
-             producto_id: item.producto_id,
-             nombre_producto: item.name,
-             cantidad: item.quantity,
-             precio_unitario_historico: item.price
-        }));
+        const detalles: LocalSaleDetail[] = items.map(item => {
+             const hasMayoreo = item.min_cantidad_mayoreo !== null && 
+                                item.precio_mayoreo !== null && 
+                                item.quantity >= item.min_cantidad_mayoreo;
+             const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
+             return {
+                 id: crypto.randomUUID(),
+                 venta_id: saleId,
+                 producto_id: item.producto_id,
+                 nombre_producto: item.name,
+                 cantidad: item.quantity,
+                 precio_unitario_historico: basePrice,
+                 descuento_manual: item.descuento_manual || 0,
+                 nota_descuento: item.nota_descuento || null
+             };
+        });
 
         const newSale: LocalSale = {
             id: saleId,

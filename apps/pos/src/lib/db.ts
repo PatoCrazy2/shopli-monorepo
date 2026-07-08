@@ -27,6 +27,8 @@ export interface LocalProduct {
   descripcion: string | null;
   costo: number; // Using number for ease of local use, but Prisma uses Decimal(10,2)
   precio_publico: number;
+  precio_mayoreo: number | null;
+  min_cantidad_mayoreo: number | null;
   categoria: string | null;
   isCritical: boolean;
   isActive: boolean;
@@ -45,8 +47,12 @@ export interface LocalCartItem {
   id: string; // product id basically for uniqueness in cart
   producto_id: string;
   name: string;
-  price: number;
+  price: number; // precio_publico
+  precio_mayoreo: number | null;
+  min_cantidad_mayoreo: number | null;
   quantity: number;
+  descuento_manual: number;
+  nota_descuento: string;
 }
 
 export interface LocalTurno {
@@ -69,6 +75,8 @@ export interface LocalSaleDetail {
   nombre_producto: string; // Para mostrar en el ticket sin tener que hacer join constante
   cantidad: number;
   precio_unitario_historico: number;
+  descuento_manual?: number;
+  nota_descuento?: string | null;
 }
 
 export interface LocalSale {
@@ -171,4 +179,15 @@ export async function clearLocalData(): Promise<void> {
     await db.inventory.clear();
   });
   await db.meta.clear();
+}
+
+/**
+ * Redondea un número con decimales a entero.
+ * Si la parte decimal es >= 0.6, redondea hacia arriba (ceil).
+ * De lo contrario, redondea hacia abajo (floor).
+ */
+export function roundCustom(value: number): number {
+  const floorVal = Math.floor(value);
+  const decimal = value - floorVal;
+  return decimal >= 0.6 ? Math.ceil(value) : floorVal;
 }

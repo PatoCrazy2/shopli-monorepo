@@ -14,6 +14,8 @@ export type SyncProduct = {
   sku: string | null;
   name: string;
   price: number;
+  precioMayoreo: number | null;
+  minCantidadMayoreo: number | null;
   category: string | null;
   updatedAt: string;
 };
@@ -209,6 +211,8 @@ export async function GET(req: NextRequest) {
         sku: p.codigo_interno,
         name: p.nombre,
         price: Number(p.precio_publico), // Prisma transfiere decimal como typeof Prisma.Decimal Object/string
+        precioMayoreo: p.precio_mayoreo ? Number(p.precio_mayoreo) : null,
+        minCantidadMayoreo: p.min_cantidad_mayoreo,
         category: p.categoria,
         updatedAt: p.updatedAt.toISOString(),
       };

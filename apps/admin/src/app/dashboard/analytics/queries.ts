@@ -76,6 +76,10 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
       const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
       gastosWhere.fecha = { gte: s, lte: e };
+    } else if (filters.startDate) {
+      gastosWhere.fecha = { gte: new Date(`${filters.startDate}T00:00:00.000-06:00`) };
+    } else if (filters.endDate) {
+      gastosWhere.fecha = { lte: new Date(`${filters.endDate}T23:59:59.999-06:00`) };
     }
     if (filters.sucursalId) {
       gastosWhere.sucursal_id = filters.sucursalId;

@@ -33,6 +33,8 @@ export default async function ProductPage({
             codigo_interno: product.codigo_interno,
             precio_publico: Number(product.precio_publico),
             costo: Number(product.costo),
+            precio_mayoreo: product.precio_mayoreo ? Number(product.precio_mayoreo) : null,
+            min_cantidad_mayoreo: product.min_cantidad_mayoreo,
         };
     }
 

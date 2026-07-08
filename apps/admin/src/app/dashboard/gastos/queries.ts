@@ -23,10 +23,16 @@ export async function getGastos(filters: {
     where.sucursal_id = filters.sucursalId;
   }
 
-  if (filters.startDate || filters.endDate) {
-    where.fecha = {};
-    if (filters.startDate) where.fecha.gte = new Date(filters.startDate);
-    if (filters.endDate) where.fecha.lte = new Date(filters.endDate);
+  if (filters.startDate && filters.endDate) {
+    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
+    where.fecha = { gte: s, lte: e };
+  } else if (filters.startDate) {
+    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const e = new Date(`${filters.startDate}T23:59:59.999-06:00`);
+    where.fecha = { gte: s, lte: e };
+  } else if (filters.endDate) {
+    where.fecha = { lte: new Date(`${filters.endDate}T23:59:59.999-06:00`) };
   }
 
   if (filters.categoria) {

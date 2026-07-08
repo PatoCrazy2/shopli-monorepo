@@ -39,6 +39,7 @@ export async function getCuts(sucursalId?: string, date?: string) {
         where: { estado: "COMPLETADA" },
         select: { total: true },
       },
+      gastos: true,
       auditorias: {
         include: {
           items: {
