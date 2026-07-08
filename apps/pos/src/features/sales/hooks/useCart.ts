@@ -25,7 +25,11 @@ export function useCart() {
                 producto_id: product.id,
                 name: product.nombre,
                 price: product.precio_publico,
-                quantity: 1
+                precio_mayoreo: product.precio_mayoreo ?? null,
+                min_cantidad_mayoreo: product.min_cantidad_mayoreo ?? null,
+                quantity: 1,
+                descuento_manual: 0,
+                nota_descuento: ""
             });
         }
     };
@@ -47,7 +51,21 @@ export function useCart() {
         await db.cart.update(id, { quantity });
     };
 
-    const totalCart = cartItems.reduce((acc: number, item: LocalCartItem) => acc + (item.price * item.quantity), 0);
+    const applyManualDiscount = async (id: string, discount: number, note: string) => {
+        await db.cart.update(id, {
+            descuento_manual: discount,
+            nota_descuento: note
+        });
+    };
+
+    const totalCart = cartItems.reduce((acc: number, item: LocalCartItem) => {
+        const hasMayoreo = item.min_cantidad_mayoreo !== null && 
+                           item.precio_mayoreo !== null && 
+                           item.quantity >= item.min_cantidad_mayoreo;
+        const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
+        return acc + (basePrice * item.quantity) - (item.descuento_manual || 0);
+    }, 0);
+
     const totalItems = cartItems.reduce((acc: number, item: LocalCartItem) => acc + item.quantity, 0);
 
     return {
@@ -57,6 +75,7 @@ export function useCart() {
         handleAddToCart,
         removeFromCart,
         updateQuantity,
+        applyManualDiscount,
         clearCart,
         totalCart,
         totalItems
