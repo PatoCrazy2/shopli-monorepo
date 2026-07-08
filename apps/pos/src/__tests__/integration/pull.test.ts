@@ -10,6 +10,16 @@ describe('pullFromCloud integration', () => {
     // Definimos la variable global para apiClient.ts
     vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000/api' } });
 
+    // Ensure test Empresa exists
+    const testEmpresa = await prisma.empresa.upsert({
+      where: { id: 'test-empresa-id' },
+      update: {},
+      create: {
+        id: 'test-empresa-id',
+        nombre: 'Test Empresa'
+      }
+    });
+
     // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL
     const userCount = await prisma.user.count({ where: { role: Role.CAJERO } });
     if (userCount === 0) {
@@ -19,6 +29,7 @@ describe('pullFromCloud integration', () => {
           email: 'integra@cajero.com',
           role: Role.CAJERO,
           pin_hash: 'dummyhash',
+          empresa_id: testEmpresa.id,
         }
       });
     }
@@ -31,6 +42,7 @@ describe('pullFromCloud integration', () => {
           codigo_interno: 'INT-01',
           precio_publico: 100,
           costo: 50,
+          empresa_id: testEmpresa.id,
         }
       });
     }
@@ -40,7 +52,7 @@ describe('pullFromCloud integration', () => {
     let branch;
     if (branchCount === 0) {
       branch = await prisma.sucursal.create({
-        data: { id: "branch-1", nombre: "Sucursal Integra" }
+        data: { id: "branch-1", nombre: "Sucursal Integra", empresa_id: testEmpresa.id }
       });
     }
 

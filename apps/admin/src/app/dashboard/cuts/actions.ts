@@ -6,9 +6,10 @@ import { auth } from "@/lib/auth";
 
 export async function resolveAuditItem(formData: FormData) {
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.empresa_id) {
     return { error: "No autorizado" };
   }
+  const empresaId = session.user.empresa_id;
 
   const id = formData.get("id") as string;
   const reason = formData.get("reason") as string;
@@ -17,6 +18,15 @@ export async function resolveAuditItem(formData: FormData) {
 
   if (!id || !reason || !sucursalId) {
     return { error: "Faltan datos requeridos" };
+  }
+
+  // Validar que la sucursal pertenece a la empresa
+  const sucursal = await db.sucursal.findUnique({
+    where: { id: sucursalId },
+    select: { empresa_id: true }
+  });
+  if (!sucursal || sucursal.empresa_id !== empresaId) {
+    return { error: "No autorizado" };
   }
 
   try {

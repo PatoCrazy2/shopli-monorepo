@@ -91,8 +91,12 @@ export async function GET(req: NextRequest) {
 
     const updatedAfterParam = searchParams.get("updatedAfter");
     const cursor = searchParams.get("cursor");
+    const empresaId = searchParams.get("empresaId");
 
-    
+    if (!empresaId) {
+      return NextResponse.json({ error: "Falta empresaId" }, { status: 400 });
+    }
+
     // Límite de 1000 productos por request
     const LIMIT = 1000;
     
@@ -104,13 +108,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Filtros para la consulta
-    const productsWhere = updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {};
+    // Filtros para la consulta por Empresa (Multi-Tenant)
+    const productsWhere = {
+      empresa_id: empresaId,
+      ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {})
+    };
     
     // Solo sincronizar perfiles relevantes para operar el POS de forma segura (CAJERO, ENCARGADO)
-    const usersWhere = updatedAfterDate 
-      ? { updatedAt: { gt: updatedAfterDate }, role: { in: [Role.CAJERO, Role.ENCARGADO] } } 
-      : { role: { in: [Role.CAJERO, Role.ENCARGADO] } };
+    const usersWhere = {
+      empresa_id: empresaId,
+      role: { in: [Role.CAJERO, Role.ENCARGADO] },
+      ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {})
+    };
 
     // 1. Ejecutar las solicitudes en paralelo con tipado explícito
     const [productsResult, inventoryResult, usersResult, branchesResult, gastosResult] = await Promise.all([
@@ -121,7 +130,10 @@ export async function GET(req: NextRequest) {
         orderBy: { id: "asc" },
       }),
       db.inventario_Sucursal.findMany({
-        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
+        where: {
+          sucursal: { empresa_id: empresaId },
+          ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {}),
+        },
       }),
       db.user.findMany({
         where: usersWhere,
@@ -135,12 +147,16 @@ export async function GET(req: NextRequest) {
       }),
       db.sucursal.findMany({
         where: {
+          empresa_id: empresaId,
           activo: true,
           ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {})
         },
       }),
       db.gasto.findMany({
-        where: updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {},
+        where: {
+          sucursal: { empresa_id: empresaId },
+          ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {}),
+        },
       })
     ]);
 

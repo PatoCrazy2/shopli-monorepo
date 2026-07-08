@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-export default function LoginPage() {
+function LoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const registered = searchParams.get("registered");
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -52,6 +55,13 @@ export default function LoginPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-0 mb-2">ShopLI</h2>
                     <p className="text-sm text-gray-500 mb-4">Iniciar Sesión</p>
                 </div>
+
+                {registered && (
+                    <div className="p-3 rounded-lg bg-green-50 text-green-600 text-sm border border-green-100 flex items-center gap-2 animate-in fade-in duration-300 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        ¡Empresa registrada con éxito! Ya puedes iniciar sesión.
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -108,7 +118,24 @@ export default function LoginPage() {
                         )}
                     </button>
                 </form>
+
+                <div className="mt-6 text-center">
+                    <Link
+                        href="/register"
+                        className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
+                    >
+                        ¿No tienes cuenta? Registra tu empresa
+                    </Link>
+                </div>
             </div>
         </main>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-sans bg-gray-50">Cargando...</div>}>
+            <LoginForm />
+        </Suspense>
     );
 }

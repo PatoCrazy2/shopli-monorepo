@@ -45,6 +45,7 @@ export async function createUser(formData: FormData) {
         numero_tel: data.numero_tel,
         role: data.role,
         pin_hash,
+        empresa_id: session.user.empresa_id,
       },
     });
 
@@ -72,6 +73,14 @@ export async function resetPin(id: string, newPin: string) {
   }
 
   try {
+    const targetUser = await db.user.findUnique({
+      where: { id },
+      select: { empresa_id: true }
+    });
+    if (!targetUser || targetUser.empresa_id !== session.user.empresa_id) {
+      return { error: "No autorizado" };
+    }
+
     const pin_hash = await bcrypt.hash(parseResult.data, 10);
     await db.user.update({
       where: { id },
@@ -95,6 +104,14 @@ export async function toggleUser(id: string, currentState: boolean, _formData: F
   
   if (session.user.id === id) {
     throw new Error("No puedes desactivar tu propia cuenta");
+  }
+
+  const targetUser = await db.user.findUnique({
+    where: { id },
+    select: { empresa_id: true }
+  });
+  if (!targetUser || targetUser.empresa_id !== session.user.empresa_id) {
+    throw new Error("No autorizado");
   }
 
   try {

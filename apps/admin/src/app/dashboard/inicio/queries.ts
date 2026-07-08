@@ -1,4 +1,5 @@
 import { db } from "@shopli/db";
+import { auth } from "@/lib/auth";
 
 function getTodayBounds() {
   const cdmxDateStr = new Date().toLocaleDateString("en-CA", {
@@ -10,6 +11,10 @@ function getTodayBounds() {
 }
 
 export async function getDashboardData() {
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  const empresaId = session.user.empresa_id;
+
   const { start, end } = getTodayBounds();
 
   // 1. Ventas totales del día
@@ -23,6 +28,9 @@ export async function getDashboardData() {
         lte: end,
       },
       estado: "COMPLETADA",
+      sucursal: {
+        empresa_id: empresaId
+      }
     },
   });
   const ventasHoy = Number(totalSalesTodayAgg._sum.total || 0);
@@ -33,6 +41,9 @@ export async function getDashboardData() {
       venta: {
         fecha: { gte: start, lte: end },
         estado: "COMPLETADA",
+        sucursal: {
+          empresa_id: empresaId
+        }
       },
     },
     include: {
@@ -54,6 +65,9 @@ export async function getDashboardData() {
         lte: end,
       },
       estado: "COMPLETADA",
+      sucursal: {
+        empresa_id: empresaId
+      }
     },
   });
 
@@ -70,6 +84,9 @@ export async function getDashboardData() {
         gte: sevenDaysAgo,
       },
       estado: "COMPLETADA",
+      sucursal: {
+        empresa_id: empresaId
+      }
     },
     select: {
       fecha: true,
@@ -110,11 +127,17 @@ export async function getDashboardData() {
         lte: end,
       },
       estado: "COMPLETADA",
+      sucursal: {
+        empresa_id: empresaId
+      }
     },
   });
 
   const sucursales = await db.sucursal.findMany({
-     where: { id: { in: branchesSalesQuery.map(b => b.sucursal_id) } }
+     where: { 
+       id: { in: branchesSalesQuery.map(b => b.sucursal_id) },
+       empresa_id: empresaId
+     }
   });
 
   const branchSalesData = branchesSalesQuery.map(b => {

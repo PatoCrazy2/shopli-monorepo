@@ -1,7 +1,16 @@
 import { db } from "@shopli/db";
+import { auth } from "@/lib/auth";
 
 export async function getCuts(sucursalId?: string, date?: string) {
-  const where: any = {};
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  const empresaId = session.user.empresa_id;
+
+  const where: any = {
+    sucursal: {
+      empresa_id: empresaId
+    }
+  };
 
   if (sucursalId) {
     where.sucursal_id = sucursalId;

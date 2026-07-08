@@ -6,13 +6,30 @@ import { auth } from "@/lib/auth";
 
 export async function adjustStock(productId: string, amountToAdd: number, reason: string, sucursalId: string) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !session.user.empresa_id) {
     return { error: "No autorizado. Su sesión puede haber expirado." };
   }
-
+  const empresaId = session.user.empresa_id;
   const userId = session.user.id;
 
   try {
+    // Validar pertenencia de la sucursal y del producto
+    const sucursal = await db.sucursal.findUnique({
+      where: { id: sucursalId },
+      select: { empresa_id: true }
+    });
+    if (!sucursal || sucursal.empresa_id !== empresaId) {
+      return { error: "No autorizado" };
+    }
+
+    const producto = await db.producto.findUnique({
+      where: { id: productId },
+      select: { empresa_id: true }
+    });
+    if (!producto || producto.empresa_id !== empresaId) {
+      return { error: "No autorizado" };
+    }
+
     let inv = await db.inventario_Sucursal.findUnique({
       where: { sucursal_id_producto_id: { sucursal_id: sucursalId, producto_id: productId } }
     });
@@ -110,9 +127,38 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
 
 export async function transferStock(data: { type: 'TRANSFER' | 'INGRESS', productId: string, amount: number, fromBranchId?: string, toBranchId: string, reason: string }) {
   const session = await auth();
-  if (!session?.user?.id) return { error: "No autorizado." };
+  if (!session?.user?.id || !session.user.empresa_id) return { error: "No autorizado." };
+  const empresaId = session.user.empresa_id;
 
   try {
+    // Validar propiedad del producto
+    const producto = await db.producto.findUnique({
+      where: { id: data.productId },
+      select: { empresa_id: true }
+    });
+    if (!producto || producto.empresa_id !== empresaId) {
+      return { error: "No autorizado" };
+    }
+
+    // Validar propiedad de la sucursal destino
+    const destSucursal = await db.sucursal.findUnique({
+      where: { id: data.toBranchId },
+      select: { empresa_id: true }
+    });
+    if (!destSucursal || destSucursal.empresa_id !== empresaId) {
+      return { error: "No autorizado" };
+    }
+
+    // Validar sucursal origen si aplica
+    if (data.type === 'TRANSFER' && data.fromBranchId) {
+      const originSucursal = await db.sucursal.findUnique({
+        where: { id: data.fromBranchId },
+        select: { empresa_id: true }
+      });
+      if (!originSucursal || originSucursal.empresa_id !== empresaId) {
+        return { error: "No autorizado" };
+      }
+    }
     await db.$transaction(async (tx) => {
       // Ensure destination inventory exists
       let destInv = await tx.inventario_Sucursal.findUnique({
@@ -199,11 +245,19 @@ export async function transferStock(data: { type: 'TRANSFER' | 'INGRESS', produc
  */
 export async function createDynamicAudit(sucursalId: string) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.id || !session.user.empresa_id) {
     return { error: "No autorizado." };
   }
+  const empresaId = session.user.empresa_id;
 
   try {
+    const sucursal = await db.sucursal.findUnique({
+      where: { id: sucursalId },
+      select: { empresa_id: true }
+    });
+    if (!sucursal || sucursal.empresa_id !== empresaId) {
+      return { error: "No autorizado" };
+    }
     const result = await db.$transaction(async (tx) => {
       // 1. Crear la cabecera de la auditoría
       const audit = await tx.dynamicAudit.create({
@@ -247,15 +301,20 @@ export async function createDynamicAudit(sucursalId: string) {
 
 export async function applyAuditAdjustments(auditId: string) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("No autorizado");
+  if (!session?.user?.id || !session.user.empresa_id) throw new Error("No autorizado");
+  const empresaId = session.user.empresa_id;
 
   try {
     const audit = await db.dynamicAudit.findUnique({
       where: { id: auditId },
-      include: { items: true }
+      include: { 
+        items: true,
+        sucursal: { select: { empresa_id: true } }
+      }
     });
 
     if (!audit) throw new Error("Auditoría no encontrada");
+    if (audit.sucursal.empresa_id !== empresaId) throw new Error("No autorizado");
     // Ensure that it's closed
     if (audit.status !== 'CLOSED') throw new Error("La auditoría debe estar cerrada para aplicar ajustes.");
     if (audit.isApplied) throw new Error("Los ajustes de esta auditoría ya fueron aplicados.");

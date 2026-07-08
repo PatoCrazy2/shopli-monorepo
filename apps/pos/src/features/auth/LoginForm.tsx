@@ -1,10 +1,21 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Loader2 } from 'lucide-react';
+import { db } from '../../lib/db';
 
-export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boolean> | void }) {
+export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) => Promise<boolean> | void }) {
     const [pin, setPin] = useState('');
     const [error, setError] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isConfigured, setIsConfigured] = useState(true);
+    const [email, setEmail] = useState('');
+
+    useEffect(() => {
+        const checkConfig = async () => {
+            const meta = await db.meta.get('empresaId');
+            setIsConfigured(!!meta);
+        };
+        checkConfig();
+    }, []);
 
     const handleKeyPress = (key: string) => {
         if (pin.length < 4) { // Max PIN length = 4
@@ -21,15 +32,20 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (pin.length > 0) {
+            if (!isConfigured && !email) {
+                setError(true);
+                return;
+            }
             setIsSyncing(true);
-            const success = await onLogin(pin);
+            const success = await onLogin(pin, !isConfigured ? email : undefined);
             setIsSyncing(false);
             
             if (success === false) {
                 setError(true);
                 setPin('');
+            } else if (success === true && !isConfigured) {
+                setIsConfigured(true);
             }
-            // Si es true, la redirección ocurre automáticamente porque AuthContext actualiza isAuthenticated
         }
     };
 
@@ -39,13 +55,35 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold tracking-tight text-black mb-2">ShopLI <sub>POS</sub></h1>
                     {error ? (
-                        <p className="text-red-500 font-semibold text-lg animate-pulse">PIN incorrecto, intenta de nuevo</p>
+                        <p className="text-red-500 font-semibold text-lg animate-pulse">
+                            {!isConfigured ? 'Error al configurar el dispositivo, verifica los datos' : 'PIN incorrecto, intenta de nuevo'}
+                        </p>
                     ) : (
-                        <p className="text-zinc-500 text-lg">Ingresa tu PIN para continuar</p>
+                        <p className="text-zinc-500 text-lg">
+                            {!isConfigured ? 'Configura el dispositivo con tu Email y PIN' : 'Ingresa tu PIN para continuar'}
+                        </p>
                     )}
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+                    {/* Email Input for configuration */}
+                    {!isConfigured && (
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-semibold text-zinc-700 text-left" htmlFor="email">
+                                Correo Electrónico
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="ejemplo@shopli.com"
+                                required
+                                className="w-full h-12 px-4 rounded-lg border border-zinc-200 focus:outline-none focus:border-black text-black bg-white"
+                            />
+                        </div>
+                    )}
+
                     {/* PIN Display */}
                     <div className="flex justify-center gap-4">
                         {[...Array(4)].map((_, i) => (
@@ -102,10 +140,10 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string) => Promise<boole
                         {isSyncing ? (
                             <>
                                 <Loader2 className="animate-spin mr-2" size={24} />
-                                Sincronizando catálogo...
+                                {!isConfigured ? 'Configurando empresa...' : 'Sincronizando catálogo...'}
                             </>
                         ) : (
-                            'Acceder'
+                            !isConfigured ? 'Configurar Dispositivo' : 'Acceder'
                         )}
                     </button>
                 </form>

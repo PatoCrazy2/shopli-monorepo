@@ -6,7 +6,8 @@ trigger: always_on
 
 ## Reglas Críticas de Negocio y Base de Datos
 - **Gestión de Roles:** El esquema de base de datos se limita exclusivamente a tres roles: `DUEÑO`,`CAJERO` y `ENCARGADO`. 
-- **Alcance de Cajero:** El rol de `CAJERO` y `ENCARGADO` tienen un alcance global sobre el sistema. Pueden operar en todas las sucursales de la tienda; no existe vinculación ni restricción a una sucursal individual en el esquema.
+- **Alcance de Cajero y Encargado:** El alcance de los roles `CAJERO` y `ENCARGADO` está restringido exclusivamente a la sucursal activa y a la empresa (`Empresa`) a la que pertenecen.
+- **Aislamiento Multi-Tenant (Empresas):** El sistema implementa aislamiento total a nivel de `Empresa`. Cada `DUEÑO` es dueño de su propia `Empresa`, y los productos, sucursales, proveedores y usuarios están estrictamente vinculados a dicha empresa.
 
 ### Matriz de Permisos por Rol
 

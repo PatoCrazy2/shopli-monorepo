@@ -19,8 +19,16 @@ export async function pullFromCloud(): Promise<SyncResult> {
     const metaRecord = await db.meta.get('lastSyncedAt');
     const lastSyncedAt = metaRecord ? metaRecord.value : null;
 
+    const empresaRecord = await db.meta.get('empresaId');
+    const empresaId = empresaRecord ? empresaRecord.value : null;
+
+    if (!empresaId) {
+      console.warn('Sincronización cancelada: Dispositivo no configurado con una Empresa.');
+      return { source: 'cache' };
+    }
+
     const secret = import.meta.env.VITE_SYNC_SECRET || '';
-    const params: Record<string, string> = { secret };
+    const params: Record<string, string> = { secret, empresaId };
     if (lastSyncedAt) {
       params.updatedAfter = lastSyncedAt;
     }

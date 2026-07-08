@@ -1,10 +1,19 @@
 import { db } from "@shopli/db";
 import type { Prisma, GastoCategoria } from "@shopli/db";
 import { AnalyticsFilters, AnalyticsData, InventoryAnalytics, CategoryPerformance } from "./types";
+import { auth } from "@/lib/auth";
 
 export async function getAnalyticsData(filters: AnalyticsFilters): Promise<AnalyticsData> {
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  const empresaId = session.user.empresa_id;
+
   try {
-    const where: Prisma.VentaWhereInput = {};
+    const where: Prisma.VentaWhereInput = {
+      sucursal: {
+        empresa_id: empresaId
+      }
+    };
 
     if (filters.estado) {
       where.estado = filters.estado;
@@ -21,9 +30,23 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
     }
     
     if (filters.sucursalId) {
+      const sucursal = await db.sucursal.findUnique({
+        where: { id: filters.sucursalId },
+        select: { empresa_id: true }
+      });
+      if (!sucursal || sucursal.empresa_id !== empresaId) {
+        throw new Error("No autorizado");
+      }
       where.sucursal_id = filters.sucursalId;
     }
     if (filters.usuarioId) {
+      const usr = await db.user.findUnique({
+        where: { id: filters.usuarioId },
+        select: { empresa_id: true }
+      });
+      if (!usr || usr.empresa_id !== empresaId) {
+        throw new Error("No autorizado");
+      }
       where.turno = { usuario_id: filters.usuarioId };
     }
 
@@ -44,7 +67,11 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
     });
 
     // 2. Obtención de gastos en el periodo
-    const gastosWhere: Prisma.GastoWhereInput = {};
+    const gastosWhere: Prisma.GastoWhereInput = {
+      sucursal: {
+        empresa_id: empresaId
+      }
+    };
     if (filters.startDate && filters.endDate) {
       const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
       const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
@@ -273,16 +300,31 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
 }
 
 export async function getFilterOptions() {
+   const session = await auth();
+   if (!session?.user?.empresa_id) throw new Error("No autorizado");
+   const empresaId = session.user.empresa_id;
+
    const [sucursales, usuarios] = await Promise.all([
-      db.sucursal.findMany({ select: { id: true, nombre: true } }),
-      db.user.findMany({ select: { id: true, name: true, email: true } })
+      db.sucursal.findMany({ 
+        where: { empresa_id: empresaId, activo: true },
+        select: { id: true, nombre: true } 
+      }),
+      db.user.findMany({ 
+        where: { empresa_id: empresaId, active: true },
+        select: { id: true, name: true, email: true } 
+      })
    ]);
 
    return { sucursales, usuarios };
 }
 
 export async function getInventoryAnalytics(): Promise<InventoryAnalytics> {
+    const session = await auth();
+    if (!session?.user?.empresa_id) throw new Error("No autorizado");
+    const empresaId = session.user.empresa_id;
+
     const products = await db.producto.findMany({
+        where: { empresa_id: empresaId },
         include: {
             inventario: {
                 select: { cantidad: true }

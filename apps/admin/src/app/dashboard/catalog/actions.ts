@@ -3,6 +3,7 @@
 import { db } from "@shopli/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
 
 const productSchema = z.object({
   id: z.string().optional().or(z.literal("new")),
@@ -28,8 +29,20 @@ export async function upsertProduct(formData: FormData) {
   const data = parseResult.data;
 
   try {
+    const session = await auth();
+    if (!session?.user?.empresa_id) throw new Error("No autorizado");
+    const empresaId = session.user.empresa_id;
+
     if (data.id && data.id !== "new") {
       // Editar
+      const product = await db.producto.findUnique({
+        where: { id: data.id },
+        select: { empresa_id: true }
+      });
+      if (!product || product.empresa_id !== empresaId) {
+        throw new Error("No autorizado");
+      }
+
       await db.producto.update({
         where: { id: data.id },
         data: {
@@ -50,12 +63,13 @@ export async function upsertProduct(formData: FormData) {
           codigo_interno: data.codigo_interno || null,
           precio_publico: data.precio_publico,
           costo: data.costo,
+          empresa_id: empresaId,
           // UpdatedAt is automatically set by Prisma, but we force it just in case
           updatedAt: new Date(),
         },
       });
 
-      const sucursales = await db.sucursal.findMany({ where: { activo: true } });
+      const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
       if (sucursales.length > 0) {
         await db.inventario_Sucursal.createMany({
           data: sucursales.map(s => ({
@@ -79,6 +93,18 @@ export async function upsertProduct(formData: FormData) {
 
 export async function toggleProduct(id: string, currentState: boolean) {
   try {
+    const session = await auth();
+    if (!session?.user?.empresa_id) throw new Error("No autorizado");
+    const empresaId = session.user.empresa_id;
+
+    const product = await db.producto.findUnique({
+      where: { id },
+      select: { empresa_id: true }
+    });
+    if (!product || product.empresa_id !== empresaId) {
+      throw new Error("No autorizado");
+    }
+
     // Usamos $executeRaw para evitar el error de tipo en el Prisma Client en caché
     // (isActive ya está en el schema, pero el cliente generado quedó obsoleto)
     await db.$executeRaw`
@@ -95,8 +121,13 @@ export async function toggleProduct(id: string, currentState: boolean) {
 
 export async function searchProducts(query: string) {
   try {
+    const session = await auth();
+    if (!session?.user?.empresa_id) throw new Error("No autorizado");
+    const empresaId = session.user.empresa_id;
+
     return await db.producto.findMany({
       where: {
+        empresa_id: empresaId,
         nombre: {
           contains: query,
           mode: "insensitive",
@@ -122,6 +153,10 @@ export async function importCatalogAction(products: any[]) {
       errors: 0,
     };
 
+    const session = await auth();
+    if (!session?.user?.empresa_id) throw new Error("No autorizado");
+    const empresaId = session.user.empresa_id;
+
     // Usamos una transacción para asegurar integridad, 
     // pero procesamos uno por uno para manejar errores individuales si es necesario
     // o simplemente usamos un bucle.
@@ -138,8 +173,13 @@ export async function importCatalogAction(products: any[]) {
 
           if (!prov) {
             prov = await db.proveedor.create({
-              data: { nombre: provName }
+              data: { 
+                nombre: provName,
+                empresa_id: empresaId
+              }
             });
+          } else if (prov.empresa_id !== empresaId) {
+            throw new Error(`El proveedor ${provName} pertenece a otra empresa.`);
           }
           proveedor_id = prov.id;
         }
@@ -153,6 +193,7 @@ export async function importCatalogAction(products: any[]) {
           proveedor_id,
           isActive: true,
           updatedAt: new Date(),
+          empresa_id: empresaId,
         };
 
         const initialStock = parseInt(item.stock, 10) || 0;
@@ -164,6 +205,9 @@ export async function importCatalogAction(products: any[]) {
           });
 
           if (existing) {
+            if (existing.empresa_id !== empresaId) {
+              throw new Error(`El producto con SKU ${item.codigo_interno} pertenece a otra empresa.`);
+            }
             await db.producto.update({
               where: { id: existing.id },
               data: productData
@@ -179,7 +223,7 @@ export async function importCatalogAction(products: any[]) {
             
             // Si hay stock inicial, lo creamos para todas las sucursales (opcional)
             if (initialStock > 0) {
-              const sucursales = await db.sucursal.findMany({ where: { activo: true } });
+              const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
               await db.inventario_Sucursal.createMany({
                 data: sucursales.map(s => ({
                   sucursal_id: s.id,
@@ -198,7 +242,7 @@ export async function importCatalogAction(products: any[]) {
           });
 
           if (initialStock > 0) {
-            const sucursales = await db.sucursal.findMany({ where: { activo: true } });
+            const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
             await db.inventario_Sucursal.createMany({
               data: sucursales.map(s => ({
                 sucursal_id: s.id,

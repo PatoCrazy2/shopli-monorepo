@@ -8,6 +8,15 @@ async function main() {
 
     const useRole = "DUENO"; // Based on @map("DUEÑO") in schema
 
+    let empresa = await db.empresa.findFirst({
+        where: { nombre: "Empresa ShopLI Demo" }
+    });
+    if (!empresa) {
+        empresa = await db.empresa.create({
+            data: { nombre: "Empresa ShopLI Demo" }
+        });
+    }
+
     const user = await db.user.upsert({
         where: { email: "admin@shopli.com" },
         update: {
@@ -19,7 +28,8 @@ async function main() {
             email: "admin@shopli.com",
             pin_hash: pin_hash,
             role: "DUENO",
-            name: "Admin Dueño"
+            name: "Admin Dueño",
+            empresa_id: empresa.id
         }
     });
 

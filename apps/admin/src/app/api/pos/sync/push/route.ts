@@ -113,6 +113,7 @@ export async function POST(req: Request) {
     // Fallback URL parse explicitly for secret query param if preferred over header
     const { searchParams } = new URL(req.url);
     const posSecretQuery = searchParams.get("secret");
+    const empresaId = searchParams.get("empresaId");
 
     const isPosAuthorized =
       validPosSecret &&
@@ -131,6 +132,10 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!empresaId) {
+      return NextResponse.json({ error: "Falta empresaId" }, { status: 400 });
+    }
+
     const body = await req.json().catch(() => ({}));
 
     // 1. Valida body completo con Zod
@@ -143,6 +148,62 @@ export async function POST(req: Request) {
     }
 
     const { turnos, ventas, auditorias, gastos, auditoriasDinamicas } = parseResult.data;
+
+    // Aislamiento Multi-Tenant: Validar sucursales y usuarios contra el empresaId
+    const sucursalIds = new Set<string>();
+    for (const t of turnos) if (t.sucursal_id) sucursalIds.add(t.sucursal_id);
+    for (const v of ventas) if (v.sucursal_id) sucursalIds.add(v.sucursal_id);
+    for (const g of gastos) if (g.sucursal_id) sucursalIds.add(g.sucursal_id);
+    for (const a of auditorias) {
+      const sid = a.sucursal_id || a.branchId;
+      if (sid) sucursalIds.add(sid);
+    }
+    for (const da of auditoriasDinamicas) if (da.sucursal_id) sucursalIds.add(da.sucursal_id);
+
+    if (sucursalIds.size > 0) {
+      const validSucursales = await db.sucursal.findMany({
+        where: {
+          id: { in: Array.from(sucursalIds) },
+          empresa_id: empresaId
+        },
+        select: { id: true }
+      });
+      const validIds = new Set(validSucursales.map(s => s.id));
+      for (const id of sucursalIds) {
+        if (!validIds.has(id)) {
+          return NextResponse.json(
+            { error: `La sucursal ${id} no pertenece a la empresa proporcionada.` },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    const userIds = new Set<string>();
+    for (const t of turnos) if (t.usuario_id) userIds.add(t.usuario_id);
+    for (const a of auditorias) {
+      const uid = a.usuario_id || a.userId;
+      if (uid) userIds.add(uid);
+    }
+
+    if (userIds.size > 0) {
+      const validUsers = await db.user.findMany({
+        where: {
+          id: { in: Array.from(userIds) },
+          empresa_id: empresaId
+        },
+        select: { id: true }
+      });
+      const validIds = new Set(validUsers.map(u => u.id));
+      for (const id of userIds) {
+        if (!validIds.has(id)) {
+          return NextResponse.json(
+            { error: `El usuario ${id} no pertenece a la empresa proporcionada.` },
+            { status: 403 }
+          );
+        }
+      }
+    }
 
     const procesados = {
       turnos: [] as string[],

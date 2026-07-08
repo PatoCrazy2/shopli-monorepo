@@ -8,11 +8,16 @@ export async function getGastos(filters: {
   categoria?: string;
 }) {
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.empresa_id) {
     throw new Error("No autorizado");
   }
+  const empresaId = session.user.empresa_id;
 
-  const where: Prisma.GastoWhereInput = {};
+  const where: Prisma.GastoWhereInput = {
+    sucursal: {
+      empresa_id: empresaId
+    }
+  };
 
   if (filters.sucursalId) {
     where.sucursal_id = filters.sucursalId;
