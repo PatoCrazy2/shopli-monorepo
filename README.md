@@ -58,22 +58,15 @@ ShopLI is an **offline-first POS system** that:
 
 ---
 
-## Architecture
+## Architecture & Multi-Tenancy
 
-ShopLI is built as a **Turborepo monorepo** with two distinct frontends and a shared backend layer.
+ShopLI is built as a **Turborepo monorepo** with strict logical isolation and two distinct frontends serving a shared backend layer.
 
-```
-shopli/
-├── apps/
-│   ├── admin/          → Next.js 14 (App Router)  — Dashboard & Analytics
-│   └── pos/            → Vite + React (PWA)        — Cashier Point of Sale
-│
-└── packages/
-    ├── db/             → Prisma schema, migrations, PrismaClient export
-    ├── ui/             → Shared Shadcn/UI components (Geist font)
-    ├── typescript-config/
-    └── eslint-config/
-```
+### 🏢 Multi-Tenant Isolation Model
+The platform implements a **Logical Multi-Tenant Architecture** scoped at the `Empresa` (Company) level:
+* **Strict Data Isolation:** All core entities (`User`, `Producto`, `Sucursal`, `Venta`, `Gasto`, `Proveedor`, `DynamicAudit`) are strictly tied to an `empresa_id` in the database.
+* **API & Action Scoping:** The backend (`apps/admin`) automatically scopes all Server Actions and REST API endpoints using the authenticated user's session `empresa_id`. Data leaks across different companies are physically impossible.
+* **POS Client Partitioning:** When a cashier logs in, the POS client (`apps/pos`) downloads *only* the catalog, sucursales, and users corresponding to their company, partitioning the local IndexedDB (`Dexie.js`) dynamically.
 
 ### Data Flow
 
@@ -82,11 +75,12 @@ shopli/
 │                    apps/pos  (PWA)                       │
 │  ┌──────────────┐    ┌────────────────────────────────┐ │
 │  │  Dexie.js    │◄───│  React Hooks + Service Worker  │ │
-│  │ (Local DB)   │    │  (Offline-First Logic)         │ │
+│  │ (Local DB    │    │  (Scoped to Empresa & Offline) │ │
+│  │  by Empresa) │    │                                │ │
 │  └──────┬───────┘    └────────────────────────────────┘ │
-│         │  Background Sync (when online)                 │
+│         │  Background Sync (when online with Empresa ID) │
 └─────────┼───────────────────────────────────────────────┘
-          │  POST /api/sync-push
+          │  POST /api/pos/sync/push
           ▼
 ┌─────────────────────────────────────────────────────────┐
 │                  apps/admin  (Next.js)                   │
@@ -117,44 +111,51 @@ shopli/
 
 ## Core Flow
 
-### Cashier — Sell Without Internet
+### 🛒 Cashier — Sell Without Internet (Offline-First)
 
 ```
-1. Open shift (Turno)  →  2. Scan / search product
+1. Open shift (Turno)  →  2. Scan / search product (offline DB)
         ↓
-3. Add to cart          →  4. Confirm payment
+3. Add to cart          →  4. Confirm payment (local transaction)
         ↓
-5. Sale written to Dexie.js (UUID assigned)
+5. Sale written to Dexie.js (UUID & Timestamp assigned)
         ↓
-6. Service Worker detects connectivity
+6. Service Worker detects connectivity (automatically)
         ↓
-7. POST /api/sync-push  →  Server validates & persists
+7. POST /api/pos/sync/push  →  Server validates, saves, and resolves conflicts
         ↓
 8. Inventory deducted at branch level (Inventario_Sucursal)
 ```
 
-### Cashier — Sequential Blind Audit
+### 🔍 Cashier — Sequential Dynamic Audit (A Puertas Abiertas)
+The POS allows cashiers to perform audits **without closing the store or pausing sales**:
 
 ```
-1. Start Dynamic Audit  →  2. Sequential product display
+1. Start Dynamic Audit  →  POS saves local timestamp (Start of Audit)
         ↓
-3. "Blind" counting (no expected stock shown)
+2. Sequential Blind Counting  →  POS displays products one-by-one
+                              →  No expected stock shown (forces physical count)
         ↓
-4. Finalize local count  →  5. Sync to server
+3. Local sales continue  →  Cashier continues processing sales
+                         →  All sales during audit are flagged locally
         ↓
-6. Server reconciles counts vs. local sales during audit period
+4. Finish count & Sync   →  POS sends count data + sales log to server
         ↓
-7. Owner reviews discrepancies & applies stock adjustments
+5. Server Reconciliation  →  Server queries expected stock at Start Timestamp
+                          →  Deducts sales processed *during* the audit interval
+                          →  Calculates true discrepancy: Counted vs (Expected - Sales)
+        ↓
+6. Owner Review & Adjust  →  Owner views financial impact & applies adjustments
 ```
 
-### Owner — Real-Time Business Intelligence
+### 📊 Owner — Real-Time Business Intelligence & Advanced Analytics
 
 ```
-Admin Dashboard  →  Financial Reports & Balance (all branches)
-                →  Net Profit Calculation (Sales - Expenses - COGS)
-                →  Inventory audit trail (InventoryAudit + AuditItem)
-                →  Expense categorization (Nomina, Renta, Variable)
-                →  User & supplier management
+Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date ranges
+                 →  Net Profit Calculation: Price - acquisition cost (COGS) - operational expenses
+                 →  Operational Expense Registry: Scoped fixed/variable costs (payroll, rent)
+                 →  Audit Trail: Track every stock modification (entries, transfers, adjustments)
+                 →  Discrepancy Metrics: Precision % & total currency lost due to inventory shrinkage
 ```
 
 ---
@@ -179,27 +180,23 @@ Admin Dashboard  →  Financial Reports & Balance (all branches)
 ## Features
 
 ### 🛒 Point of Sale (POS)
-- **Offline-first sales & expenses** — operate when internet is down
-- **Petty cash management** — track small daily outgoings (caja chica)
-- **Barcode / internal code search** — fast product lookup
-- **Shift management** — open/close cash register with initial float
-- **Multi-cashier on single device** — PIN-based quick session switching
-- **Sequential Dynamic Audit** — blind counting flow for forced accuracy
-- **Subtle connectivity indicator** — traffic-light dot (🟢 / 🟡 / 🔴)
-- **Blocking success modal** — cashier must confirm each completed sale
+- **Offline-First Sales & Expenses** — operate dynamically without internet connection.
+- **Online Tenant Handshake** — login initial online to link the physical device with the target `Empresa` (Company) and fetch the isolated catalog database.
+- **Multi-Cashier On Single Device** — PIN-based quick session switching, signing each transaction with the cashier's UUID.
+- **Petty Cash Management** — track small daily outgoings (caja chica) at branch level.
+- **Sequential Dynamic Audit (Blind Count)** — open-door inventory verification. The interface presents products sequentially without showing expected stock, enforcing forced accuracy.
+- **Connectivity Traffic-Light (🟢 / 🟡 / 🔴)** — visual cue showing live connection status.
+- **Blocking Success Modal** — prevents double-tapping and forces the cashier to visually confirm each completed sale.
 
 ### 📊 Admin Dashboard
-- **Consolidated balance & utility** — net profit tracking across all branches
-- **Operational expense registry** — log rent, payroll, and fixed costs
-- **Real profit tracking** — `price - cost - expenses` margin calc
-- **Inventory management** — per-branch stock levels via `Inventario_Sucursal`
-- **Bulk Catalog Import** — intelligent CSV/Excel parser with auto-header detection and data sanitization
-- **Centralized Stock History** — detailed audit trail of entries, adjustments, and transfers
-- **Dynamic Audit Reporting** — KPI tracking (Product precision, financial impact)
-- **Inventory audit log** — discrepancy tracking with reason codes
-- **User management** — create cashiers, managers; assign PINs
-- **Supplier directory** — contact info linked to products
-- **Bulk price updates** — owner-level batch operations
+- **Logical Multi-Tenant Scoping** — secure data access. Owners only see resources of their registered company; cashiers/managers are restricted to their assigned branch.
+- **Advanced Net Profit Analytics** — computes dynamic net profit: `Price - Acquisition Cost (COGS) - Operational Expenses`.
+- **Advanced Inventory Analytics** — detailed stock tracking per branch, discrepancy metrics (shrinkage percentage), and financial impact of missing items.
+- **Centralized Stock History** — comprehensive audit logs of all entries, adjustments, and branch-to-branch transfers.
+- **Operational Expense Registry** — log payroll, rent, and other fixed or variable costs.
+- **Intelligent CSV Catalog Import** — smart parser with header auto-detection, schema verification, and automated mapping.
+- **User & Role Management** — create users (Owners, Managers, Cashiers) and manage their security PINs.
+- **Supplier Directory** — contact book linked directly to product acquisition.
 
 ### 🔐 Role-Based Access Control
 
@@ -268,28 +265,30 @@ NEXTAUTH_URL="http://localhost:3000"
 POS_SYNC_SECRET="your-sync-secret"
 
 # apps/pos/.env
-VITE_API_URL="http://localhost:3000"
+VITE_API_BASE_URL="http://localhost:3000"
 VITE_SYNC_SECRET="your-sync-secret"
 ```
 
-### 4. Run Migrations & Seed
+### 4. Run Migrations & Initial Setup
 
 ```bash
 # Generate Prisma client
 pnpm --filter @shopli/db db:generate
 
-# Push schema to local Docker DB
-pnpm --filter @shopli/db db:push
+# Apply migrations locally (Docker DB)
+pnpm --filter @shopli/db exec prisma migrate dev
 
-# (Optional) Seed initial data
+# (Optional) Seed initial demo data
 pnpm --filter @shopli/db db:seed
 ```
 
-### 5. Start Development
-
-```bash
-pnpm dev
-```
+### 5. Start Development & Register
+1. Run the dev servers:
+   ```bash
+   pnpm dev
+   ```
+2. Navigate to `http://localhost:3000/register` to register your initial **Dueño (Owner)** account and create your **Empresa (Company)**.
+3. Use those credentials to access the Dashboard and configure your sucursales/products, then log in on the POS client.
 
 | App | URL |
 |---|---|
@@ -306,12 +305,6 @@ pnpm dev
 - **Audit everything** — sale deletions, price changes, and inventory adjustments are always logged
 - **Migrations in Docker first** — never apply untested migrations to Neon production
 - **Financial logic must have unit tests** — no exceptions
-
----
-
-## Project Team
-
-> Built with ❤️ for small businesses that deserve enterprise-grade tools.
 
 ---
 
