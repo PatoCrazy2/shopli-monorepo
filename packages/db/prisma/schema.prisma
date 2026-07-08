@@ -69,6 +69,8 @@ model Producto {
   descripcion    String?
   costo          Decimal  @db.Decimal(10, 2)
   precio_publico Decimal  @db.Decimal(10, 2)
+  precio_mayoreo Decimal? @db.Decimal(10, 2)
+  min_cantidad_mayoreo Int?
   categoria      String?
   proveedor_id   String?
   isCritical     Boolean  @default(false)
@@ -155,6 +157,8 @@ model Detalle_Venta {
   producto_id                String
   cantidad                   Int
   precio_unitario_historico  Decimal  @db.Decimal(10, 2)
+  descuento_manual           Decimal  @default(0) @db.Decimal(10, 2)
+  nota_descuento             String?
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
   
