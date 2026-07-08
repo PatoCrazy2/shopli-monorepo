@@ -14,12 +14,22 @@ describe('pushToCloud integration', () => {
     vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000/api' } });
     vi.stubGlobal('navigator', { onLine: true });
 
+    // Ensure test Empresa exists
+    const testEmpresa = await prisma.empresa.upsert({
+      where: { id: 'test-empresa-id' },
+      update: {},
+      create: {
+        id: 'test-empresa-id',
+        nombre: 'Test Empresa'
+      }
+    });
+
     // 1. Setup Postgres data needed for a successful Push
     // Sucursal
     const branch = await prisma.sucursal.findFirst();
     if (!branch) {
       const newBranch = await prisma.sucursal.create({
-        data: { id: "branch-push-test", nombre: "Push Test Branch" }
+        data: { id: "branch-push-test", nombre: "Push Test Branch", empresa_id: testEmpresa.id }
       });
       testBranchId = newBranch.id;
     } else {
@@ -35,6 +45,7 @@ describe('pushToCloud integration', () => {
           email: 'pusher@cajero.com',
           role: Role.CAJERO,
           pin_hash: 'dummy',
+          empresa_id: testEmpresa.id,
         }
       });
     }
@@ -48,6 +59,7 @@ describe('pushToCloud integration', () => {
           nombre: 'Push Product',
           precio_publico: 100,
           costo: 50,
+          empresa_id: testEmpresa.id,
         }
       });
     }
