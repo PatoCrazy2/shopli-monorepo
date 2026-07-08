@@ -105,7 +105,8 @@ export default async function CutsPage({
         ) : (
           turnos.map(turno => {
             const ventasSistema = turno.ventas.reduce((acc, v) => acc + Number(v.total), 0);
-            const sistema = ventasSistema + Number(turno.monto_inicial);
+            const totalGastos = (turno as any).gastos ? (turno as any).gastos.reduce((acc: number, g: any) => acc + Number(g.monto), 0) : 0;
+            const sistema = ventasSistema + Number(turno.monto_inicial) - totalGastos;
             const reportado = turno.monto_final ? Number(turno.monto_final) : 0;
             const diferencia = reportado - sistema;
             const isClosed = turno.estado === "CERRADO";
@@ -169,7 +170,9 @@ export default async function CutsPage({
                   <div className="flex flex-col p-6 rounded-2xl bg-black dark:bg-zinc-800 border border-black shadow-xl">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Calculado sistema</span>
                     <span className="text-4xl font-black tracking-tighter text-white">${sistema.toFixed(2)}</span>
-                    <p className="text-[11px] text-zinc-500 mt-3 font-medium leading-relaxed">Suma de ventas completadas + fondo inicial.</p>
+                    <p className="text-[11px] text-zinc-500 mt-3 font-medium leading-relaxed">
+                      Suma de ventas completadas + fondo inicial{totalGastos > 0 ? ` - gastos de caja chica ($${totalGastos.toFixed(2)})` : ''}.
+                    </p>
                   </div>
 
                   <div className={`flex flex-col p-6 rounded-2xl border shadow-sm transition-colors ${!isClosed ? 'bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800' : isBalanced ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
@@ -182,6 +185,40 @@ export default async function CutsPage({
                     </p>
                   </div>
                 </div>
+
+                {/* Gastos de Caja Chica Section */}
+                {(turno as any).gastos && (turno as any).gastos.length > 0 && (
+                  <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="flex items-center gap-3 px-2">
+                      <div className="h-1 w-12 bg-red-500 rounded-full" />
+                      <h4 className="text-xs font-black uppercase tracking-[0.25em] text-zinc-900 dark:text-white">
+                        Gastos de Caja Chica del Turno
+                      </h4>
+                    </div>
+                    <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 max-w-xl">
+                      <table className="w-full text-sm text-left border-collapse">
+                        <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
+                          <tr>
+                            <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">Descripción / Motivo</th>
+                            <th className="px-6 py-3 text-right text-[10px] font-black uppercase tracking-widest text-zinc-500">Monto</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+                          {(turno as any).gastos.map((g: any) => (
+                            <tr key={g.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                              <td className="px-6 py-3 font-medium text-zinc-900 dark:text-white">
+                                {g.descripcion}
+                              </td>
+                              <td className="px-6 py-3 text-right font-bold text-red-600 dark:text-red-400">
+                                -${Number(g.monto).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Inventory Audits Section */}
                 {turno.auditorias.length > 0 && (
