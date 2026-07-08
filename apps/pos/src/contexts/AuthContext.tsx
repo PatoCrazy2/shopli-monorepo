@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { db } from '../lib/db';
 import bcrypt from 'bcryptjs';
 import { pullFromCloud, pushToCloud } from '../lib/sync';
+import { apiClient } from '../lib/api-client';
 
 
 export interface User {
@@ -59,19 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             try {
-                const response = await fetch('/api/pos/auth', {
+                const data = await apiClient<{ id: string; empresa_id: string }>('pos/auth', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, pin })
+                    body: { email, pin }
                 });
-
-                if (!response.ok) {
-                    const err = await response.json();
-                    console.warn('Error en login online:', err.error);
-                    return false;
-                }
-
-                const data = await response.json();
                 
                 // Guardar empresaId en db.meta antes del pull
                 await db.meta.put({ key: 'empresaId', value: data.empresa_id });
