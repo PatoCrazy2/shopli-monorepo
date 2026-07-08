@@ -75,8 +75,8 @@ export interface LocalSaleDetail {
   nombre_producto: string; // Para mostrar en el ticket sin tener que hacer join constante
   cantidad: number;
   precio_unitario_historico: number;
-  descuento_manual: number;
-  nota_descuento: string | null;
+  descuento_manual?: number;
+  nota_descuento?: string | null;
 }
 
 export interface LocalSale {

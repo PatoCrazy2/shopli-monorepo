@@ -18,6 +18,7 @@ export default function SalesScreen() {
         handleAddToCart,
         removeFromCart,
         updateQuantity,
+        applyManualDiscount,
         clearCart,
         totalCart,
         totalItems
@@ -73,6 +74,7 @@ export default function SalesScreen() {
                     onCheckout={handleCheckout}
                     onRemove={removeFromCart}
                     onUpdateQuantity={updateQuantity}
+                    onApplyDiscount={applyManualDiscount}
                 />
             )}
 
