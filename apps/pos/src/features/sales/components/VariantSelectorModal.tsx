@@ -47,7 +47,6 @@ export default function VariantSelectorModal({
                                 key={v.id}
                                 onClick={() => {
                                     onSelect(v.id);
-                                    onClose();
                                 }}
                                 className={`w-full p-4 flex items-center justify-between border rounded-2xl transition-all text-left active:scale-[0.99]
                                     ${isOutOfStock 
