@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { adjustStock } from "./actions";
 
 interface QuickAdjustModalProps {
@@ -16,6 +16,11 @@ export function QuickAdjustModal({ productId, productName, branches, selectedBra
   const [newStockStr, setNewStockStr] = useState<string>("");
   const [branchId, setBranchId] = useState(selectedBranchId || "");
   const [isPending, startTransition] = useTransition();
+
+  // Sincronizar branchId si cambia el filtro externo
+  useEffect(() => {
+    setBranchId(selectedBranchId || "");
+  }, [selectedBranchId]);
 
   // Find current stock for the selected branch
   const currentBranchStock = productShares.find(s => s.sucursal_id === branchId)?.cantidad ?? 0;
@@ -71,7 +76,7 @@ export function QuickAdjustModal({ productId, productName, branches, selectedBra
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Sucursal</span>
                   {selectedBranchId ? (
-                    <span className="text-sm font-semibold text-black mt-0.5">{selectedBranchName}</span>
+                    <span className="text-sm font-semibold text-black mt-0.5">{selectedBranchName || "Cargando..."}</span>
                   ) : (
                     <select 
                       value={branchId}
