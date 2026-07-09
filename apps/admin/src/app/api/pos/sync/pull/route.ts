@@ -17,6 +17,8 @@ export type SyncProduct = {
   precioMayoreo: number | null;
   minCantidadMayoreo: number | null;
   category: string | null;
+  parentId: string | null;
+  varianteNombre: string | null;
   updatedAt: string;
 };
 
@@ -214,6 +216,8 @@ export async function GET(req: NextRequest) {
         precioMayoreo: p.precio_mayoreo ? Number(p.precio_mayoreo) : null,
         minCantidadMayoreo: p.min_cantidad_mayoreo,
         category: p.categoria,
+        parentId: p.parent_id,
+        varianteNombre: p.variante_nombre,
         updatedAt: p.updatedAt.toISOString(),
       };
     });

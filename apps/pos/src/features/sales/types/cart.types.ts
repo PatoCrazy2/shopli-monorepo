@@ -8,4 +8,6 @@ export interface CartItem {
     quantity: number;
     descuento_manual: number;
     nota_descuento: string;
+    parent_id: string | null;
+    variante_nombre: string | null;
 }
