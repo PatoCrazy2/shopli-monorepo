@@ -13,7 +13,7 @@ export default async function ProductPage({
     let initialData = undefined;
 
     if (id !== "new") {
-        const product = await db.producto.findUnique({
+        let product = await db.producto.findUnique({
             where: { id },
             include: {
                 inventario: true,
@@ -26,6 +26,23 @@ export default async function ProductPage({
 
         if (!product) {
             return notFound();
+        }
+
+        // Si es una variante, redirigimos la carga de datos al producto padre
+        if (product.parent_id) {
+            const parentProduct = await db.producto.findUnique({
+                where: { id: product.parent_id },
+                include: {
+                    inventario: true,
+                    variants: {
+                        where: { isActive: true },
+                        orderBy: { variante_nombre: "asc" }
+                    }
+                }
+            });
+            if (parentProduct) {
+                product = parentProduct;
+            }
         }
 
         initialData = {
