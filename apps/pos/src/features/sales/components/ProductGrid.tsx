@@ -158,6 +158,7 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
 
             {selectedParent && (
                 <VariantSelectorModal
+                    parentId={selectedParent.id}
                     parentName={selectedParent.nombre}
                     variants={selectedParent.variants}
                     onClose={() => setSelectedParent(null)}

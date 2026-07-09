@@ -1,4 +1,6 @@
 import { X, Layers, AlertTriangle } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../../lib/db';
 
 interface VariantProduct {
     id: string;
@@ -9,6 +11,7 @@ interface VariantProduct {
 }
 
 interface VariantSelectorModalProps {
+    parentId: string;
     parentName: string;
     variants: VariantProduct[];
     onClose: () => void;
@@ -16,11 +19,20 @@ interface VariantSelectorModalProps {
 }
 
 export default function VariantSelectorModal({
+    parentId,
     parentName,
     variants,
     onClose,
     onSelect
 }: VariantSelectorModalProps) {
+    // Consultar reactivamente los productos en el carrito
+    const cartItems = useLiveQuery(() => db.cart.toArray()) ?? [];
+
+    // Contar cuántas unidades de variantes de este padre hay en el carrito
+    const selectedCount = cartItems
+        .filter(item => item.parent_id === parentId)
+        .reduce((sum, item) => sum + item.quantity, 0);
+
     return (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
@@ -59,11 +71,8 @@ export default function VariantSelectorModal({
                                         {v.variante_nombre || "General"}
                                     </span>
                                     <div className="flex items-center gap-1.5">
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isOutOfStock ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
-                                            Stock: {v.stock}
-                                        </span>
                                         {isOutOfStock && (
-                                            <span className="text-[10px] text-amber-600 flex items-center gap-0.5 font-bold">
+                                            <span className="text-[10px] bg-red-100 text-red-700 flex items-center gap-0.5 font-bold px-2 py-0.5 rounded-full">
                                                 <AlertTriangle className="w-3 h-3" /> Sin stock
                                             </span>
                                         )}
@@ -75,6 +84,16 @@ export default function VariantSelectorModal({
                             </button>
                         );
                     })}
+                </div>
+
+                {/* Footer con botón de Listo */}
+                <div className="p-6 border-t border-gray-100 bg-gray-50 flex flex-col gap-3">
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3.5 bg-black text-white rounded-2xl text-sm font-bold hover:bg-zinc-800 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                        Listo {selectedCount > 0 ? `(${selectedCount})` : ''}
+                    </button>
                 </div>
             </div>
         </div>
