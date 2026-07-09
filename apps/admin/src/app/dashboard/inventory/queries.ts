@@ -19,7 +19,11 @@ export async function getInventory(sucursalId?: string) {
   const productos = await db.producto.findMany({
     where: { 
       isActive: true,
-      empresa_id: empresaId 
+      empresa_id: empresaId,
+      OR: [
+        { parent_id: { not: null } },
+        { parent_id: null, variants: { none: {} } }
+      ]
     },
     include: {
       inventario: {

@@ -24,7 +24,12 @@ export default async function CatalogPage({
 
   const whereClause = {
     empresa_id: empresaId,
-    ...(query ? { nombre: { contains: query, mode: "insensitive" as const } } : {})
+    isActive: true,
+    ...(query ? { nombre: { contains: query, mode: "insensitive" as const } } : {}),
+    OR: [
+      { parent_id: { not: null } },
+      { parent_id: null, variants: { none: {} } }
+    ]
   };
 
   const products = await db.producto.findMany({
