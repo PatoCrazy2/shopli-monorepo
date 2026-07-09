@@ -37,14 +37,28 @@ export async function upsertProduct(formData: FormData) {
   }
 
   const data = parseResult.data;
+  const variantsRaw = formData.get("variants") as string | null;
+  let variants: any[] = [];
+  if (variantsRaw) {
+    try {
+      const parsed = JSON.parse(variantsRaw);
+      if (Array.isArray(parsed)) {
+        variants = parsed;
+      }
+    } catch (e) {
+      return { error: "Formato de variantes inválido" };
+    }
+  }
 
   try {
     const session = await auth();
     if (!session?.user?.empresa_id) throw new Error("No autorizado");
     const empresaId = session.user.empresa_id;
 
+    let parentId = data.id;
+
     if (data.id && data.id !== "new") {
-      // Editar
+      // Editar Padre
       const product = await db.producto.findUnique({
         where: { id: data.id },
         select: { empresa_id: true }
@@ -66,9 +80,72 @@ export async function upsertProduct(formData: FormData) {
         },
       });
 
-      // Ya no actualizamos el stock desde aquí porque se maneja en Inventario
+      // Obtener variantes actuales
+      const existingVariants = await db.producto.findMany({
+        where: { parent_id: data.id },
+        select: { id: true }
+      });
+      const existingIds = existingVariants.map(v => v.id);
+      const receivedIds = variants.map(v => v.id).filter(Boolean) as string[];
+
+      // Desactivar variantes obsoletas
+      const idsToDeactivate = existingIds.filter(id => !receivedIds.includes(id));
+      if (idsToDeactivate.length > 0) {
+        await db.producto.updateMany({
+          where: { id: { in: idsToDeactivate } },
+          data: { isActive: false }
+        });
+      }
+
+      // Procesar variantes
+      for (const v of variants) {
+        const variantFullName = `${data.nombre} (${v.variante_nombre})`;
+        if (v.id) {
+          await db.producto.update({
+            where: { id: v.id },
+            data: {
+              nombre: variantFullName,
+              codigo_interno: v.codigo_interno || null,
+              costo: data.costo,
+              precio_publico: data.precio_publico,
+              precio_mayoreo: data.precio_mayoreo ?? null,
+              min_cantidad_mayoreo: data.min_cantidad_mayoreo ?? null,
+              variante_nombre: v.variante_nombre,
+              isActive: v.isActive !== false,
+              updatedAt: new Date(),
+            }
+          });
+        } else {
+          const newVar = await db.producto.create({
+            data: {
+              nombre: variantFullName,
+              codigo_interno: v.codigo_interno || null,
+              costo: data.costo,
+              precio_publico: data.precio_publico,
+              precio_mayoreo: data.precio_mayoreo ?? null,
+              min_cantidad_mayoreo: data.min_cantidad_mayoreo ?? null,
+              variante_nombre: v.variante_nombre,
+              parent_id: data.id,
+              empresa_id: empresaId,
+              isActive: true,
+              updatedAt: new Date(),
+            }
+          });
+
+          const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
+          if (sucursales.length > 0) {
+            await db.inventario_Sucursal.createMany({
+              data: sucursales.map(s => ({
+                sucursal_id: s.id,
+                producto_id: newVar.id,
+                cantidad: 0
+              }))
+            });
+          }
+        }
+      }
     } else {
-      // Crear
+      // Crear Padre
       const newProduct = await db.producto.create({
         data: {
           nombre: data.nombre,
@@ -78,10 +155,11 @@ export async function upsertProduct(formData: FormData) {
           precio_mayoreo: data.precio_mayoreo ?? null,
           min_cantidad_mayoreo: data.min_cantidad_mayoreo ?? null,
           empresa_id: empresaId,
-          // UpdatedAt is automatically set by Prisma, but we force it just in case
           updatedAt: new Date(),
         },
       });
+
+      parentId = newProduct.id;
 
       const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
       if (sucursales.length > 0) {
@@ -92,6 +170,36 @@ export async function upsertProduct(formData: FormData) {
             cantidad: 0
           }))
         });
+      }
+
+      // Crear variantes de este nuevo producto
+      for (const v of variants) {
+        const variantFullName = `${data.nombre} (${v.variante_nombre})`;
+        const newVar = await db.producto.create({
+          data: {
+            nombre: variantFullName,
+            codigo_interno: v.codigo_interno || null,
+            costo: data.costo,
+            precio_publico: data.precio_publico,
+            precio_mayoreo: data.precio_mayoreo ?? null,
+            min_cantidad_mayoreo: data.min_cantidad_mayoreo ?? null,
+            variante_nombre: v.variante_nombre,
+            parent_id: parentId,
+            empresa_id: empresaId,
+            isActive: true,
+            updatedAt: new Date(),
+          }
+        });
+
+        if (sucursales.length > 0) {
+          await db.inventario_Sucursal.createMany({
+            data: sucursales.map(s => ({
+              sucursal_id: s.id,
+              producto_id: newVar.id,
+              cantidad: 0
+            }))
+          });
+        }
       }
     }
 
@@ -119,12 +227,10 @@ export async function toggleProduct(id: string, currentState: boolean) {
       throw new Error("No autorizado");
     }
 
-    // Usamos $executeRaw para evitar el error de tipo en el Prisma Client en caché
-    // (isActive ya está en el schema, pero el cliente generado quedó obsoleto)
     await db.$executeRaw`
       UPDATE "Producto"
       SET "isActive" = ${!currentState}, "updatedAt" = NOW()
-      WHERE "id" = ${id}
+      WHERE "id" = ${id} OR "parent_id" = ${id}
     `;
     revalidatePath("/dashboard/catalog");
     return { success: true };
