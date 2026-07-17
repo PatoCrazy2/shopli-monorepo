@@ -40,6 +40,13 @@ export default function CartScreen({
         return db.inventory.where('sucursal_id').equals(user.branchId).toArray();
     }, [user]) ?? [];
 
+    // Agrupación para mayoreo cruzado por variante
+    const groupQuantities = new Map<string, number>();
+    cartItems.forEach(it => {
+        const k = it.parent_id || it.producto_id;
+        groupQuantities.set(k, (groupQuantities.get(k) || 0) + it.quantity);
+    });
+
     const handleSaveDiscount = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedItemForDiscount) return;
@@ -50,9 +57,12 @@ export default function CartScreen({
             return;
         }
 
+        const key = selectedItemForDiscount.parent_id || selectedItemForDiscount.producto_id;
+        const groupQty = groupQuantities.get(key) || 0;
+
         const hasMayoreo = selectedItemForDiscount.min_cantidad_mayoreo !== null && 
                            selectedItemForDiscount.precio_mayoreo !== null && 
-                           selectedItemForDiscount.quantity >= selectedItemForDiscount.min_cantidad_mayoreo;
+                           groupQty >= selectedItemForDiscount.min_cantidad_mayoreo;
         const basePrice = hasMayoreo ? (selectedItemForDiscount.precio_mayoreo as number) : selectedItemForDiscount.price;
         const maxAllowed = roundCustom(basePrice * selectedItemForDiscount.quantity);
 
@@ -91,9 +101,12 @@ export default function CartScreen({
                     const currentStock = inv ? inv.cantidad : 0;
                     const stockIsLow = currentStock <= 0;
                     
+                    const key = item.parent_id || item.producto_id;
+                    const groupQty = groupQuantities.get(key) || 0;
+
                     const hasMayoreo = item.min_cantidad_mayoreo !== null && 
                                        item.precio_mayoreo !== null && 
-                                       item.quantity >= item.min_cantidad_mayoreo;
+                                       groupQty >= item.min_cantidad_mayoreo;
                     const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
                     const itemTotal = roundCustom(basePrice * item.quantity) - (item.descuento_manual || 0);
 
@@ -101,7 +114,9 @@ export default function CartScreen({
                     <div key={item.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border shadow-sm rounded-xl transition-colors gap-3 sm:gap-0 ${stockIsLow ? 'bg-amber-50/30 border-amber-200' : 'bg-white border-gray-100'}`}>
                         <div className="flex-1 pr-2">
                             <div className="flex items-start gap-2">
-                                <p className="font-semibold text-lg leading-tight">{item.name}</p>
+                                <p className="font-semibold text-lg leading-tight">
+                                    {item.name} {item.variante_nombre ? `(${item.variante_nombre})` : ''}
+                                </p>
                                 {stockIsLow && (
                                     <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
                                         <AlertTriangle className="w-3 h-3" />

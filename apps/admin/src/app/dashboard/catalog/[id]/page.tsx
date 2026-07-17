@@ -13,19 +13,37 @@ export default async function ProductPage({
     let initialData = undefined;
 
     if (id !== "new") {
-        const product = await db.producto.findUnique({
+        let product = await db.producto.findUnique({
             where: { id },
-            include: { inventario: true },
+            include: {
+                inventario: true,
+                variants: {
+                    where: { isActive: true },
+                    orderBy: { variante_nombre: "asc" }
+                }
+            },
         });
 
         if (!product) {
             return notFound();
         }
 
-        const stockTotal = product.inventario.reduce(
-            (acc, inv) => acc + inv.cantidad,
-            0
-        );
+        // Si es una variante, redirigimos la carga de datos al producto padre
+        if (product.parent_id) {
+            const parentProduct = await db.producto.findUnique({
+                where: { id: product.parent_id },
+                include: {
+                    inventario: true,
+                    variants: {
+                        where: { isActive: true },
+                        orderBy: { variante_nombre: "asc" }
+                    }
+                }
+            });
+            if (parentProduct) {
+                product = parentProduct;
+            }
+        }
 
         initialData = {
             id: product.id,
@@ -35,6 +53,12 @@ export default async function ProductPage({
             costo: Number(product.costo),
             precio_mayoreo: product.precio_mayoreo ? Number(product.precio_mayoreo) : null,
             min_cantidad_mayoreo: product.min_cantidad_mayoreo,
+            variants: product.variants.map(v => ({
+                id: v.id,
+                variante_nombre: v.variante_nombre || "",
+                codigo_interno: v.codigo_interno,
+                isActive: v.isActive
+            }))
         };
     }
 

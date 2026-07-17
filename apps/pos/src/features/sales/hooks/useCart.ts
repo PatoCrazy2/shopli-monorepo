@@ -29,7 +29,9 @@ export function useCart() {
                 min_cantidad_mayoreo: product.min_cantidad_mayoreo ?? null,
                 quantity: 1,
                 descuento_manual: 0,
-                nota_descuento: ""
+                nota_descuento: "",
+                parent_id: product.parent_id ?? null,
+                variante_nombre: product.variante_nombre ?? null
             });
         }
     };
@@ -58,10 +60,20 @@ export function useCart() {
         });
     };
 
+    // Agrupación para mayoreo cruzado por variante
+    const groupQuantities = new Map<string, number>();
+    cartItems.forEach(item => {
+        const key = item.parent_id || item.producto_id;
+        groupQuantities.set(key, (groupQuantities.get(key) || 0) + item.quantity);
+    });
+
     const totalCart = cartItems.reduce((acc: number, item: LocalCartItem) => {
+        const key = item.parent_id || item.producto_id;
+        const groupQty = groupQuantities.get(key) || 0;
+
         const hasMayoreo = item.min_cantidad_mayoreo !== null && 
                            item.precio_mayoreo !== null && 
-                           item.quantity >= item.min_cantidad_mayoreo;
+                           groupQty >= item.min_cantidad_mayoreo;
         const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
         const subtotal = roundCustom(basePrice * item.quantity);
         return acc + subtotal - (item.descuento_manual || 0);

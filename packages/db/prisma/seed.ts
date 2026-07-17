@@ -122,6 +122,52 @@ async function main() {
     },
   });
 
+  // Imán Padre
+  const imanPadre = await prisma.producto.create({
+    data: {
+      nombre: "Imán Decorativo",
+      codigo_interno: "IMAN-GEN",
+      costo: 15.00,
+      precio_publico: 30.00,
+      precio_mayoreo: 25.00,
+      min_cantidad_mayoreo: 2,
+      categoria: "Decoración",
+      empresa_id: empresaA.id,
+    }
+  });
+
+  // Imán Rojo (Variante)
+  const imanRojo = await prisma.producto.create({
+    data: {
+      nombre: "Imán Decorativo (Rojo)",
+      codigo_interno: "IMAN-ROJO",
+      costo: 15.00,
+      precio_publico: 30.00,
+      precio_mayoreo: 25.00,
+      min_cantidad_mayoreo: 2,
+      categoria: "Decoración",
+      empresa_id: empresaA.id,
+      parent_id: imanPadre.id,
+      variante_nombre: "Rojo"
+    }
+  });
+
+  // Imán Café (Variante)
+  const imanCafe = await prisma.producto.create({
+    data: {
+      nombre: "Imán Decorativo (Café)",
+      codigo_interno: "IMAN-CAFE",
+      costo: 15.00,
+      precio_publico: 30.00,
+      precio_mayoreo: 25.00,
+      min_cantidad_mayoreo: 2,
+      categoria: "Decoración",
+      empresa_id: empresaA.id,
+      parent_id: imanPadre.id,
+      variante_nombre: "Café"
+    }
+  });
+
   // Empresa B (Pepsi)
   const prodB1 = await prisma.producto.create({
     data: {
@@ -150,6 +196,8 @@ async function main() {
     data: [
       { sucursal_id: sucursalA.id, producto_id: prodA1.id, cantidad: 50 },
       { sucursal_id: sucursalA.id, producto_id: prodA2.id, cantidad: 30 },
+      { sucursal_id: sucursalA.id, producto_id: imanRojo.id, cantidad: 15 },
+      { sucursal_id: sucursalA.id, producto_id: imanCafe.id, cantidad: 20 },
       { sucursal_id: sucursalB.id, producto_id: prodB1.id, cantidad: 45 },
       { sucursal_id: sucursalB.id, producto_id: prodB2.id, cantidad: 25 },
     ],

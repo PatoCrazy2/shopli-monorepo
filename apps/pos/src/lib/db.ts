@@ -32,6 +32,8 @@ export interface LocalProduct {
   categoria: string | null;
   isCritical: boolean;
   isActive: boolean;
+  parent_id: string | null;
+  variante_nombre: string | null;
   updatedAt: string;
 }
 
@@ -53,6 +55,8 @@ export interface LocalCartItem {
   quantity: number;
   descuento_manual: number;
   nota_descuento: string;
+  parent_id: string | null;
+  variante_nombre: string | null;
 }
 
 export interface LocalTurno {

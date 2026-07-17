@@ -22,10 +22,20 @@ export function useSalesHistory() {
 
         const saleId = crypto.randomUUID();
 
+        // Agrupación para mayoreo cruzado por variante
+        const groupQuantities = new Map<string, number>();
+        items.forEach(item => {
+             const key = item.parent_id || item.producto_id;
+             groupQuantities.set(key, (groupQuantities.get(key) || 0) + item.quantity);
+        });
+
         const detalles: LocalSaleDetail[] = items.map(item => {
+             const key = item.parent_id || item.producto_id;
+             const groupQty = groupQuantities.get(key) || 0;
+
              const hasMayoreo = item.min_cantidad_mayoreo !== null && 
                                 item.precio_mayoreo !== null && 
-                                item.quantity >= item.min_cantidad_mayoreo;
+                                groupQty >= item.min_cantidad_mayoreo;
              const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
              return {
                  id: crypto.randomUUID(),

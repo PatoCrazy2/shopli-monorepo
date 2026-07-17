@@ -93,6 +93,8 @@ export async function pullFromCloud(): Promise<SyncResult> {
              categoria: p.category,
              isCritical: false, // Ahora se puede calcular mediante cruce local
              isActive: true, // El endpoint solo devuelve productos activos
+             parent_id: p.parentId || null,
+             variante_nombre: p.varianteNombre || null,
              updatedAt: p.updatedAt
           }));
           await db.products.bulkAdd(productsToAdd);
@@ -148,6 +150,8 @@ export async function pullFromCloud(): Promise<SyncResult> {
               categoria: p.category,
               isCritical: false,
               isActive: true, // El endpoint solo devuelve productos activos
+              parent_id: p.parentId || null,
+              variante_nombre: p.varianteNombre || null,
               updatedAt: p.updatedAt
             }))
            );

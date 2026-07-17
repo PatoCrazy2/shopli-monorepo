@@ -10,9 +10,19 @@ export function useInventory() {
     const productsDb = useLiveQuery(async () => {
         if (!user) return [];
         const allProducts = await db.products.toArray();
+        const parentIdsWithVariants = new Set(
+            allProducts.filter(p => p.parent_id).map(p => p.parent_id)
+        );
+
+        const sellableProducts = allProducts.filter(p => {
+            if (p.parent_id) return true;
+            if (parentIdsWithVariants.has(p.id)) return false;
+            return true;
+        });
+
         const allInventory = await db.inventory.where('sucursal_id').equals(user.branchId).toArray();
         
-        return allProducts.map(p => {
+        return sellableProducts.map(p => {
             const inv = allInventory.find(i => i.producto_id === p.id);
             return {
                 id: p.id,

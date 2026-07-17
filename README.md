@@ -181,6 +181,8 @@ Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date rang
 
 ### 🛒 Point of Sale (POS)
 - **Offline-First Sales & Expenses** — operate dynamically without internet connection.
+- **Combined Wholesale Discounts (Mayoreo Cruzado)** — automatically applies wholesale pricing to variant groups if the combined quantity of all selected colors/variants is equal to or greater than the minimum quantity defined for the group.
+- **Sequential Variant Selection Modal** — clean single-card representation for parent products in the grid, opening a modal to add multiple colors/sizes sequentially with a live count indicator, keeping the stock hidden unless it is 0.
 - **Online Tenant Handshake** — login initial online to link the physical device with the target `Empresa` (Company) and fetch the isolated catalog database.
 - **Multi-Cashier On Single Device** — PIN-based quick session switching, signing each transaction with the cashier's UUID.
 - **Petty Cash Management** — track small daily outgoings (caja chica) at branch level.
@@ -190,6 +192,7 @@ Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date rang
 
 ### 📊 Admin Dashboard
 - **Logical Multi-Tenant Scoping** — secure data access. Owners only see resources of their registered company; cashiers/managers are restricted to their assigned branch.
+- **Product Variant Management** — dynamically manage product variants in the creation/edit form, auto-propagating activation state, category, cost, price, and wholesale rules to all associated children.
 - **Advanced Net Profit Analytics** — computes dynamic net profit: `Price - Acquisition Cost (COGS) - Operational Expenses`.
 - **Advanced Inventory Analytics** — detailed stock tracking per branch, discrepancy metrics (shrinkage percentage), and financial impact of missing items.
 - **Centralized Stock History** — comprehensive audit logs of all entries, adjustments, and branch-to-branch transfers.
@@ -217,7 +220,7 @@ Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date rang
 ```prisma
 User           → Role: DUENO | ENCARGADO | CAJERO
 Sucursal       → Branch location
-Producto       → costo + precio_publico (profit = price - cost)
+Producto       → parent_id (relation) + variante_nombre + cost + public_price + wholesale rules
 Inventario_Sucursal → Stock per branch per product (@@unique)
 Turno          → Cashier shift (ABIERTO | CERRADO)
 Venta          → Sale (sync_status: PENDING | SYNCED)
