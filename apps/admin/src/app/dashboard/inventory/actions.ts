@@ -268,9 +268,17 @@ export async function createDynamicAudit(sucursalId: string) {
         },
       });
 
-      // 2. Capturar snapshot de stock para TODOS los productos registrados en la sucursal
+      // 2. Capturar snapshot de stock para TODOS los productos registrados en la sucursal (excluyendo productos padre)
       const branchInventory = await tx.inventario_Sucursal.findMany({
-        where: { sucursal_id: sucursalId },
+        where: { 
+          sucursal_id: sucursalId,
+          producto: {
+            OR: [
+              { parent_id: { not: null } },
+              { parent_id: null, variants: { none: {} } }
+            ]
+          }
+        },
         select: {
           producto_id: true,
           cantidad: true,
@@ -344,7 +352,8 @@ export async function applyAuditAdjustments(auditId: string) {
       });
     });
 
-    revalidatePath(`/dashboard/inventory/audits/${auditId}`);
+    revalidatePath("/dashboard/audits");
+    revalidatePath(`/dashboard/audits/${auditId}`);
     return { success: true };
   } catch (error: any) {
     console.error("Error applying audit adjustments:", error);
