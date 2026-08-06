@@ -16,6 +16,16 @@ export default function DynamicAuditPage() {
     
     const inputRef = useRef<HTMLInputElement>(null);
 
+    const filterParentProducts = (allProds: LocalProduct[]) => {
+        const parentIds = new Set<string>();
+        allProds.forEach(p => {
+            if (p.parent_id) {
+                parentIds.add(p.parent_id);
+            }
+        });
+        return allProds.filter(p => !parentIds.has(p.id));
+    };
+
     // Check if an audit is already in progress when mounting
     useEffect(() => {
         const checkExisting = async () => {
@@ -24,7 +34,7 @@ export default function DynamicAuditPage() {
                 setAuditId(activeId.value);
                 setIsStarted(true);
                 const allProducts = await db.products.toArray();
-                setProducts(allProducts);
+                setProducts(filterParentProducts(allProducts));
             }
         };
         checkExisting();
@@ -37,7 +47,7 @@ export default function DynamicAuditPage() {
         }
 
         const allProducts = await db.products.toArray();
-        setProducts(allProducts);
+        setProducts(filterParentProducts(allProducts));
 
         const newAuditId = crypto.randomUUID();
         setAuditId(newAuditId);
