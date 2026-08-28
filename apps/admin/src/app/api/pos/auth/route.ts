@@ -123,11 +123,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Buscar si el usuario tiene un turno abierto
+    // Buscar si el usuario tiene un turno abierto (ordenado por el más reciente)
     const activeShift = await db.turno.findFirst({
       where: {
         usuario_id: user.id,
         estado: "ABIERTO",
+      },
+      orderBy: {
+        fecha_apertura: "desc",
       },
       select: {
         id: true,
