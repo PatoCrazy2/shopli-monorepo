@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (pin: string, email?: string): Promise<boolean> => {
         let localUser = null;
+        let recoveredShift: Shift | null = null;
 
         if (email) {
             // Login inicial online para configurar la empresa del dispositivo
@@ -60,7 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             try {
-                const data = await apiClient<{ id: string; empresa_id: string }>('pos/auth', {
+                const data = await apiClient<{ 
+                    id: string; 
+                    empresa_id: string;
+                    active_shift?: {
+                        id: string;
+                        sucursal_id: string;
+                        monto_inicial: number;
+                        fecha_apertura: string;
+                        total_ventas: number;
+                    } | null;
+                }>('pos/auth', {
                     method: 'POST',
                     body: { email, pin }
                 });
@@ -73,6 +84,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 // Ahora buscamos al usuario localmente ya guardado en IndexedDB
                 localUser = await db.users.get(data.id);
+
+                // Si viene un turno activo desde el servidor, lo guardamos localmente
+                if (data.active_shift) {
+                    await db.turnos.put({
+                        id: data.active_shift.id,
+                        usuario_id: data.id,
+                        sucursal_id: data.active_shift.sucursal_id,
+                        estado: 'ABIERTO',
+                        monto_inicial: data.active_shift.monto_inicial,
+                        monto_final: null,
+                        total_ventas: data.active_shift.total_ventas,
+                        fecha_apertura: data.active_shift.fecha_apertura,
+                        fecha_cierre: null,
+                        sync_status: 'SYNCED'
+                    });
+
+                    recoveredShift = {
+                        id: data.active_shift.id,
+                        userId: data.id,
+                        branchId: data.active_shift.sucursal_id,
+                        status: 'ABIERTO',
+                        initialAmount: data.active_shift.monto_inicial,
+                        totalSales: data.active_shift.total_ventas,
+                        openedAt: new Date(data.active_shift.fecha_apertura)
+                    };
+                }
             } catch (error) {
                 console.error('Error durante el login online inicial:', error);
                 return false;
@@ -108,8 +145,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const branches = await db.branches.toArray();
-        // Ordenamos alfabéticamente para asegurar que Sucursal 1 sea seleccionada por defecto en testing
-        const branch = branches.sort((a,b) => a.nombre.localeCompare(b.nombre))[0];
+        let branch = null;
+        if (recoveredShift) {
+            branch = branches.find(b => b.id === recoveredShift.branchId) || null;
+        }
+        if (!branch) {
+            branch = branches.sort((a,b) => a.nombre.localeCompare(b.nombre))[0];
+        }
 
         const authUser: User = {
             id: localUser.id,
@@ -120,9 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
 
         setUser(authUser);
-        setActiveShift(null);
+        if (recoveredShift) {
+            setActiveShift(recoveredShift);
+            localStorage.setItem('pos_shift', JSON.stringify(recoveredShift));
+        } else {
+            setActiveShift(null);
+            localStorage.removeItem('pos_shift');
+        }
         localStorage.setItem('auth_user', JSON.stringify(authUser));
-        localStorage.removeItem('pos_shift');
         return true;
     };
 
