@@ -42,6 +42,7 @@ export async function getInventory(sucursalId?: string) {
       ...p,
       costo: Number(p.costo),
       precio_publico: Number(p.precio_publico),
+      precio_mayoreo: p.precio_mayoreo ? Number(p.precio_mayoreo) : null,
       totalStock
     }
   }).sort((a, b) => a.totalStock - b.totalStock);

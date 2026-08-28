@@ -33,9 +33,9 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
   // Actually, we already have initialStock, expectedAtCount, and difference.
   // The sales can be derived: Sales = initialStock - expectedAtCount.
   
-  // Excluir productos padre
+  // Excluir productos padre (productos base con variantes)
   const filteredItems = audit.items.filter(item => {
-    const isParent = item.producto.parent_id === null && item.producto.variants.length > 0;
+    const isParent = item.producto.parent_id == null && item.producto.variants && item.producto.variants.length > 0;
     return !isParent;
   });
 
