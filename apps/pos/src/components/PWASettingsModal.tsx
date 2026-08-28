@@ -96,8 +96,8 @@ export function PWASettingsModal({ isOpen, onClose }: PWASettingsModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
@@ -109,7 +109,7 @@ export function PWASettingsModal({ isOpen, onClose }: PWASettingsModalProps) {
             <h2 className="text-xl font-bold text-zinc-950">Ajustes del Sistema (PWA)</h2>
             <p className="text-xs text-zinc-500 mt-0.5">Diagnóstico y restablecimiento local</p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
           >

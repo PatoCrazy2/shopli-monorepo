@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
 import { db } from '../../lib/db';
+import { PWASettingsModal } from '../../components/PWASettingsModal';
 
 export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) => Promise<boolean> | void }) {
     const [pin, setPin] = useState('');
@@ -8,6 +9,7 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
     const [isSyncing, setIsSyncing] = useState(false);
     const [isConfigured, setIsConfigured] = useState(true);
     const [email, setEmail] = useState('');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     useEffect(() => {
         const checkConfig = async () => {
@@ -50,7 +52,16 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans">
+        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans relative">
+            <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:bg-zinc-150 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                title="Ajustes del Sistema"
+            >
+                <Settings size={24} />
+            </button>
+
             <div className="w-full max-w-sm">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold tracking-tight text-black mb-2">ShopLI <sub>POS</sub></h1>
@@ -148,6 +159,7 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
                     </button>
                 </form>
             </div>
+            <PWASettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         </div>
     );
 }
