@@ -184,6 +184,9 @@ Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date rang
 - **Combined Wholesale Discounts (Mayoreo Cruzado)** — automatically applies wholesale pricing to variant groups if the combined quantity of all selected colors/variants is equal to or greater than the minimum quantity defined for the group.
 - **Sequential Variant Selection Modal** — clean single-card representation for parent products in the grid, opening a modal to add multiple colors/sizes sequentially with a live count indicator, keeping the stock hidden unless it is 0.
 - **Online Tenant Handshake** — login initial online to link the physical device with the target `Empresa` (Company) and fetch the isolated catalog database.
+- **PWA Auto-Updates & Proactive Check** — auto-updates service worker automatically upon deployment and proactively checks for updates on load, window focus, and hourly intervals.
+- **Diagnostic & Rescue Settings Modal** — built-in system modal accessible from login keypad and sidebar to view connection status, trigger manual update check, unlink the current account, or perform a hard reset (wipes IndexedDB, LocalStorage, and cached assets).
+- **Orphan Shift Recovery** — re-linking / re-logging online automatically fetches and restores active server shifts locally, skipping initial cash register opening.
 - **Multi-Cashier On Single Device** — PIN-based quick session switching, signing each transaction with the cashier's UUID.
 - **Petty Cash Management** — track small daily outgoings (caja chica) at branch level.
 - **Sequential Dynamic Audit (Blind Count)** — open-door inventory verification. The interface presents products sequentially without showing expected stock, enforcing forced accuracy.
@@ -192,6 +195,7 @@ Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date rang
 
 ### 📊 Admin Dashboard
 - **Logical Multi-Tenant Scoping** — secure data access. Owners only see resources of their registered company; cashiers/managers are restricted to their assigned branch.
+- **Administrative Force Shift Close** — allow Owners or Managers to forcibly close unsubmitted cashier shifts directly from the Cuts page, automatically computing final balances based on system sales and petty cash expenses.
 - **Product Variant Management** — dynamically manage product variants in the creation/edit form, auto-propagating activation state, category, cost, price, and wholesale rules to all associated children.
 - **Advanced Net Profit Analytics** — computes dynamic net profit: `Price - Acquisition Cost (COGS) - Operational Expenses`.
 - **Advanced Inventory Analytics** — detailed stock tracking per branch, discrepancy metrics (shrinkage percentage), and financial impact of missing items.
