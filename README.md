@@ -1,15 +1,9 @@
 <div align="center">
 
-<br />
+<img src=".github/assets/shopli-hero.webp" alt="ShopLI POS & BI Platform Showcase" width="100%" style="border-radius: 8px;" />
 
-```
- ███████╗██╗  ██╗ ██████╗ ██████╗ ██╗     ██╗
- ██╔════╝██║  ██║██╔═══██╗██╔══██╗██║     ██║
- ███████╗███████║██║   ██║██████╔╝██║     ██║
- ╚════██║██╔══██║██║   ██║██╔═══╝ ██║     ██║
- ███████║██║  ██║╚██████╔╝██║     ███████╗██║
- ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝
-```
+<br />
+<br />
 
 ### **Offline-First POS & Business Intelligence Platform**
 
