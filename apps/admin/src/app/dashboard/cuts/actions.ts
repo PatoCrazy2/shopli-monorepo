@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@shopli/db";
+import { db, Role } from "@shopli/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 
@@ -82,5 +82,62 @@ export async function resolveAuditItem(formData: FormData) {
   } catch (err: any) {
     console.error("Error resolviendo auditoría:", err);
     return { error: "Ocurrió un error al procesar la resolución en el servidor." };
+  }
+}
+
+export async function forceCloseTurno(turnoId: string) {
+  const session = await auth();
+  if (!session?.user?.empresa_id || !session?.user?.id) {
+    return { error: "No autorizado" };
+  }
+  const { role, empresa_id } = session.user;
+
+  if (role !== Role.DUENO && role !== Role.ENCARGADO) {
+    return { error: "No autorizado: Permisos insuficientes" };
+  }
+
+  try {
+    const turno = await db.turno.findUnique({
+      where: { id: turnoId },
+      include: {
+        sucursal: { select: { empresa_id: true } }
+      }
+    });
+
+    if (!turno) {
+      return { error: "Turno no encontrado" };
+    }
+
+    if (turno.sucursal.empresa_id !== empresa_id) {
+      return { error: "No autorizado: El turno pertenece a otra empresa" };
+    }
+
+    if (turno.estado === "CERRADO") {
+      return { error: "El turno ya se encuentra cerrado" };
+    }
+
+    // Calcular el monto final esperado por el sistema (monto_inicial + total_ventas - gastos)
+    const initialAmount = Number(turno.monto_inicial);
+    const totalSales = Number(turno.total_ventas);
+    const gastos = await db.gasto.findMany({
+      where: { turno_id: turnoId }
+    });
+    const totalExpenses = gastos.reduce((sum, g) => sum + Number(g.monto), 0);
+    const systemCalculatedFinalAmount = initialAmount + totalSales - totalExpenses;
+
+    await db.turno.update({
+      where: { id: turnoId },
+      data: {
+        estado: "CERRADO",
+        fecha_cierre: new Date(),
+        monto_final: systemCalculatedFinalAmount
+      }
+    });
+
+    revalidatePath("/dashboard/cuts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error in forceCloseTurno:", error);
+    return { error: "Error interno al forzar el cierre del turno" };
   }
 }

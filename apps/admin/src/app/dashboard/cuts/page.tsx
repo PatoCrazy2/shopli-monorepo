@@ -5,6 +5,7 @@ import { resolveAuditItem } from "./actions";
 import { getSucursales } from "../branches/queries";
 import Link from "next/link";
 import CutsAutoRefresh from "./CutsAutoRefresh";
+import ForceCloseButton from "./ForceCloseButton";
 
 export default async function CutsPage({
   searchParams,
@@ -129,6 +130,9 @@ export default async function CutsPage({
                           <span className={`px-3 py-1 text-[10px] font-black tracking-widest uppercase rounded-full border shadow-sm ${isClosed ? 'bg-zinc-100 text-zinc-600 border-zinc-200' : 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse'}`}>
                             {turno.estado}
                           </span>
+                          {!isClosed && (session.user.role === "DUENO" || session.user.role === "ENCARGADO") && (
+                            <ForceCloseButton turnoId={turno.id} />
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-sm font-bold text-zinc-400 mt-1 uppercase tracking-tighter">
                           <span>{turno.sucursal.nombre}</span>
