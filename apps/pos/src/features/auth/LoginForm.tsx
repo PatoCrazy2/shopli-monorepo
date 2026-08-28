@@ -52,16 +52,7 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans relative">
-            <button
-                type="button"
-                onClick={() => setIsSettingsOpen(true)}
-                className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:bg-zinc-150 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
-                title="Ajustes del Sistema"
-            >
-                <Settings size={24} />
-            </button>
-
+        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans">
             <div className="w-full max-w-sm">
                 <div className="text-center mb-10">
                     <h1 className="text-3xl font-bold tracking-tight text-black mb-2">ShopLI <sub>POS</sub></h1>
@@ -122,24 +113,28 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
                                 {num}
                             </button>
                         ))}
-                        <div className="col-start-2">
-                            <button
-                                type="button"
-                                onClick={() => handleKeyPress('0')}
-                                className="w-full h-16 rounded-lg bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 touch-manipulation"
-                            >
-                                0
-                            </button>
-                        </div>
-                        <div className="col-start-3">
-                            <button
-                                type="button"
-                                onClick={handleBackspace}
-                                className="w-full h-16 rounded-lg bg-zinc-100 text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation"
-                            >
-                                ⌫
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="h-16 rounded-lg bg-zinc-100 text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation"
+                            title="Ajustes del Sistema"
+                        >
+                            <Settings size={24} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleKeyPress('0')}
+                            className="h-16 rounded-lg bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 touch-manipulation"
+                        >
+                            0
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleBackspace}
+                            className="h-16 rounded-lg bg-zinc-100 text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation"
+                        >
+                            ⌫
+                        </button>
                     </div>
 
                     {/* Action Button */}
