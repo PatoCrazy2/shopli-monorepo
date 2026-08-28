@@ -69,6 +69,9 @@ export function PWASettingsModal({ isOpen, onClose }: PWASettingsModalProps) {
   const handleResetApp = async () => {
     setResetConfirmStep(2);
     try {
+      // Limpiar variables de sesión y datos guardados de LocalStorage
+      localStorage.clear();
+
       // Borrar IndexedDB
       await db.delete();
 

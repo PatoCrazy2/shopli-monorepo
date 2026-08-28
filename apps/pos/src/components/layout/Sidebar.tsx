@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ShoppingCart, Package, Wallet, History, X, Lock } from "lucide-react";
+import { ShoppingCart, Package, Wallet, History, X, Lock, Settings } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../lib/db";
+import { PWASettingsModal } from "../PWASettingsModal";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -9,6 +11,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const isAuditActive = useLiveQuery(
         async () => {
             const activeAudit = await db.meta.get('active_audit_id');
@@ -84,7 +87,23 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     ))}
                 </nav>
 
+                <div className="border-t border-gray-200 p-4 shrink-0 bg-gray-50/50">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsSettingsOpen(true);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 transition-none min-h-[3rem]"
+                    >
+                        <Settings className="w-5 h-5 text-gray-500" />
+                        Ajustes del Sistema
+                    </button>
+                </div>
             </aside>
+            <PWASettingsModal 
+                isOpen={isSettingsOpen} 
+                onClose={() => setIsSettingsOpen(false)} 
+            />
         </>
     );
 }
