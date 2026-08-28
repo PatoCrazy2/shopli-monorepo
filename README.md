@@ -11,7 +11,7 @@
  ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝╚═╝
 ```
 
-### **Enterprise-Grade Offline-First POS & Distributed BI Platform**
+### **Offline-First POS & Business Intelligence Platform**
 
 *Sell with zero latency. Guarantee transactional integrity offline. Auditable financial metrics. Always.*
 
