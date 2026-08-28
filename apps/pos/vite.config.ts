@@ -22,9 +22,8 @@ export default defineConfig(({ mode }) => {
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'sw.ts',
-        injectManifest: {
-          injectionPoint: undefined
-        },
+        registerType: 'autoUpdate',
+        injectManifest: {},
         manifest: {
           name: 'ShopLI POS',
           short_name: 'ShopLI',
