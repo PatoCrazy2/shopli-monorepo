@@ -5,6 +5,7 @@ import { resolveAuditItem } from "./actions";
 import { getSucursales } from "../branches/queries";
 import Link from "next/link";
 import CutsAutoRefresh from "./CutsAutoRefresh";
+import ForceCloseButton from "./ForceCloseButton";
 
 export default async function CutsPage({
   searchParams,
@@ -129,6 +130,9 @@ export default async function CutsPage({
                           <span className={`px-3 py-1 text-[10px] font-black tracking-widest uppercase rounded-full border shadow-sm ${isClosed ? 'bg-zinc-100 text-zinc-600 border-zinc-200' : 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse'}`}>
                             {turno.estado}
                           </span>
+                          {!isClosed && (session.user.role === "DUENO" || session.user.role === "ENCARGADO") && (
+                            <ForceCloseButton turnoId={turno.id} />
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-sm font-bold text-zinc-400 mt-1 uppercase tracking-tighter">
                           <span>{turno.sucursal.nombre}</span>
@@ -141,12 +145,12 @@ export default async function CutsPage({
                     <div className="flex items-center gap-4 py-2 px-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 w-fit">
                       <div className="flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                        <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">{formatDate(turno.fecha_apertura)}</span>
+                        <span suppressHydrationWarning className="text-xs font-bold text-zinc-600 dark:text-zinc-300">{formatDate(turno.fecha_apertura)}</span>
                       </div>
                       {turno.fecha_cierre && (
                         <>
                           <span className="text-zinc-300">→</span>
-                          <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">{formatDate(turno.fecha_cierre!)}</span>
+                          <span suppressHydrationWarning className="text-xs font-bold text-zinc-600 dark:text-zinc-300">{formatDate(turno.fecha_cierre!)}</span>
                         </>
                       )}
                     </div>
@@ -243,7 +247,7 @@ export default async function CutsPage({
                               <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-zinc-500">Resolución</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900 bg-white dark:bg-zinc-950">
+                          <tbody suppressHydrationWarning className="divide-y divide-zinc-100 dark:divide-zinc-900 bg-white dark:bg-zinc-950">
                             {audit.items.map((item: any) => {
                               const isResolved = item.resolved;
                               const hasDiscrepancy = item.discrepancy !== 0;

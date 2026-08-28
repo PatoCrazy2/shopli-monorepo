@@ -2,6 +2,8 @@ import { db, DynamicAudit, DynamicAuditItem, Producto } from "@shopli/db";
 import { redirect } from "next/navigation";
 import AuditReportClient from "./AuditReportClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuditReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -11,7 +13,13 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
       sucursal: true,
       items: {
         include: {
-          producto: true
+          producto: {
+            include: {
+              variants: {
+                where: { isActive: true }
+              }
+            }
+          }
         }
       }
     }
@@ -25,13 +33,19 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
   // Actually, we already have initialStock, expectedAtCount, and difference.
   // The sales can be derived: Sales = initialStock - expectedAtCount.
   
+  // Excluir productos padre (productos base con variantes)
+  const filteredItems = audit.items.filter(item => {
+    const isParent = item.producto.parent_id == null && item.producto.variants && item.producto.variants.length > 0;
+    return !isParent;
+  });
+
   const formattedAudit = {
     id: audit.id,
     branchName: audit.sucursal.nombre,
     status: audit.status,
     isApplied: audit.isApplied,
     startedAt: audit.startedAt.toISOString(),
-    items: audit.items.map(item => ({
+    items: filteredItems.map(item => ({
       id: item.id,
       productId: item.productId,
       productName: item.producto.nombre,

@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Settings } from 'lucide-react';
 import { db } from '../../lib/db';
+import { PWASettingsModal } from '../../components/PWASettingsModal';
 
 export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) => Promise<boolean> | void }) {
     const [pin, setPin] = useState('');
@@ -8,6 +9,7 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
     const [isSyncing, setIsSyncing] = useState(false);
     const [isConfigured, setIsConfigured] = useState(true);
     const [email, setEmail] = useState('');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     useEffect(() => {
         const checkConfig = async () => {
@@ -111,24 +113,28 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
                                 {num}
                             </button>
                         ))}
-                        <div className="col-start-2">
-                            <button
-                                type="button"
-                                onClick={() => handleKeyPress('0')}
-                                className="w-full h-16 rounded-lg bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 touch-manipulation"
-                            >
-                                0
-                            </button>
-                        </div>
-                        <div className="col-start-3">
-                            <button
-                                type="button"
-                                onClick={handleBackspace}
-                                className="w-full h-16 rounded-lg bg-zinc-100 text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation"
-                            >
-                                ⌫
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="h-16 rounded-lg bg-zinc-100 text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation"
+                            title="Ajustes del Sistema"
+                        >
+                            <Settings size={24} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleKeyPress('0')}
+                            className="h-16 rounded-lg bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 touch-manipulation"
+                        >
+                            0
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleBackspace}
+                            className="h-16 rounded-lg bg-zinc-100 text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation"
+                        >
+                            ⌫
+                        </button>
                     </div>
 
                     {/* Action Button */}
@@ -148,6 +154,7 @@ export function LoginForm({ onLogin }: { onLogin: (pin: string, email?: string) 
                     </button>
                 </form>
             </div>
+            <PWASettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         </div>
     );
 }

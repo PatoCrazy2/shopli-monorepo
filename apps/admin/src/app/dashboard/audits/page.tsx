@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ClipboardCheck, ArrowRight, Calendar, MapPin, CheckCircle2, Clock, Filter } from "lucide-react";
 import { SucursalFilter } from "./SucursalFilter";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuditsListPage({ 
   searchParams 
 }: { 

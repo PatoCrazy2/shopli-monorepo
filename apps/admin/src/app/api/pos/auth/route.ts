@@ -3,13 +3,19 @@ import { db, Role } from "@shopli/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-// Tipos exportados solicitados
 export type PosAuthResponse = {
   id: string;
   name: string | null;
   email: string;
   role: string;
   empresa_id: string;
+  active_shift?: {
+    id: string;
+    sucursal_id: string;
+    monto_inicial: number;
+    fecha_apertura: string;
+    total_ventas: number;
+  } | null;
 };
 
 // Validación con Zod: email opcional y PIN de 4 dígitos numéricos exactos
@@ -117,12 +123,39 @@ export async function POST(req: Request) {
       );
     }
 
+    // Buscar si el usuario tiene un turno abierto (ordenado por el más reciente)
+    const activeShift = await db.turno.findFirst({
+      where: {
+        usuario_id: user.id,
+        estado: "ABIERTO",
+      },
+      orderBy: {
+        fecha_apertura: "desc",
+      },
+      select: {
+        id: true,
+        sucursal_id: true,
+        monto_inicial: true,
+        fecha_apertura: true,
+        total_ventas: true,
+      },
+    });
+
     const responseData: PosAuthResponse = {
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       empresa_id: user.empresa_id,
+      active_shift: activeShift
+        ? {
+            id: activeShift.id,
+            sucursal_id: activeShift.sucursal_id,
+            monto_inicial: Number(activeShift.monto_inicial),
+            fecha_apertura: activeShift.fecha_apertura.toISOString(),
+            total_ventas: Number(activeShift.total_ventas),
+          }
+        : null,
     };
     
     return NextResponse.json(responseData, { status: 200, headers: responseHeaders });

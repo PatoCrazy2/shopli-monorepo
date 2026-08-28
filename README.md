@@ -13,7 +13,7 @@
 
 ### **Offline-First POS & Business Intelligence Platform**
 
-*Sell with or without internet. Know your real profit. Always.*
+*Sell with zero latency. Guarantee transactional integrity offline. Auditable financial metrics. Always.*
 
 <br />
 
@@ -28,291 +28,201 @@
 </div>
 
 ---
-## Live Demo
 
-- Admin Dashboard: https://...
-- POS (PWA): https://...
+## System Topology
 
-## Demo Video
-
-https://...
-
-## Problem
-
-Small businesses often rely on unstable internet connections and lack tools to:
-
-- Operate without connectivity
-- Track real profitability (sales - expenses - COGS)
-- Manage inventory, finances, and operational costs in one place
-
-Most POS systems fail in offline scenarios or lack comprehensive expense tracking.
-
-## Solution
-
-ShopLI is an **offline-first POS system** that:
-
-- ✅ Allows sales & expense records **without internet connection**
-- 🔄 **Syncs data automatically** when online
-- 📊 Provides **real-time financial insights** (net profit, costs, gastos)
-- 🏪 Supports **multi-branch operations**
-
----
-
-## Architecture & Multi-Tenancy
-
-ShopLI is built as a **Turborepo monorepo** with strict logical isolation and two distinct frontends serving a shared backend layer.
-
-### 🏢 Multi-Tenant Isolation Model
-The platform implements a **Logical Multi-Tenant Architecture** scoped at the `Empresa` (Company) level:
-* **Strict Data Isolation:** All core entities (`User`, `Producto`, `Sucursal`, `Venta`, `Gasto`, `Proveedor`, `DynamicAudit`) are strictly tied to an `empresa_id` in the database.
-* **API & Action Scoping:** The backend (`apps/admin`) automatically scopes all Server Actions and REST API endpoints using the authenticated user's session `empresa_id`. Data leaks across different companies are physically impossible.
-* **POS Client Partitioning:** When a cashier logs in, the POS client (`apps/pos`) downloads *only* the catalog, sucursales, and users corresponding to their company, partitioning the local IndexedDB (`Dexie.js`) dynamically.
-
-### Data Flow
+ShopLI separates administrative reporting and configuration from edge sales execution. The admin dashboard leverages server-side rendering (RSC) and Server Actions, while the POS runs as a highly resilient Progressive Web App (PWA) using an offline-first transactional engine.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    apps/pos  (PWA)                       │
-│  ┌──────────────┐    ┌────────────────────────────────┐ │
-│  │  Dexie.js    │◄───│  React Hooks + Service Worker  │ │
-│  │ (Local DB    │    │  (Scoped to Empresa & Offline) │ │
-│  │  by Empresa) │    │                                │ │
-│  └──────┬───────┘    └────────────────────────────────┘ │
-│         │  Background Sync (when online with Empresa ID) │
-└─────────┼───────────────────────────────────────────────┘
-          │  POST /api/pos/sync/push
-          ▼
-┌─────────────────────────────────────────────────────────┐
-│                  apps/admin  (Next.js)                   │
-│  ┌──────────────┐    ┌────────────────────────────────┐ │
-│  │  Server      │    │  REST API  /api/...            │ │
-│  │  Actions     │    │  (serves POS exclusively)      │ │
-│  └──────┬───────┘    └────────────────────────────────┘ │
-└─────────┼───────────────────────────────────────────────┘
-          │
-          ▼
-┌──────────────────────────────────┐
-│  packages/db  (Prisma + Neon PG) │
-│  Single source of truth          │
-└──────────────────────────────────┘
-```
-
-### Conflict Resolution & Sync Rules
-
-| Rule | Behavior |
-|---|---|
-| **Authority** | Server is always the final source of truth |
-| **Sale IDs** | UUIDs are generated client-side (offline safe) |
-| **Inventory conflict** | First synced record wins |
-| **Idempotency** | All sync operations are safe to retry |
-| **Offline session** | Cashier operates with a locally stored valid token |
-
----
-
-## Core Flow
-
-### 🛒 Cashier — Sell Without Internet (Offline-First)
-
-```
-1. Open shift (Turno)  →  2. Scan / search product (offline DB)
-        ↓
-3. Add to cart          →  4. Confirm payment (local transaction)
-        ↓
-5. Sale written to Dexie.js (UUID & Timestamp assigned)
-        ↓
-6. Service Worker detects connectivity (automatically)
-        ↓
-7. POST /api/pos/sync/push  →  Server validates, saves, and resolves conflicts
-        ↓
-8. Inventory deducted at branch level (Inventario_Sucursal)
-```
-
-### 🔍 Cashier — Sequential Dynamic Audit (A Puertas Abiertas)
-The POS allows cashiers to perform audits **without closing the store or pausing sales**:
-
-```
-1. Start Dynamic Audit  →  POS saves local timestamp (Start of Audit)
-        ↓
-2. Sequential Blind Counting  →  POS displays products one-by-one
-                              →  No expected stock shown (forces physical count)
-        ↓
-3. Local sales continue  →  Cashier continues processing sales
-                         →  All sales during audit are flagged locally
-        ↓
-4. Finish count & Sync   →  POS sends count data + sales log to server
-        ↓
-5. Server Reconciliation  →  Server queries expected stock at Start Timestamp
-                          →  Deducts sales processed *during* the audit interval
-                          →  Calculates true discrepancy: Counted vs (Expected - Sales)
-        ↓
-6. Owner Review & Adjust  →  Owner views financial impact & applies adjustments
-```
-
-### 📊 Owner — Real-Time Business Intelligence & Advanced Analytics
-
-```
-Admin Dashboard  →  Financial Reports: Filter by branch, shifts, and date ranges
-                 →  Net Profit Calculation: Price - acquisition cost (COGS) - operational expenses
-                 →  Operational Expense Registry: Scoped fixed/variable costs (payroll, rent)
-                 →  Audit Trail: Track every stock modification (entries, transfers, adjustments)
-                 →  Discrepancy Metrics: Precision % & total currency lost due to inventory shrinkage
+                               ┌──────────────────┐
+                               │    PostgreSQL    │
+                               │ (Neon / Cloud)   │
+                               └────────▲─────────┘
+                                        │
+                                        │ Prisma Client
+                                        │
+                         ┌──────────────┴──────────────┐
+                         │         packages/db         │
+                         └──────────────▲──────────────┘
+                                        │
+                         ┌──────────────┴──────────────┐
+                         │       Next.js API &         │
+                         │      Server Actions         │
+                         └──────────────▲──────────────┘
+                                        │
+                  ┌─────────────────────┴─────────────────────┐
+                  │                                           │
+         HTTPS / JSON                                Background Sync
+                  │                                  (Outbox Push)
+                  ▼                                           ▼
+       ┌─────────────────────┐                     ┌─────────────────────┐
+       │     apps/admin      │                     │      apps/pos       │
+       │ (Next.js Dashboard) │                     │ (Vite React PWA)    │
+       └─────────────────────┘                     └──────────┬──────────┘
+                                                              │
+                                                              ▼
+                                                        ┌───────────┐
+                                                        │ IndexedDB │
+                                                        │ (Local DB)│
+                                                        └───────────┘
 ```
 
 ---
 
-## Stack
+## Distributed Systems & Offline-First Engineering
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| **Monorepo** | Turborepo + pnpm | Workspace orchestration & task caching |
-| **Admin Dashboard** | Next.js 14+ (App Router) | RSC, Server Actions, REST API host |
-| **POS Client** | Vite + React + PWA | Offline-first cashier interface |
-| **Database** | PostgreSQL via Neon | Cloud-hosted production database |
-| **ORM** | Prisma | Type-safe schema, migrations, client |
-| **Local DB (POS)** | Dexie.js | IndexedDB wrapper for offline storage |
-| **Auth** | NextAuth.js (Auth.js) | Session management, role-based access |
-| **UI Components** | Shadcn/UI + Tailwind CSS | Shared, accessible component system |
-| **Typography** | Geist Sans | Clean, Apple-inspired typeface |
-| **Local Dev DB** | Docker + PostgreSQL | Mirror production schema locally |
+### Logical Multi-Tenant Segregation
+The database partition model enforces tenant separation at the query layer. 
+* All core relations (User, Producto, Sucursal, Venta, Gasto, DynamicAudit) maintain an `empresa_id` foreign key.
+* Server-side database clients append `empresa_id` filters dynamically derived from secure, server-signed JWT session contexts.
+* During client synchronization, endpoints partition and stream catalogs specific to the tenant company.
 
----
+### Idempotent Sync Protocol (Outbox Pattern)
+Transactions completed at the edge are buffered locally in an IndexedDB write-ahead outbox.
+* **UUID-V4 Resolution:** The POS client assigns immutable client-side UUIDs to all entities immediately.
+* **Native Sync API:** The PWA Service Worker leverages the browser's native Background Sync API (`self.addEventListener('sync')`). When connectivity drops and returns, the browser executes the sync callback in the background, ensuring outbox payloads are delivered even if the user closes the PWA tab.
+* **Idempotency Guard:** The server deduplicates incoming payloads using database unique constraints on transaction IDs. Re-transmitted payloads are processed cleanly without duplicating sales or expense logs.
 
-## Features
+### Delta-Based Incremental Sync (Pull Strategy)
+To optimize data transfers and minimize bandwidth consumption in mobile or high-latency environments:
+* **Timestamp Delta Tracking:** Catalog pulls do not fetch full tables. Instead, the POS requests record mutations using a `lastSyncedAt` timestamp.
+* **Server-Side Filtering:** The API filters database queries using Prisma `updatedAt > lastSyncedAt` conditions, returning only creation, updates, or deletion deltas.
+* **Incremental Local Updates:** The PWA applies these incoming deltas on IndexedDB tables, maintaining database synchronization without downloading redudant data.
 
-### 🛒 Point of Sale (POS)
-- **Offline-First Sales & Expenses** — operate dynamically without internet connection.
-- **Combined Wholesale Discounts (Mayoreo Cruzado)** — automatically applies wholesale pricing to variant groups if the combined quantity of all selected colors/variants is equal to or greater than the minimum quantity defined for the group.
-- **Sequential Variant Selection Modal** — clean single-card representation for parent products in the grid, opening a modal to add multiple colors/sizes sequentially with a live count indicator, keeping the stock hidden unless it is 0.
-- **Online Tenant Handshake** — login initial online to link the physical device with the target `Empresa` (Company) and fetch the isolated catalog database.
-- **Multi-Cashier On Single Device** — PIN-based quick session switching, signing each transaction with the cashier's UUID.
-- **Petty Cash Management** — track small daily outgoings (caja chica) at branch level.
-- **Sequential Dynamic Audit (Blind Count)** — open-door inventory verification. The interface presents products sequentially without showing expected stock, enforcing forced accuracy.
-- **Connectivity Traffic-Light (🟢 / 🟡 / 🔴)** — visual cue showing live connection status.
-- **Blocking Success Modal** — prevents double-tapping and forces the cashier to visually confirm each completed sale.
+### Service Worker Periodic Refresh
+* **Daily catalog updates:** The Service Worker registers a native `periodicsync` task (`pull-catalog-daily`) with the browser's periodic sync scheduler. The browser wakes up the Service Worker in the background once a day to refresh the localized price lists and product catalogs automatically.
 
-### 📊 Admin Dashboard
-- **Logical Multi-Tenant Scoping** — secure data access. Owners only see resources of their registered company; cashiers/managers are restricted to their assigned branch.
-- **Product Variant Management** — dynamically manage product variants in the creation/edit form, auto-propagating activation state, category, cost, price, and wholesale rules to all associated children.
-- **Advanced Net Profit Analytics** — computes dynamic net profit: `Price - Acquisition Cost (COGS) - Operational Expenses`.
-- **Advanced Inventory Analytics** — detailed stock tracking per branch, discrepancy metrics (shrinkage percentage), and financial impact of missing items.
-- **Centralized Stock History** — comprehensive audit logs of all entries, adjustments, and branch-to-branch transfers.
-- **Operational Expense Registry** — log payroll, rent, and other fixed or variable costs.
-- **Intelligent CSV Catalog Import** — smart parser with header auto-detection, schema verification, and automated mapping.
-- **User & Role Management** — create users (Owners, Managers, Cashiers) and manage their security PINs.
-- **Supplier Directory** — contact book linked directly to product acquisition.
+### Eventual Inventory Consistency
+Offline sales decrement local stock immediately to provide instant UI feedback. During online reconciliation:
+* **Asynchronous Reordering:** The database processes offline sales using their client-originated transaction timestamps.
+* **Reconciliation handshakes:** Inventory counts are reconciled downstream during catalog pulls by comparing local schema states with server modification logs.
 
-### 🔐 Role-Based Access Control
-
-| Action | DUEÑO | ENCARGADO | CAJERO |
-|---|:---:|:---:|:---:|
-| Create / View Sales | ✅ | ✅ | ✅ |
-| Cancel / Delete Sale | ✅ | ✅ *(audit log required)* | ❌ |
-| Adjust Inventory | ✅ | ✅ *(audit log required)* | ❌ |
-| Create / Edit Products | ✅ | ✅ | ❌ |
-| Financial Reports | Global | Global | Own shift only |
-| User Management | ✅ | ❌ | ❌ |
-| Access Admin Dashboard | ✅ | ✅ | ❌ |
+### Monorepo Schema & Package Segregation
+* **Single Source of Truth:** All PostgreSQL schemas, custom types, and seed workflows reside in the `@shopli/db` workspace package.
+* **Strict Type Safety:** Next.js Server Components and REST APIs consume this typed database package. The POS client matches these types to Dexie.js interfaces, providing compile-time type safety across database operations.
 
 ---
 
-## Data Model (Key Entities)
+## Algorithmic & Business Core Highlights
 
-```prisma
-User           → Role: DUENO | ENCARGADO | CAJERO
-Sucursal       → Branch location
-Producto       → parent_id (relation) + variante_nombre + cost + public_price + wholesale rules
-Inventario_Sucursal → Stock per branch per product (@@unique)
-Turno          → Cashier shift (ABIERTO | CERRADO)
-Venta          → Sale (sync_status: PENDING | SYNCED)
-Detalle_Venta  → Line items with historical unit price
-Gasto          → Operational expenses (fixed or variable)
-DynamicAudit   → Offline-initiated inventory reconciliation
-DynamicAuditItem → Counted vs Expected vs Differences
-InventoryAudit → Static audit session per shift
-AuditItem      → Discrepancy record per product
-MovimientoInventario → Centralized log for entry, adjustment, and transfer
-Proveedor      → Supplier contact linked to products
+### Blind Count & Dynamic Inventory Reconciliation
+To allow inventory counts without interrupting cashier sales, ShopLI uses a dynamic reconciliation algorithm.
+
+During a count, live sales continue to mutate stock levels. The system captures the state at start time $T_0$ and reconciles physical inputs using the transaction delta:
+
+$$\text{Discrepancy} = Q_{\text{counted}} - \left( Q_{\text{expected at } T_0} - \sum Q_{\text{sold during } [T_0, T_{\text{end}}]} \right)$$
+
+* **Zero-Bias Interface:** The cashier interface displays products sequentially, hiding the expected stock figures to enforce an objective physical count.
+* **Time-Series Matching:** The server calculates the exact discrepancy by analyzing transaction logs created between the audit initialization and completion timestamps.
+
+### Cross-Variant Grouped Wholesale Rules
+Discounts are computed dynamically on variant families. If a product group exceeds a wholesale threshold, the pricing engine adjusts all variants of that family present in the cart:
+
+```typescript
+const familyQuantity = cart
+  .filter(item => item.parent_id === targetParentId)
+  .reduce((sum, item) => sum + item.quantity, 0);
+
+if (familyQuantity >= minQuantityForWholesale) {
+  cart.forEach(item => {
+    if (item.parent_id === targetParentId) {
+      item.price = item.precio_mayoreo;
+    }
+  });
+}
 ```
 
 ---
 
-## Getting Started
+## Security Architecture
+
+### Zero-Trust Client Verification
+POS client computations are treated as untrusted. 
+* All sales details, costs, and discounts are re-calculated on the server using secure database metrics before database insertion.
+* Transactions with invalid recalculation parameters are rejected.
+
+### Offline Bcrypt Verification
+For cashier authentication without cloud access:
+* Salted Bcrypt hashes of cashiers' PINs are securely synced to the local client's IndexedDB during initial online pairing.
+* Local authentication compares PIN inputs against local hashes using a client-side Bcrypt implementation.
+
+### Diagnostic & Rescue Module
+An embedded settings drawer allows troubleshooting browser-level storage and caching:
+* **Update Engine:** Triggers registration updates to force newer Service Worker iterations.
+* **Account Separation:** Clears the local IndexedDB metadata scope and resets local state pointers.
+* **Hard Reset:** Deletes the local IndexedDB schema, clears browser-level caches, unregisters Service Workers, and empties local storage to return the app to a clean state.
+
+---
+
+## Development Environment Setup
+
+### Workspace Architecture
+* `apps/admin`: Next.js 14+ Application Dashboard.
+* `apps/pos`: Vite + React Progressive Web App.
+* `packages/db`: Prisma schema and database utility module.
 
 ### Prerequisites
+* Node.js 20+
+* pnpm 9+
+* Docker
 
-- [Node.js 20+](https://nodejs.org/)
-- [pnpm 9+](https://pnpm.io/installation)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) *(for local PostgreSQL)*
-
-### 1. Clone & Install
-
+### 1. Initialize Workspace
+Clone the repository and install workspace dependencies:
 ```bash
 git clone https://github.com/your-org/shopli.git
 cd shopli
 pnpm install
 ```
 
-### 2. Start Local Database
-
+### 2. Configure Infrastructure
+Start the development database instance:
 ```bash
 docker-compose up -d
 ```
 
-### 3. Configure Environment
+Configure environment files:
 
-```bash
-# apps/admin/.env
+**`apps/admin/.env`**
+```env
 DATABASE_URL="postgresql://shopli:shopli@localhost:5432/shoplidb"
-NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_SECRET="development-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
-POS_SYNC_SECRET="your-sync-secret"
-
-# apps/pos/.env
-VITE_API_BASE_URL="http://localhost:3000"
-VITE_SYNC_SECRET="your-sync-secret"
+POS_SYNC_SECRET="development-sync-handshake"
 ```
 
-### 4. Run Migrations & Initial Setup
+**`apps/pos/.env`**
+```env
+VITE_API_BASE_URL="http://localhost:3000"
+VITE_SYNC_SECRET="development-sync-handshake"
+```
 
+### 3. Generate Database Client & Seeds
+Generate Prisma schemas and apply local migrations:
 ```bash
-# Generate Prisma client
+# Generate client artifacts
 pnpm --filter @shopli/db db:generate
 
-# Apply migrations locally (Docker DB)
+# Apply migrations
 pnpm --filter @shopli/db exec prisma migrate dev
 
-# (Optional) Seed initial demo data
+# Seed database with initial dataset
 pnpm --filter @shopli/db db:seed
 ```
 
-### 5. Start Development & Register
-1. Run the dev servers:
-   ```bash
-   pnpm dev
-   ```
-2. Navigate to `http://localhost:3000/register` to register your initial **Dueño (Owner)** account and create your **Empresa (Company)**.
-3. Use those credentials to access the Dashboard and configure your sucursales/products, then log in on the POS client.
+### 4. Start Development Servers
+Run dev servers in parallel using Turborepo:
+```bash
+pnpm dev
+```
 
-| App | URL |
-|---|---|
-| Admin Dashboard | http://localhost:3000 |
-| POS Client | http://localhost:5173 |
+* **Admin Dashboard:** http://localhost:3000
+* **POS Client:** http://localhost:5173
 
 ---
 
-## Development Principles
+## Engineering Standards
 
-- **No business logic in JSX** — hooks handle state, abstractions handle complexity
-- **Server is source of truth** — all financial calculations validated server-side
-- **UUID-first** — no sequential IDs exposed publicly
-- **Audit everything** — sale deletions, price changes, and inventory adjustments are always logged
-- **Migrations in Docker first** — never apply untested migrations to Neon production
-- **Financial logic must have unit tests** — no exceptions
-
----
-
-<div align="center">
-
-**ShopLI** — *Your store never stops. Neither do you.*
-
-</div>
+* **RSC Dominance:** All backend operations in the Admin dashboard must use React Server Components and Server Actions. Avoid API endpoints except for POS synchronization.
+* **State Decoupling:** Keep business logic separated from the layout layer. Use custom hooks for reactivity.
+* **Strict Auditing:** sales modifications, stock transactions, and inventory transfers must write audit trails to the database.
+* **Unit Testing:** Write unit tests for all financial calculations, wholesale rule applications, and audit calculations.

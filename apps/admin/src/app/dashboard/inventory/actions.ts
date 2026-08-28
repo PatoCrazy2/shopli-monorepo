@@ -51,68 +51,15 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
         }
       });
 
-      // b) Crear un registro en InventoryAudit documentando el cambio
-      // InventoryAudit y AuditItem requieren un ambiente transaccional sobre un "Turno".
-      // Crearemos un Turno ficticio/administrativo si el usuario no tiene uno activo 
-      // para cumplir con la integridad relacional de Prisma sin modificar el schema.
-      let adminTurno = await tx.turno.findFirst({
-        where: { usuario_id: userId, sucursal_id: sucursalId, estado: "ABIERTO" }
-      });
-
-      if (!adminTurno) {
-        adminTurno = await tx.turno.create({
-          data: {
-            usuario_id: userId,
-            sucursal_id: sucursalId,
-            estado: "ABIERTO",
-            monto_inicial: 0
-          }
-        });
-      }
-
-      // Buscar o crear la auditoría principal ("cabecera") del turno administrativo
-      let audit = await tx.inventoryAudit.findFirst({
-        where: { turno_id: adminTurno.id, sucursal_id: sucursalId }
-      });
-
-      if (!audit) {
-        audit = await tx.inventoryAudit.create({
-          data: {
-            turno_id: adminTurno.id,
-            usuario_id: userId,
-            sucursal_id: sucursalId
-          }
-        });
-      }
-
-      // Crear el Item de auditoría que refleja el log
-      const expectedStock = inv.cantidad; // stock antes del ajuste
-      const countedStock = expectedStock + amountToAdd; // nuevo stock simulado/contado
-
-      // Usamos (tx.auditItem as any) para evitar errores TS si 'resolved' es muy reciente
-      await (tx.auditItem as any).create({
-        data: {
-          auditId: audit.id,
-          productId,
-          expectedStock: expectedStock,
-          countedStock: countedStock,
-          discrepancy: amountToAdd,
-          reason: reason,
-          comments: "Ajuste Rápido (Modal UI)",
-          resolved: true, // Ya se afectó la base de datos local
-        }
-      });
-
-      // c) Log en MovimientoInventario (Nuevo Historial Centralizado)
+      // b) Log en MovimientoInventario (Historial Centralizado)
       await tx.movimientoInventario.create({
         data: {
           producto_id: productId,
           sucursal_id: sucursalId,
           cantidad: amountToAdd,
-          tipo: amountToAdd > 0 ? "INGRESO" : "EGRESO",
+          tipo: "AJUSTE",
           motivo: reason,
           usuario_id: userId,
-          referencia_id: audit.id
         }
       });
     });
@@ -268,9 +215,17 @@ export async function createDynamicAudit(sucursalId: string) {
         },
       });
 
-      // 2. Capturar snapshot de stock para TODOS los productos registrados en la sucursal
+      // 2. Capturar snapshot de stock para TODOS los productos registrados en la sucursal (excluyendo productos padre)
       const branchInventory = await tx.inventario_Sucursal.findMany({
-        where: { sucursal_id: sucursalId },
+        where: { 
+          sucursal_id: sucursalId,
+          producto: {
+            OR: [
+              { parent_id: { not: null } },
+              { parent_id: null, variants: { none: {} } }
+            ]
+          }
+        },
         select: {
           producto_id: true,
           cantidad: true,
@@ -344,7 +299,8 @@ export async function applyAuditAdjustments(auditId: string) {
       });
     });
 
-    revalidatePath(`/dashboard/inventory/audits/${auditId}`);
+    revalidatePath("/dashboard/audits");
+    revalidatePath(`/dashboard/audits/${auditId}`);
     return { success: true };
   } catch (error: any) {
     console.error("Error applying audit adjustments:", error);

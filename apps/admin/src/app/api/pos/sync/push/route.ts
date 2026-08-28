@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, SyncStatus, EstadoTurno, EstadoVenta, GastoCategoria } from "@shopli/db";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 // ==========================================
 // Tipos Exportados
@@ -403,9 +404,17 @@ export async function POST(req: Request) {
 
         // Si la auditoria no tiene items (es nueva o se quedó a medias en un sync anterior), hacemos el Snapshot
         if (dbAudit && dbAudit.items.length === 0) {
-          // Snapshot del inventario actual en el servidor al momento de recibir la primera sync
+          // Snapshot del inventario actual en el servidor al momento de recibir la primera sync (excluyendo productos padre)
           const branchInventory = await tx.inventario_Sucursal.findMany({
-            where: { sucursal_id: dbAudit.sucursalId },
+            where: { 
+              sucursal_id: dbAudit.sucursalId,
+              producto: {
+                OR: [
+                  { parent_id: { not: null } },
+                  { parent_id: null, variants: { none: {} } }
+                ]
+              }
+            },
             select: { producto_id: true, cantidad: true }
           });
 
@@ -494,6 +503,10 @@ export async function POST(req: Request) {
         // Marcamos la auditoria local del POS como procesada independiente de si existía en backend.
         // Eso permite liberar la cola offline.
         procesados.auditoriasDinamicas.push(da.id);
+        
+        // Revalidar caché del dashboard de administración
+        revalidatePath("/dashboard/audits");
+        revalidatePath(`/dashboard/audits/${da.id}`);
       }
 
     });
