@@ -6,11 +6,13 @@ import CartScreen from "./components/CartScreen";
 import { useCart } from "./hooks/useCart";
 import { useSalesHistory } from "./hooks/useSalesHistory";
 import ExpenseModal from "./components/ExpenseModal";
-import { Wallet } from "lucide-react";
+import CameraScannerModal from "./components/CameraScannerModal";
+import { Wallet, Camera } from "lucide-react";
 
 export default function SalesScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showScannerModal, setShowScannerModal] = useState(false);
     const {
         cartItems,
         showCart,
@@ -53,6 +55,14 @@ export default function SalesScreen() {
                             <Wallet className="w-5 h-5 text-gray-400" />
                             Gasto Caja Chica
                         </button>
+
+                        <button
+                            onClick={() => setShowScannerModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg active:scale-95 transition-all"
+                        >
+                            <Camera className="w-5 h-5" />
+                            Escáner QR
+                        </button>
                     </div>
                     <ProductGrid onAddToCart={handleAddToCart} />
 
@@ -84,6 +94,14 @@ export default function SalesScreen() {
 
             {showExpenseModal && (
                 <ExpenseModal onClose={() => setShowExpenseModal(false)} />
+            )}
+
+            {showScannerModal && (
+                <CameraScannerModal
+                    isOpen={showScannerModal}
+                    onClose={() => setShowScannerModal(false)}
+                    onAddToCart={handleAddToCart}
+                />
             )}
         </div>
     );
