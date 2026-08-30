@@ -50,10 +50,6 @@ export default function MainLayout() {
                                 title={isOnline ? "Conectado" : "Offline"}
                             />
                         </div>
-                        {/* User profile / shift info */}
-                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center font-bold text-xs">
-                            C1
-                        </div>
                     </div>
                 </header>
             )}

@@ -23,6 +23,8 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const lastReadCodeRef = useRef<{ code: string; time: number } | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const torchTimeoutRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const torchTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Generar un beep corto a 1kHz usando Web Audio API nativa
   const playBeep = () => {
@@ -123,15 +125,25 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
           }
         )
         .then(() => {
-          // Chequear linterna / flash (torch)
-          try {
-            const capabilities = html5Qrcode.getRunningTrackCapabilities();
-            if (capabilities && "torch" in capabilities) {
-              setHasTorch(true);
+          // Chequear linterna / flash (torch) de forma proactiva y con reintento por inicialización lenta
+          const checkTorch = () => {
+            try {
+              const capabilities = html5Qrcode.getRunningTrackCapabilities();
+              const settings = html5Qrcode.getRunningTrackSettings();
+              if (
+                (capabilities && "torch" in capabilities) ||
+                (settings && "torch" in settings)
+              ) {
+                setHasTorch(true);
+              }
+            } catch (e) {
+              console.log("Torch no disponible o error al consultar capacidades:", e);
             }
-          } catch (e) {
-            console.log("Torch no disponible en esta cámara/navegador", e);
-          }
+          };
+
+          checkTorch();
+          torchTimeoutRef1.current = setTimeout(checkTorch, 500);
+          torchTimeoutRef2.current = setTimeout(checkTorch, 1500);
         })
         .catch((err) => {
           console.error("Error iniciando html5-qrcode:", err);
@@ -145,6 +157,12 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
       clearTimeout(timer);
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
+      }
+      if (torchTimeoutRef1.current) {
+        clearTimeout(torchTimeoutRef1.current);
+      }
+      if (torchTimeoutRef2.current) {
+        clearTimeout(torchTimeoutRef2.current);
       }
       if (html5QrcodeRef.current) {
         const scanner = html5QrcodeRef.current;
@@ -178,11 +196,11 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between">
+      <div className="relative w-full h-full bg-zinc-950 flex flex-col justify-between">
         
         {/* Header */}
-        <div className="w-full px-6 py-4 flex items-center justify-between border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md z-10">
+        <div className="w-full px-6 py-4 flex items-center justify-between border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md z-10 shrink-0">
           <div>
             <h3 className="text-base font-black text-white font-sans">Escáner de Cámara</h3>
             <p className="text-[10px] text-zinc-500 mt-0.5">Apunta a un código QR o de barras</p>
@@ -199,13 +217,13 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
         </div>
 
         {/* Visor Area */}
-        <div className="relative w-full aspect-square bg-black flex items-center justify-center">
+        <div className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
           {scannerError ? (
             <div className="px-6 text-center text-xs text-red-400 max-w-xs leading-relaxed">
               {scannerError}
             </div>
           ) : (
-            <div id="qr-reader" className="w-full h-full [&_video]:object-cover" />
+            <div id="qr-reader" className="w-full h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0" />
           )}
 
           {/* Minimalist targeting square frame (aligned to exactly 260px) */}
@@ -241,7 +259,7 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
         </div>
 
         {/* Footer controls */}
-        <div className="w-full px-6 py-4 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 gap-4">
+        <div className="w-full px-6 py-6 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 gap-4 shrink-0 pb-safe">
           {hasTorch && (
             <button
               onClick={toggleTorch}
