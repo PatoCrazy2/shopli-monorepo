@@ -47,8 +47,6 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
     return qtys;
   });
 
-  if (!isOpen) return null;
-
   // Filtrado de productos en memoria
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
@@ -142,6 +140,8 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
       alert("Error al compilar el PDF de etiquetas.");
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
