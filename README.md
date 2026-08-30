@@ -126,6 +126,13 @@ if (familyQuantity >= minQuantityForWholesale) {
 }
 ```
 
+### Client-Side QR Code & PDF Label Generation
+To eliminate server load and avoid external microservice/render dependencies, ShopLI generates QR codes and compiles high-definition print-ready PDFs 100% on the client side using `jspdf` and `qrcode`.
+
+* **Avery 5160 Grid Layout:** Compiles a standard Letter-sized sheet (3 columns x 10 rows, 30 labels total) with precise grid spacing. Automatically handles pagination and overflows.
+* **Thermal Roll Layout:** Generates a continuous, single-label landscape PDF (50mm x 25mm) customized for standard barcode and thermal roll printers.
+* **Metadata Overlay:** Each label embeds a generated vector QR code mapped to the product's unique SKU, alongside wrapped text including the product name, variant name, and price.
+
 ---
 
 ## Security Architecture
