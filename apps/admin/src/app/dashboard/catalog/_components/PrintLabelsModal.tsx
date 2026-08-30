@@ -27,12 +27,15 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
   const [globalQty, setGlobalQty] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Estado de ids seleccionados (tanto padres como variantes)
+  // Estado de ids seleccionados (solo independientes y variantes)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => {
     const ids = new Set<string>();
     products.forEach((p) => {
-      ids.add(p.id);
-      p.variants.forEach((v) => ids.add(v.id));
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v) => ids.add(v.id));
+      } else {
+        ids.add(p.id);
+      }
     });
     return ids;
   });
@@ -41,10 +44,13 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
   const [quantities, setQuantities] = useState<Record<string, number>>(() => {
     const qtys: Record<string, number> = {};
     products.forEach((p) => {
-      qtys[p.id] = 1;
-      p.variants.forEach((v) => {
-        qtys[v.id] = 1;
-      });
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v) => {
+          qtys[v.id] = 1;
+        });
+      } else {
+        qtys[p.id] = 1;
+      }
     });
     return qtys;
   });
@@ -89,8 +95,11 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
   const selectAll = () => {
     const next = new Set<string>();
     products.forEach((p) => {
-      next.add(p.id);
-      p.variants.forEach((v) => next.add(v.id));
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v) => next.add(v.id));
+      } else {
+        next.add(p.id);
+      }
     });
     setSelectedIds(next);
   };
@@ -109,49 +118,51 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
       }
 
       products.forEach((p) => {
-        productsToPrint.push({
-          nombre: p.nombre,
-          variante_nombre: null,
-          precio_publico: p.precio_publico,
-          codigo_interno: p.codigo_interno || "SIN-SKU",
-          cantidad: globalQty,
-        });
-
-        p.variants.forEach((v) => {
-          productsToPrint.push({
-            nombre: p.nombre,
-            variante_nombre: v.variante_nombre,
-            precio_publico: p.precio_publico,
-            codigo_interno: v.codigo_interno || "SIN-SKU",
-            cantidad: globalQty,
-          });
-        });
-      });
-    } else {
-      products.forEach((p) => {
-        // 1. Producto principal
-        if (selectedIds.has(p.id) && (quantities[p.id] || 0) > 0) {
-          productsToPrint.push({
-            nombre: p.nombre,
-            variante_nombre: null,
-            precio_publico: p.precio_publico,
-            codigo_interno: p.codigo_interno || "SIN-SKU",
-            cantidad: quantities[p.id] || 0,
-          });
-        }
-
-        // 2. Variantes
-        p.variants.forEach((v) => {
-          if (selectedIds.has(v.id) && (quantities[v.id] || 0) > 0) {
+        if (p.variants && p.variants.length > 0) {
+          p.variants.forEach((v) => {
             productsToPrint.push({
               nombre: p.nombre,
               variante_nombre: v.variante_nombre,
               precio_publico: p.precio_publico,
               codigo_interno: v.codigo_interno || "SIN-SKU",
-              cantidad: quantities[v.id] || 0,
+              cantidad: globalQty,
+            });
+          });
+        } else {
+          productsToPrint.push({
+            nombre: p.nombre,
+            variante_nombre: null,
+            precio_publico: p.precio_publico,
+            codigo_interno: p.codigo_interno || "SIN-SKU",
+            cantidad: globalQty,
+          });
+        }
+      });
+    } else {
+      products.forEach((p) => {
+        if (p.variants && p.variants.length > 0) {
+          p.variants.forEach((v) => {
+            if (selectedIds.has(v.id) && (quantities[v.id] || 0) > 0) {
+              productsToPrint.push({
+                nombre: p.nombre,
+                variante_nombre: v.variante_nombre,
+                precio_publico: p.precio_publico,
+                codigo_interno: v.codigo_interno || "SIN-SKU",
+                cantidad: quantities[v.id] || 0,
+              });
+            }
+          });
+        } else {
+          if (selectedIds.has(p.id) && (quantities[p.id] || 0) > 0) {
+            productsToPrint.push({
+              nombre: p.nombre,
+              variante_nombre: null,
+              precio_publico: p.precio_publico,
+              codigo_interno: p.codigo_interno || "SIN-SKU",
+              cantidad: quantities[p.id] || 0,
             });
           }
-        });
+        }
       });
     }
 
@@ -366,36 +377,42 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
                       <div key={p.id} className="p-3 space-y-2 bg-white dark:bg-zinc-950/20">
                         
                         {/* Fila del Producto Padre */}
-                        <div className="flex items-center justify-between gap-4">
-                          <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
-                            <input
-                              type="checkbox"
-                              checked={parentChecked}
-                              onChange={() => toggleSelect(p.id)}
-                              className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 bg-transparent accent-black dark:accent-white focus:ring-0 cursor-pointer"
-                            />
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate block">
-                                {p.nombre}
-                              </span>
-                              <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">
-                                SKU: {p.codigo_interno || "N/A"}
-                              </span>
-                            </div>
-                          </label>
-                          {parentChecked && (
-                            <div className="flex items-center gap-1">
-                              <span className="text-[10px] text-zinc-400">Copias:</span>
+                        {p.variants && p.variants.length > 0 ? (
+                          <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 px-1 border-b border-zinc-100 dark:border-zinc-900 pb-1">
+                            {p.nombre}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between gap-4">
+                            <label className="flex items-center gap-3 cursor-pointer min-w-0 flex-1">
                               <input
-                                type="number"
-                                min="1"
-                                value={quantities[p.id] || 1}
-                                onChange={(e) => handleQtyChange(p.id, parseInt(e.target.value) || 0)}
-                                className="w-12 h-7 text-center rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white font-mono"
+                                type="checkbox"
+                                checked={parentChecked}
+                                onChange={() => toggleSelect(p.id)}
+                                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 bg-transparent accent-black dark:accent-white focus:ring-0 cursor-pointer"
                               />
-                            </div>
-                          )}
-                        </div>
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate block">
+                                  {p.nombre}
+                                </span>
+                                <span className="text-[10px] text-zinc-400 font-mono block mt-0.5">
+                                  SKU: {p.codigo_interno || "N/A"}
+                                </span>
+                              </div>
+                            </label>
+                            {parentChecked && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-[10px] text-zinc-400">Copias:</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={quantities[p.id] || 1}
+                                  onChange={(e) => handleQtyChange(p.id, parseInt(e.target.value) || 0)}
+                                  className="w-12 h-7 text-center rounded border border-zinc-300 dark:border-zinc-700 bg-transparent text-xs focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white font-mono"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {/* Filas de Variantes (Anidadas) */}
                         {p.variants && p.variants.length > 0 && (
