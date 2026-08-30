@@ -197,88 +197,78 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
 
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between">
-      <div className="relative w-full h-full bg-zinc-950 flex flex-col justify-between">
-        
-        {/* Header */}
-        <div className="w-full px-6 py-4 flex items-center justify-between border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md z-10 shrink-0">
-          <div>
-            <h3 className="text-base font-black text-white font-sans">Escáner de Cámara</h3>
-            <p className="text-[10px] text-zinc-500 mt-0.5">Apunta a un código QR o de barras</p>
+      
+      {/* Floating Close Button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-20 p-3 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-sm transition-none"
+        aria-label="Cerrar escáner"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      {/* Visor Area */}
+      <div className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
+        {scannerError ? (
+          <div className="px-6 text-center text-xs text-red-400 max-w-xs leading-relaxed">
+            {scannerError}
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-zinc-100 transition-none"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
+        ) : (
+          <div id="qr-reader" className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0" />
+        )}
+
+        {/* Minimalist targeting square frame (aligned to exactly 260px) */}
+        {!scannerError && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="w-[260px] h-[260px] border border-white/20 rounded-2xl relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+              {/* Clean white corners */}
+              <div className="absolute -top-[2px] -left-[2px] w-6 h-6 border-t-[3px] border-l-[3px] border-white rounded-tl-lg" />
+              <div className="absolute -top-[2px] -right-[2px] w-6 h-6 border-t-[3px] border-r-[3px] border-white rounded-tr-lg" />
+              <div className="absolute -bottom-[2px] -left-[2px] w-6 h-6 border-b-[3px] border-l-[3px] border-white rounded-bl-lg" />
+              <div className="absolute -bottom-[2px] -right-[2px] w-6 h-6 border-b-[3px] border-r-[3px] border-white rounded-br-lg" />
+              
+              {/* Sutil scanning line */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-pulse mt-4" />
+            </div>
+          </div>
+        )}
+
+        {/* Floating Toast Notification */}
+        {toast && (
+          <div className="absolute bottom-6 left-4 right-4 bg-zinc-900/95 border border-zinc-800 text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-zinc-400">
+              <polyline points="20 6 9 17 4 12" />
             </svg>
-          </button>
-        </div>
-
-        {/* Visor Area */}
-        <div className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
-          {scannerError ? (
-            <div className="px-6 text-center text-xs text-red-400 max-w-xs leading-relaxed">
-              {scannerError}
+            <div className="min-w-0 flex-1 truncate text-zinc-100">
+              {toast.nombre}
             </div>
-          ) : (
-            <div id="qr-reader" className="w-full h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0" />
-          )}
-
-          {/* Minimalist targeting square frame (aligned to exactly 260px) */}
-          {!scannerError && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div className="w-[260px] h-[260px] border border-white/20 rounded-2xl relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
-                {/* Clean white corners */}
-                <div className="absolute -top-[2px] -left-[2px] w-6 h-6 border-t-[3px] border-l-[3px] border-white rounded-tl-lg" />
-                <div className="absolute -top-[2px] -right-[2px] w-6 h-6 border-t-[3px] border-r-[3px] border-white rounded-tr-lg" />
-                <div className="absolute -bottom-[2px] -left-[2px] w-6 h-6 border-b-[3px] border-l-[3px] border-white rounded-bl-lg" />
-                <div className="absolute -bottom-[2px] -right-[2px] w-6 h-6 border-b-[3px] border-r-[3px] border-white rounded-br-lg" />
-                
-                {/* Sutil scanning line */}
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-pulse mt-4" />
-              </div>
+            <div className="font-mono bg-zinc-800 px-2 py-0.5 rounded text-[10px] shrink-0 text-zinc-300">
+              ${toast.precio.toFixed(2)}
             </div>
-          )}
+          </div>
+        )}
+      </div>
 
-          {/* Floating Toast Notification */}
-          {toast && (
-            <div className="absolute bottom-6 left-4 right-4 bg-zinc-900/95 border border-zinc-800 text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-zinc-400">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <div className="min-w-0 flex-1 truncate text-zinc-100">
-                {toast.nombre}
-              </div>
-              <div className="font-mono bg-zinc-800 px-2 py-0.5 rounded text-[10px] shrink-0 text-zinc-300">
-                ${toast.precio.toFixed(2)}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer controls */}
-        <div className="w-full px-6 py-6 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 gap-4 shrink-0 pb-safe">
-          {hasTorch && (
-            <button
-              onClick={toggleTorch}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-none ${
-                isTorchOn
-                  ? "bg-white text-black shadow-sm"
-                  : "bg-zinc-900 text-zinc-400 hover:text-white"
-              }`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-                <line x1="9" y1="18" x2="15" y2="18" />
-                <line x1="10" y1="22" x2="14" y2="22" />
-              </svg>
-              <span>{isTorchOn ? "Flash Encendido" : "Encender Flash"}</span>
-            </button>
-          )}
-        </div>
-
+      {/* Footer controls */}
+      <div className="w-full px-6 py-6 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 gap-4 shrink-0 pb-safe">
+        <button
+          onClick={toggleTorch}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-none ${
+            isTorchOn
+              ? "bg-white text-black shadow-sm"
+              : "bg-zinc-900 text-zinc-400 hover:text-white"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+            <line x1="9" y1="18" x2="15" y2="18" />
+            <line x1="10" y1="22" x2="14" y2="22" />
+          </svg>
+          <span>{isTorchOn ? "Flash Encendido" : "Encender Flash"}</span>
+        </button>
       </div>
     </div>
   );
