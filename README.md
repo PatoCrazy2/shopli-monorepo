@@ -219,6 +219,18 @@ pnpm dev
 * **Admin Dashboard:** http://localhost:3000
 * **POS Client:** http://localhost:5173
 
+### 5. Utility & Test Scripts
+To run maintenance and custom development tests on the database and utility features:
+
+* **SKU Batch Migration Script:** Generates unique sequential SKUs for all existing products and variants without a SKU:
+  ```bash
+  pnpm --filter @shopli/db run db:migrate-skus
+  ```
+* **PDF Label Generator Layout Test:** Runs a local dry-run generation of PDF labels (Avery 3x10 grid and Thermal rolls) using mock data, saving them locally as `test-carta.pdf` and `test-termico.pdf` (both are git-ignored):
+  ```bash
+  pnpm --filter @shopli/db run db:test-pdf
+  ```
+
 ---
 
 ## Engineering Standards
