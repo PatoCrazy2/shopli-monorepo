@@ -16,7 +16,6 @@ interface ToastMessage {
 }
 
 export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: CameraScannerModalProps) {
-  const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -24,8 +23,6 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const lastReadCodeRef = useRef<{ code: string; time: number } | null>(null);
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const torchTimeoutRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const torchTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Generar un beep corto a 1kHz usando Web Audio API nativa
   const playBeep = () => {
@@ -81,7 +78,6 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
 
     // Reiniciar estados al abrir
     setScannerError(null);
-    setHasTorch(false);
     setIsTorchOn(false);
 
     // Asegurar que el contenedor está montado antes de instanciar Html5Qrcode
@@ -162,31 +158,10 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
               console.error("Error al buscar código en la base local:", err);
             }
           },
-          (errorMessage) => {
+          () => {
             // Ignoramos la mayoría de los errores por frame no detectado (html5-qrcode es muy ruidosa)
           }
         )
-        .then(() => {
-          // Chequear linterna / flash (torch) de forma proactiva y con reintento por inicialización lenta
-          const checkTorch = () => {
-            try {
-              const capabilities = html5Qrcode.getRunningTrackCapabilities();
-              const settings = html5Qrcode.getRunningTrackSettings();
-              if (
-                (capabilities && "torch" in capabilities) ||
-                (settings && "torch" in settings)
-              ) {
-                setHasTorch(true);
-              }
-            } catch (e) {
-              console.log("Torch no disponible o error al consultar capacidades:", e);
-            }
-          };
-
-          checkTorch();
-          torchTimeoutRef1.current = setTimeout(checkTorch, 500);
-          torchTimeoutRef2.current = setTimeout(checkTorch, 1500);
-        })
         .catch((err) => {
           console.error("Error iniciando html5-qrcode:", err);
           setScannerError(
@@ -199,12 +174,6 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
       clearTimeout(timer);
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
-      }
-      if (torchTimeoutRef1.current) {
-        clearTimeout(torchTimeoutRef1.current);
-      }
-      if (torchTimeoutRef2.current) {
-        clearTimeout(torchTimeoutRef2.current);
       }
       if (html5QrcodeRef.current) {
         const scanner = html5QrcodeRef.current;
@@ -232,6 +201,7 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
       setIsTorchOn(nextTorch);
     } catch (err) {
       console.error("Error toggling torch:", err);
+      alert("La linterna no es compatible con la cámara actual o este navegador.");
     }
   };
 
