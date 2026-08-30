@@ -70,10 +70,7 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
           { facingMode: "environment" },
           {
             fps: 10,
-            qrbox: (width, height) => {
-              const size = Math.min(width, height) * 0.7;
-              return { width: size, height: size };
-            },
+            qrbox: { width: 260, height: 260 },
           },
           async (decodedText) => {
             const now = Date.now();
@@ -181,18 +178,18 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm">
+      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center">
         
         {/* Header */}
         <div className="w-full px-6 py-4 flex items-center justify-between border-b border-zinc-900 bg-zinc-950/80 backdrop-blur-md z-10">
           <div>
-            <h3 className="text-base font-black text-white">Escáner de Cámara</h3>
+            <h3 className="text-base font-black text-white font-sans">Escáner de Cámara</h3>
             <p className="text-[10px] text-zinc-500 mt-0.5">Apunta a un código QR o de barras</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-zinc-100 transition-colors"
+            className="p-2 hover:bg-zinc-900 rounded-xl text-zinc-400 hover:text-zinc-100 transition-none"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -211,32 +208,32 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
             <div id="qr-reader" className="w-full h-full [&_video]:object-cover" />
           )}
 
-          {/* Green Targeting Square Frame (Visual Guide) */}
+          {/* Minimalist targeting square frame (aligned to exactly 260px) */}
           {!scannerError && (
             <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div className="w-2/3 aspect-square border-2 border-emerald-500 rounded-2xl relative shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
-                {/* L corners */}
-                <div className="absolute -top-1.5 -left-1.5 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
-                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
-                <div className="absolute -bottom-1.5 -left-1.5 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
-                <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
+              <div className="w-[260px] h-[260px] border border-white/20 rounded-2xl relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                {/* Clean white corners */}
+                <div className="absolute -top-[2px] -left-[2px] w-6 h-6 border-t-[3px] border-l-[3px] border-white rounded-tl-lg" />
+                <div className="absolute -top-[2px] -right-[2px] w-6 h-6 border-t-[3px] border-r-[3px] border-white rounded-tr-lg" />
+                <div className="absolute -bottom-[2px] -left-[2px] w-6 h-6 border-b-[3px] border-l-[3px] border-white rounded-bl-lg" />
+                <div className="absolute -bottom-[2px] -right-[2px] w-6 h-6 border-b-[3px] border-r-[3px] border-white rounded-br-lg" />
                 
-                {/* Scanning laser effect */}
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-bounce mt-4 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+                {/* Sutil scanning line */}
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-pulse mt-4" />
               </div>
             </div>
           )}
 
           {/* Floating Toast Notification */}
           {toast && (
-            <div className="absolute bottom-6 left-4 right-4 bg-emerald-500/90 text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-sm animate-in slide-in-from-bottom-3 duration-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-white">
+            <div className="absolute bottom-6 left-4 right-4 bg-zinc-900/95 border border-zinc-800 text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-zinc-400">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <div className="min-w-0 flex-1 truncate">
+              <div className="min-w-0 flex-1 truncate text-zinc-100">
                 {toast.nombre}
               </div>
-              <div className="font-mono bg-white/20 px-2 py-0.5 rounded text-[10px] shrink-0">
+              <div className="font-mono bg-zinc-800 px-2 py-0.5 rounded text-[10px] shrink-0 text-zinc-300">
                 ${toast.precio.toFixed(2)}
               </div>
             </div>
@@ -248,9 +245,9 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
           {hasTorch && (
             <button
               onClick={toggleTorch}
-              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-none ${
                 isTorchOn
-                  ? "bg-amber-500 text-black shadow-[0_0_12px_rgba(245,158,11,0.4)]"
+                  ? "bg-white text-black shadow-sm"
                   : "bg-zinc-900 text-zinc-400 hover:text-white"
               }`}
             >

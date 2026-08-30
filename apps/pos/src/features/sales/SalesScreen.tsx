@@ -7,7 +7,7 @@ import { useCart } from "./hooks/useCart";
 import { useSalesHistory } from "./hooks/useSalesHistory";
 import ExpenseModal from "./components/ExpenseModal";
 import CameraScannerModal from "./components/CameraScannerModal";
-import { Wallet, Camera } from "lucide-react";
+import { Wallet, Scan } from "lucide-react";
 
 export default function SalesScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -50,7 +50,7 @@ export default function SalesScreen() {
                     <div className="flex justify-between items-center mb-4">
                         <button
                             onClick={() => setShowExpenseModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700"
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-none text-gray-700"
                         >
                             <Wallet className="w-5 h-5 text-gray-400" />
                             Gasto Caja Chica
@@ -58,10 +58,10 @@ export default function SalesScreen() {
 
                         <button
                             onClick={() => setShowScannerModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg active:scale-95 transition-all"
+                            className="w-12 h-12 flex items-center justify-center bg-black hover:bg-zinc-800 text-white rounded-xl active:scale-95 shadow-sm"
+                            aria-label="Escáner QR"
                         >
-                            <Camera className="w-5 h-5" />
-                            Escáner QR
+                            <Scan className="w-6 h-6" />
                         </button>
                     </div>
                     <ProductGrid onAddToCart={handleAddToCart} />
