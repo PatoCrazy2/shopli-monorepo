@@ -2,6 +2,7 @@ import { db } from "@shopli/db";
 import Link from "next/link";
 import { toggleProduct } from "./actions";
 import { ImportCatalogModal } from "./_components/ImportCatalogModal";
+import { PrintCatalogButton } from "./_components/PrintCatalogButton";
 import { auth } from "@/lib/auth";
 
 // RSC
@@ -42,6 +43,34 @@ export default async function CatalogPage({
   const totalProducts = await db.producto.count({ where: whereClause });
   const totalPages = Math.ceil(totalProducts / take);
 
+  // Consulta para el modal de impresión de etiquetas (todos los productos y variantes activos)
+  const allProductsForPrint = await db.producto.findMany({
+    where: {
+      empresa_id: empresaId,
+      isActive: true,
+      parent_id: null,
+    },
+    include: {
+      variants: {
+        where: { isActive: true },
+        orderBy: { variante_nombre: "asc" }
+      }
+    },
+    orderBy: { nombre: "asc" }
+  });
+
+  const serializedProducts = allProductsForPrint.map(p => ({
+    id: p.id,
+    nombre: p.nombre,
+    codigo_interno: p.codigo_interno,
+    precio_publico: Number(p.precio_publico),
+    variants: p.variants.map(v => ({
+      id: v.id,
+      variante_nombre: v.variante_nombre || "",
+      codigo_interno: v.codigo_interno
+    }))
+  }));
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
@@ -77,6 +106,7 @@ export default async function CatalogPage({
           </form>
 
           <div className="flex items-center gap-2 w-full md:w-auto">
+            <PrintCatalogButton products={serializedProducts} />
             <ImportCatalogModal />
             
             <Link

@@ -3,7 +3,6 @@
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upsertProduct } from "../actions";
-import { PrintLabelsModal, PrintProduct } from "../_components/PrintLabelsModal";
 
 interface ProductFormProps {
   initialData?: {
@@ -27,7 +26,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [variants, setVariants] = useState<Array<{ id?: string; variante_nombre: string; codigo_interno: string | null }>>(
     initialData?.variants || []
   );
@@ -232,21 +230,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
       </div>
 
       <div className="pt-4 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-zinc-800 mt-6">
-        {initialData && (
-          <button
-            type="button"
-            onClick={() => setIsPrintModalOpen(true)}
-            className="mr-auto h-10 px-4 py-2 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-900/50 dark:text-gray-100 flex items-center gap-2 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            Imprimir Código QR
-          </button>
-        )}
         <button
           type="button"
           onClick={() => router.back()}
@@ -268,14 +251,6 @@ export function ProductForm({ initialData }: ProductFormProps) {
           Guardar Producto
         </button>
       </div>
-
-      {initialData && (
-        <PrintLabelsModal
-          isOpen={isPrintModalOpen}
-          onClose={() => setIsPrintModalOpen(false)}
-          product={initialData as PrintProduct}
-        />
-      )}
     </form>
   );
 }
