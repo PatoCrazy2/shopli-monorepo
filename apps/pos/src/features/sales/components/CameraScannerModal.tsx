@@ -12,6 +12,7 @@ interface ToastMessage {
   id: number;
   nombre: string;
   precio: number;
+  type: 'success' | 'error';
 }
 
 export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: CameraScannerModalProps) {
@@ -47,6 +48,27 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
     }
   };
 
+  // Sonido de error grave
+  const playErrorBeep = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = "sawtooth";
+      oscillator.frequency.setValueAtTime(300, audioCtx.currentTime); // 300Hz
+      gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.25); // beep largo de 250ms
+    } catch (e) {
+      console.warn("AudioContext error:", e);
+    }
+  };
+
   // Feedback de vibración háptica
   const triggerVibration = () => {
     if (navigator.vibrate) {
@@ -71,8 +93,11 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
         .start(
           { facingMode: "environment" },
           {
-            fps: 10,
-            qrbox: { width: 260, height: 260 },
+            fps: 15,
+            videoConstraints: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            }
           },
           async (decodedText) => {
             const now = Date.now();
@@ -85,6 +110,8 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
               return;
             }
             lastReadCodeRef.current = { code: decodedText, time: now };
+
+            console.log("[CameraScanner] Código decodificado de cámara:", decodedText);
 
             try {
               // Buscar producto en Dexie
@@ -109,12 +136,27 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
                   id: now,
                   nombre: matchedProduct.nombre,
                   precio: matchedProduct.precio_publico,
+                  type: 'success',
                 });
                 toastTimeoutRef.current = setTimeout(() => {
                   setToast(null);
                 }, 1200);
               } else {
-                console.log(`Código no registrado: ${decodedText}`);
+                console.warn(`[CameraScanner] Código leído pero no encontrado en IndexedDB: ${decodedText}`);
+                playErrorBeep();
+                
+                if (toastTimeoutRef.current) {
+                  clearTimeout(toastTimeoutRef.current);
+                }
+                setToast({
+                  id: now,
+                  nombre: `No registrado: ${decodedText}`,
+                  precio: 0,
+                  type: 'error',
+                });
+                toastTimeoutRef.current = setTimeout(() => {
+                  setToast(null);
+                }, 1800);
               }
             } catch (err) {
               console.error("Error al buscar código en la base local:", err);
@@ -238,16 +280,31 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
 
         {/* Floating Toast Notification */}
         {toast && (
-          <div className="absolute bottom-6 left-4 right-4 bg-zinc-900/95 border border-zinc-800 text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-zinc-400">
-              <polyline points="20 6 9 17 4 12" />
+          <div className={`absolute bottom-6 left-4 right-4 border text-white font-semibold text-xs py-3 px-4 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-sm ${
+            toast.type === 'success'
+              ? 'bg-zinc-900/95 border-zinc-800'
+              : 'bg-red-950/95 border-red-800/80 text-red-200'
+          }`}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${
+              toast.type === 'success' ? 'text-zinc-400' : 'text-red-400'
+            }`}>
+              {toast.type === 'success' ? (
+                <polyline points="20 6 9 17 4 12" />
+              ) : (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </>
+              )}
             </svg>
-            <div className="min-w-0 flex-1 truncate text-zinc-100">
+            <div className="min-w-0 flex-1 truncate">
               {toast.nombre}
             </div>
-            <div className="font-mono bg-zinc-800 px-2 py-0.5 rounded text-[10px] shrink-0 text-zinc-300">
-              ${toast.precio.toFixed(2)}
-            </div>
+            {toast.type === 'success' && (
+              <div className="font-mono bg-zinc-800 px-2 py-0.5 rounded text-[10px] shrink-0 text-zinc-300">
+                ${toast.precio.toFixed(2)}
+              </div>
+            )}
           </div>
         )}
       </div>
