@@ -22,7 +22,7 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
 
   const html5QrcodeRef = useRef<Html5Qrcode | null>(null);
   const lastReadCodeRef = useRef<{ code: string; time: number } | null>(null);
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Generar un beep corto a 1kHz usando Web Audio API nativa
   const playBeep = () => {
@@ -128,12 +128,9 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
         .then(() => {
           // Chequear linterna / flash (torch)
           try {
-            const track = html5Qrcode.getRunningTrack();
-            if (track) {
-              const capabilities = track.getCapabilities();
-              if ("torch" in capabilities) {
-                setHasTorch(true);
-              }
+            const capabilities = html5Qrcode.getRunningTrackCapabilities();
+            if (capabilities && "torch" in capabilities) {
+              setHasTorch(true);
             }
           } catch (e) {
             console.log("Torch no disponible en esta cámara/navegador", e);
