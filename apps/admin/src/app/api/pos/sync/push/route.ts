@@ -136,7 +136,7 @@ export async function POST(req: Request) {
       const isAdminAuthorized = !!session?.user;
       
       // Bypass para scripts de test / integración 
-      const isTestBypass = process.env.NODE_ENV === 'test' || req.headers.get("x-test-bypass") === "true";
+      const isTestBypass = process.env.NODE_ENV === 'test' && req.headers.get("x-test-bypass") === "true";
 
       if (!isAdminAuthorized && !isTestBypass) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
