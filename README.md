@@ -236,6 +236,14 @@ To run maintenance and custom development tests on the database and utility feat
   ```bash
   pnpm --filter pos test:auth
   ```
+* **Financial Logic Unit Suite:** Runs pure unit tests for cart financial calculations including wholesale family grouping, boundary conditions (familyQty === threshold), cross-family isolation, negative discount guards, and the roundCustom rounding function:
+  ```bash
+  pnpm --filter pos test
+  ```
+* **Zero-Trust Integration Suite:** Runs end-to-end integration tests that verify the server rejects price-manipulated payloads with 422 Unprocessable Entity:
+  ```bash
+  pnpm --filter pos test
+  ```
 * **PDF Label Generator Layout Test:** Runs a local dry-run generation of PDF labels (Avery 3x10 grid and Thermal rolls) using mock data, saving them locally as `test-carta.pdf` and `test-termico.pdf` (both are git-ignored):
   ```bash
   pnpm --filter @shopli/db run db:test-pdf

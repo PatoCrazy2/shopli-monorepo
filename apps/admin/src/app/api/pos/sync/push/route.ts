@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
  */
 function roundCustom(value: number): number {
   const floorVal = Math.floor(value);
-  const decimal = value - floorVal;
+  const decimal = Math.round((value - floorVal) * 1000) / 1000;
   return decimal >= 0.6 ? Math.ceil(value) : floorVal;
 }
 

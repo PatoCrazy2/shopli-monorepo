@@ -161,4 +161,58 @@ describe('pushToCloud integration', () => {
     const finalDetailsCount = await db.sale_details.count();
     expect(finalDetailsCount).toBe(0);
   });
+
+  it('debe rechazar una venta con total manipulado (zero-trust) con status 422', async () => {
+    // Este test verifica que el servidor RECALCULA los precios y no confía en el cliente.
+    // Enviamos directamente al endpoint con un total fraudulento.
+    const fraudSaleId = crypto.randomUUID();
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
+    const payload = {
+      turnos: [],
+      ventas: [
+        {
+          id: fraudSaleId,
+          turno_id: turnoId,
+          sucursal_id: testBranchId,
+          total: 1, // ← MANIPULADO: debería ser 200 (2 × $100)
+          estado: 'COMPLETADA',
+          fecha: new Date().toISOString(),
+          detalles: [
+            {
+              producto_id: productId,
+              cantidad: 2,
+              precio_unitario_historico: 100,
+              descuento_manual: 0,
+            }
+          ]
+        }
+      ],
+      auditorias: [],
+      gastos: [],
+      auditoriasDinamicas: [],
+    };
+
+    const response = await fetch(
+      `${apiBase}/pos/sync/push?empresaId=test-empresa-id`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-test-bypass': 'true', // Válido en NODE_ENV=test
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    // El servidor debe rechazar la venta manipulada
+    expect(response.status).toBe(422);
+    const body = await response.json();
+    expect(body.error).toBeDefined();
+    expect(body.details).toContain(fraudSaleId);
+
+    // La venta NO debe existir en PostgreSQL
+    const serverSale = await prisma.venta.findUnique({ where: { id: fraudSaleId } });
+    expect(serverSale).toBeNull();
+  });
 });

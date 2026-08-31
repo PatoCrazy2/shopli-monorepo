@@ -3,6 +3,17 @@ import 'fake-indexeddb/auto';
 import { db } from '../lib/db';
 import bcrypt from 'bcryptjs';
 
+/**
+ * ALCANCE DE ESTOS TESTS: Persistencia en IndexedDB (Dexie)
+ *
+ * Estos tests verifican que los metadatos de seguridad (lockout, TTL, intentos fallidos)
+ * SE PERSISTEN CORRECTAMENTE en Dexie. NO verifican que la función de login los LEE
+ * y los aplica correctamente. Para cobertura de comportamiento real del flujo de
+ * autenticación, se requieren tests adicionales que importen y llamen a la función
+ * authenticateOffline() del hook de login.
+ *
+ * Referencia: Auditoría técnica 2026-08-31 — hallazgo P3.
+ */
 describe('Autenticación Offline y Mecanismos de Seguridad (Unit Tests)', () => {
     beforeEach(async () => {
         await db.users.clear();
