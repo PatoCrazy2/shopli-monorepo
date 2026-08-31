@@ -5,6 +5,20 @@ import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 // ==========================================
+// Utilidades Financieras (mirror del cliente)
+// ==========================================
+/**
+ * Redondeo personalizado: igual al cliente (useCart.ts / db.ts).
+ * >= 0.6 → ceil, de lo contrario → floor.
+ * Debe mantenerse sincronizado con apps/pos/src/lib/db.ts#roundCustom
+ */
+function roundCustom(value: number): number {
+  const floorVal = Math.floor(value);
+  const decimal = value - floorVal;
+  return decimal >= 0.6 ? Math.ceil(value) : floorVal;
+}
+
+// ==========================================
 // Tipos Exportados
 // ==========================================
 export type PushSyncResponse = {
@@ -288,6 +302,88 @@ export async function POST(req: Request) {
         procesados.auditorias.push(auditoria.id);
       }
 
+      // 2.2.5 Zero-Trust: Recálculo de precios antes de insertar ventas nuevas
+      // Estrategia: una sola query precarga todos los productos del lote para O(1) lookup por ítem
+      const allProductIds = new Set<string>();
+      for (const venta of ventas) {
+        for (const detalle of venta.detalles) {
+          allProductIds.add(detalle.producto_id);
+        }
+      }
+      // Una sola query: precargar catálogo oficial dentro del tenant
+      const catalogProducts = await tx.producto.findMany({
+        where: {
+          id: { in: Array.from(allProductIds) },
+          empresa_id: empresaId,
+        },
+        select: {
+          id: true,
+          precio_publico: true,
+          precio_mayoreo: true,
+          min_cantidad_mayoreo: true,
+          parent_id: true,
+        }
+      });
+      const productMap = new Map(catalogProducts.map(p => [p.id, p]));
+      // Validar cada venta nueva contra el catálogo oficial
+      for (const venta of ventas) {
+        // Solo validar ventas nuevas (las existentes ya fueron aceptadas previamente)
+        const existingSaleCheck = await tx.venta.findUnique({
+          where: { id: venta.id },
+          select: { id: true }
+        });
+        if (existingSaleCheck) continue; // Ya existe: skip validación
+        if (venta.estado === 'CANCELADA') continue; // Ventas canceladas no tienen total real que validar
+        // Paso 1: Calcular familyQuantity por familia de variantes (mirror de useCart.ts)
+        const familyQtyMap = new Map<string, number>();
+        for (const detalle of venta.detalles) {
+          const prod = productMap.get(detalle.producto_id);
+          const familyKey = prod?.parent_id ?? detalle.producto_id;
+          familyQtyMap.set(familyKey, (familyQtyMap.get(familyKey) ?? 0) + detalle.cantidad);
+        }
+        // Paso 2: Calcular serverTotal replicando exactamente la lógica de useCart.ts
+        let serverTotal = 0;
+        for (const detalle of venta.detalles) {
+          const prod = productMap.get(detalle.producto_id);
+          if (!prod) {
+            // Producto no encontrado en el catálogo del tenant → posible inyección cross-tenant
+            throw Object.assign(
+              new Error(`Producto ${detalle.producto_id} no existe en el catálogo de esta empresa.`),
+              { statusCode: 422 }
+            );
+          }
+          const familyKey = prod.parent_id ?? detalle.producto_id;
+          const familyQty = familyQtyMap.get(familyKey) ?? 0;
+          const hasMayoreo =
+            prod.min_cantidad_mayoreo !== null &&
+            prod.precio_mayoreo !== null &&
+            familyQty >= prod.min_cantidad_mayoreo;
+          const basePrice = hasMayoreo ? Number(prod.precio_mayoreo!) : Number(prod.precio_publico);
+          const subtotalItem = roundCustom(basePrice * detalle.cantidad);
+          const descuento = detalle.descuento_manual ?? 0;
+          // Validar que el descuento manual no supere el subtotal del ítem
+          if (descuento > subtotalItem) {
+            throw Object.assign(
+              new Error(
+                `Venta ${venta.id}: descuento_manual ($${descuento}) supera el subtotal del ítem ($${subtotalItem}) para producto ${detalle.producto_id}.`
+              ),
+              { statusCode: 422 }
+            );
+          }
+          serverTotal += Math.max(0, subtotalItem - descuento);
+        }
+        // Paso 3: Comparar total del cliente vs total recalculado (tolerancia ±$0.01)
+        const clientTotal = Number(venta.total);
+        if (Math.abs(clientTotal - serverTotal) > 0.01) {
+          throw Object.assign(
+            new Error(
+              `Venta ${venta.id}: total del cliente ($${clientTotal}) no coincide con recálculo del servidor ($${serverTotal.toFixed(2)}). Posible manipulación de precio.`
+            ),
+            { statusCode: 422 }
+          );
+        }
+      }
+
       // 2.3 Para ventas: Upsert. Si es create, usa creación anidada para insertar detalles. 
       // Si es update, asume que la venta ya existe y no modifiques detalles.
       for (const venta of ventas) {
@@ -522,6 +618,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Transacción abortada: Inconsistencia referencial (por ej. Inventario no encontrado)", details: error.message },
         { status: 409 }
+      );
+    }
+
+    // Zero-Trust: precio manipulado o descuento inválido
+    if (error instanceof Error && (error as any).statusCode === 422) {
+      return NextResponse.json(
+        { error: "Validación de precio fallida", details: error.message },
+        { status: 422 }
       );
     }
 
