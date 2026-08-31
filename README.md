@@ -231,6 +231,10 @@ To run maintenance and custom development tests on the database and utility feat
   ```bash
   pnpm --filter @shopli/db run db:migrate-skus
   ```
+* **Offline Auth & Security Suite:** Runs automated tests for 72-hour TTL expiration, 2-tier progressive lockout, and targeted 6-digit Bcrypt verification:
+  ```bash
+  pnpm --filter pos test:auth
+  ```
 * **PDF Label Generator Layout Test:** Runs a local dry-run generation of PDF labels (Avery 3x10 grid and Thermal rolls) using mock data, saving them locally as `test-carta.pdf` and `test-termico.pdf` (both are git-ignored):
   ```bash
   pnpm --filter @shopli/db run db:test-pdf
