@@ -142,10 +142,15 @@ POS client computations are treated as untrusted.
 * All sales details, costs, and discounts are re-calculated on the server using secure database metrics before database insertion.
 * Transactions with invalid recalculation parameters are rejected.
 
-### Offline Bcrypt Verification
+### Offline Bcrypt Verification & Defense-in-Depth
 For cashier authentication without cloud access:
-* Salted Bcrypt hashes of cashiers' PINs are securely synced to the local client's IndexedDB during initial online pairing.
-* Local authentication compares PIN inputs against local hashes using a client-side Bcrypt implementation.
+* **6-Digit PIN & Tenant Uniqueness:** All cashiers and store managers use a 6-digit numeric PIN, validated for uniqueness across active users of the tenant company via salted Bcrypt comparisons during creation and reset workflows.
+* **Direct 1:1 User Resolution:** The POS interface provides a visual cashier selector, executing targeted 1:1 `bcrypt.compare` checks against IndexedDB records instead of blind iterative loops.
+* **72-Hour Offline Session TTL:** Disconnected devices verify credentials locally against a `lastOnlineVerification` timestamp refreshed on every successful synchronization. If offline continuously for > 72 hours, the POS locks access and requests network connectivity.
+* **2-Tier Lockout Protection:**
+  * *Tier 1 (Per-User Anti-DoS):* 3 consecutive failures trigger a 30s penalty; 5 failures trigger a 5min penalty; 10 failures permanently lock the cashier profile until online revalidation or manager assistance.
+  * *Tier 2 (Global Terminal Anti-Spraying):* A 5-minute sliding window accumulates terminal-wide failures. Reaching 10 global failures freezes the login screen for 2 minutes, preventing horizontal brute-force attacks across cached employee profiles.
+  * *Sync Isolation:* Network synchronization updates TTL verification timestamps without resetting active lockouts.
 
 ### Diagnostic & Rescue Module
 An embedded settings drawer allows troubleshooting browser-level storage and caching:
