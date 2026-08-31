@@ -111,18 +111,18 @@ export default function NewUserPage() {
 
             <div className="space-y-2">
               <label htmlFor="pin" className="text-sm font-medium leading-none text-zinc-800">
-                PIN de Acceso (4 dígitos)
+                PIN de Acceso (6 dígitos)
               </label>
               <input
                 id="pin"
                 name="pin"
                 type="password"
                 required
-                maxLength={4}
-                minLength={4}
-                pattern="\d{4}"
+                maxLength={6}
+                minLength={6}
+                pattern="\d{6}"
                 className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                placeholder="1234"
+                placeholder="123456"
               />
             </div>
           </div>
