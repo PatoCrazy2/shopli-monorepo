@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { toggleUser } from "./actions";
 import { getUsers } from "./queries";
+import { ResetPinButton } from "./_components/ResetPinButton";
 
 export default async function UsersPage() {
   const session = await auth();
@@ -78,8 +79,10 @@ export default async function UsersPage() {
                   </td>
                   {role === "DUENO" && session?.user && (
                     <td className="px-6 py-4 text-right space-x-2">
-                       {/* Un botón simple en form en RSC, o podríamos tener components cliente,
-                           pero limitándonos a 3 archivos: */}
+                       <ResetPinButton
+                         userId={user.id}
+                         userName={user.name || user.email}
+                       />
                        {user.id !== session.user.id && (
                          <form action={toggleAction} className="inline-block">
                            <button
