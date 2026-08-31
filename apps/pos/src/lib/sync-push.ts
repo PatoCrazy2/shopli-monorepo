@@ -152,6 +152,8 @@ export async function pushToCloud(): Promise<PushResult> {
         }
       });
 
+      await db.meta.put({ key: 'lastOnlineVerification', value: new Date().toISOString() });
+
       return {
         success: true,
         pushed: {

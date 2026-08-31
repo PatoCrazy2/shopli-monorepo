@@ -172,10 +172,11 @@ export async function pullFromCloud(): Promise<SyncResult> {
         // Si tuvieramos data.deletedProductIds, haríamos db.products.bulkDelete(data.deletedProductIds) etc.
       }
 
-      // 2. Acutalizamos lastSyncedAt
+      // 2. Actualizamos lastSyncedAt y lastOnlineVerification
       if (data.syncedAt) {
         await db.meta.put({ key: 'lastSyncedAt', value: data.syncedAt });
       }
+      await db.meta.put({ key: 'lastOnlineVerification', value: new Date().toISOString() });
     });
 
     return { 
