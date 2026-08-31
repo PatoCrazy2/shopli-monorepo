@@ -75,8 +75,8 @@ export function useCart() {
                            item.precio_mayoreo !== null && 
                            groupQty >= item.min_cantidad_mayoreo;
         const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
-        const subtotal = roundCustom(basePrice * item.quantity);
-        return acc + subtotal - (item.descuento_manual || 0);
+        const subtotalItem = Math.max(0, roundCustom(basePrice * item.quantity) - (item.descuento_manual || 0));
+        return acc + subtotalItem;
     }, 0);
 
     const totalItems = cartItems.reduce((acc: number, item: LocalCartItem) => acc + item.quantity, 0);

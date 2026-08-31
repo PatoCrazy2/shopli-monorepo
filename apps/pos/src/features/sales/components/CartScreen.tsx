@@ -108,7 +108,7 @@ export default function CartScreen({
                                        item.precio_mayoreo !== null && 
                                        groupQty >= item.min_cantidad_mayoreo;
                     const basePrice = hasMayoreo ? (item.precio_mayoreo as number) : item.price;
-                    const itemTotal = roundCustom(basePrice * item.quantity) - (item.descuento_manual || 0);
+                    const itemTotal = Math.max(0, roundCustom(basePrice * item.quantity) - (item.descuento_manual || 0));
 
                     return (
                     <div key={item.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border shadow-sm rounded-xl transition-colors gap-3 sm:gap-0 ${stockIsLow ? 'bg-amber-50/30 border-amber-200' : 'bg-white border-gray-100'}`}>

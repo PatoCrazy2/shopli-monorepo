@@ -138,9 +138,10 @@ To eliminate server load and avoid external microservice/render dependencies, Sh
 ## Security Architecture
 
 ### Zero-Trust Client Verification
-POS client computations are treated as untrusted. 
-* All sales details, costs, and discounts are re-calculated on the server using secure database metrics before database insertion.
-* Transactions with invalid recalculation parameters are rejected.
+POS client computations are treated as untrusted input. The server enforces the following invariants on every sync:
+* **Price recalculation:** For each incoming sale, the server fetches the official `precio_publico` and wholesale pricing rules (`precio_mayoreo`, `min_cantidad_mayoreo`) directly from the `Producto` catalog table and recalculates the expected total server-side. Any payload where the client-reported `total` deviates by more than ±$0.01 from the server-recalculated total is rejected with `422 Unprocessable Entity`.
+* **Discount cap enforcement:** The server validates that each line-item `descuento_manual` does not exceed the item's subtotal (`precio × cantidad`). Negative totals from over-discounting are rejected at the API boundary.
+* **Tenant isolation:** All product lookups during recalculation are scoped to the authenticated `empresaId`, preventing cross-tenant price spoofing.
 
 ### Offline Bcrypt Verification & Defense-in-Depth
 For cashier authentication without cloud access:
