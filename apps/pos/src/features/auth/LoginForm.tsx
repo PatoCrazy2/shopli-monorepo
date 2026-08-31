@@ -266,30 +266,18 @@ export function LoginForm({
                         {availableUsers.length === 0 && (
                             <div className="text-center p-8 bg-white rounded-xl border border-zinc-200">
                                 <p className="text-zinc-500 text-sm mb-3">No hay usuarios locales sincronizados.</p>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsConfigured(false)}
-                                    className="text-xs font-bold text-black underline"
-                                >
-                                    Reconfigurar dispositivo con correo
-                                </button>
+                                <p className="text-xs text-zinc-400">Abra Configuración del sistema abajo para reconfigurar.</p>
                             </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex justify-center pt-2">
                             <button
                                 type="button"
                                 onClick={() => setIsSettingsOpen(true)}
-                                className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-black py-2"
+                                className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 transition-colors py-2"
                             >
-                                <Settings size={16} /> Ajustes del Sistema
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setIsConfigured(false)}
-                                className="text-xs font-semibold text-zinc-500 hover:text-black py-2"
-                            >
-                                Iniciar con otro correo
+                                <Settings size={14} className="opacity-70" />
+                                <span>Configuración del sistema</span>
                             </button>
                         </div>
                     </div>
