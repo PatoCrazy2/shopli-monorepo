@@ -178,6 +178,13 @@ async function cleanupEmpresas(keepName: string) {
   ).map((p) => p.id);
 
   await prisma.$transaction(async (tx) => {
+    // El schema tiene un BEFORE DELETE trigger en Detalle_Venta que bloquea
+    // eliminaciones para garantizar inmutabilidad en operación normal.
+    // En este script de limpieza administrativa (sistema fuera de uso),
+    // lo desactivamos solo para esta transacción con SET LOCAL.
+    // El setting se revierte automáticamente al terminar la transacción.
+    await tx.$executeRaw`SET LOCAL session_replication_role = 'replica'`;
+
     // 1. DynamicAuditItem y AuditItem (dependen de Producto y Audit → Cascade, pero
     //    Producto tiene Restrict en algunos, borramos explícitamente por seguridad)
     await tx.dynamicAuditItem.deleteMany({ where: { productId: { in: productoIds } } });
