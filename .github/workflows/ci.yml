@@ -1,0 +1,89 @@
+name: CI Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Build, Lint & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: shopli
+          POSTGRES_PASSWORD: shopli
+          POSTGRES_DB: shoplidb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://shopli:shopli@localhost:5432/shoplidb?schema=public"
+      NEXTAUTH_SECRET: "ci-nextauth-test-secret"
+      NEXTAUTH_URL: "http://localhost:3000"
+      POS_SYNC_SECRET: "ci-pos-sync-secret"
+      VITE_SYNC_SECRET: "ci-pos-sync-secret"
+      VITE_API_BASE_URL: "http://localhost:3000/api"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @shopli/db db:generate
+
+      - name: Push Prisma Schema to CI Database
+        run: pnpm --filter @shopli/db exec prisma db push --skip-generate
+
+      # Fail-Fast: Build en entorno de producción real idéntico a Vercel
+      - name: Build Monorepo (Production Mode)
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Lint Codebase
+        run: pnpm lint
+
+      # Arrancar servidor Next.js en segundo plano (con NODE_ENV=test para habilitar el bypass seguro de tests en CI)
+      - name: Start Next.js Admin Server (Background)
+        run: |
+          pnpm --filter admin start &
+        env:
+          PORT: 3000
+          NODE_ENV: test
+
+      # Esperar a que el servidor Next.js esté listo antes de correr la suite
+      - name: Wait for Next.js Server to be Ready
+        run: |
+          echo "Waiting for Next.js server on http://localhost:3000/api/pos/sync/push..."
+          timeout 30s bash -c 'until curl -s -o /dev/null -X OPTIONS http://localhost:3000/api/pos/sync/push; do sleep 1; done' || (echo "Server failed to start within timeout" && exit 1)
+          echo "Next.js server is up and responsive!"
+
+      # Ejecutar la suite completa de tests de POS (Unitarios + Integración)
+      - name: Run POS Tests Suite (Unit & Integration)
+        run: pnpm --filter pos test
+        env:
+          NODE_ENV: test

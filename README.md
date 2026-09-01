@@ -108,6 +108,9 @@ $$\text{Discrepancy} = Q_{\text{counted}} - \left( Q_{\text{expected at } T_0} -
 
 * **Zero-Bias Interface:** The cashier interface displays products sequentially, hiding the expected stock figures to enforce an objective physical count.
 * **Time-Series Matching:** The server calculates the exact discrepancy by analyzing transaction logs created between the audit initialization and completion timestamps.
+* **Retroactive Reconciliation & 72-Hour Hard Cutoff:** When late offline sales sync after an audit has been recorded or closed (`CLOSED`), the server retroactively recalculates `expectedAtCount` and `difference` for non-applied audits (`isApplied: false`) started within the last 72 hours (`startedAt >= now - 72h`).
+* **Audit Trail Traceability:** Any retroactive discrepancy shift on closed audits automatically writes an immutable log to `MovimientoInventario` with `tipo: 'AJUSTE'` and detailed descriptive motivation referencing the sale ID and discrepancy delta, preventing silent data overwrites.
+* **Strict Nonnegative Input Validation:** The Zod API boundary enforces `countedQuantity: z.number().int().nonnegative().nullable()`, blocking negative physical counts at the schema layer.
 
 ### Cross-Variant Grouped Wholesale Rules
 Discounts are computed dynamically on variant families. If a product group exceeds a wholesale threshold, the pricing engine adjusts all variants of that family present in the cart:
@@ -239,6 +242,11 @@ To run maintenance and custom development tests on the database and utility feat
 * **Financial Logic Unit Suite:** Runs pure unit tests for cart financial calculations including wholesale family grouping, boundary conditions (familyQty === threshold), cross-family isolation, negative discount guards, and the roundCustom rounding function:
   ```bash
   pnpm --filter pos test
+  ```
+* **Dynamic Inventory Audit & Reconciliation Test Suites:** Runs pure unit tests for blind count discrepancy calculations, boundary conditions, limits rejection ($Q_{counted} < 0$), late sale retroactive reconciliation, 72h window cutoff, and idempotent retransmissions:
+  ```bash
+  pnpm --filter pos test src/__tests__/unit/inventory-audit.test.ts
+  pnpm --filter pos test src/__tests__/unit/inventory-reconciliation.test.ts
   ```
 * **Zero-Trust Integration Suite:** Runs end-to-end integration tests that verify the server rejects price-manipulated payloads with 422 Unprocessable Entity:
   ```bash
