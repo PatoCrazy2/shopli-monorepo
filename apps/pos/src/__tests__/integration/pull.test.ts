@@ -90,7 +90,7 @@ describe('pullFromCloud integration', () => {
     await db.products.clear();
     await db.users.clear();
     await db.meta.clear();
-    await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
+    await db.meta.put({ key: 'empresaId', value: 'test-empresa-id' });
     await db.inventory.clear();
 
     const initialUsersCount = await db.users.count();
