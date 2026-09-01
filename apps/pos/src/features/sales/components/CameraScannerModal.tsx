@@ -81,93 +81,132 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
     setIsTorchOn(false);
 
     // Asegurar que el contenedor está montado antes de instanciar Html5Qrcode
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       const html5Qrcode = new Html5Qrcode("qr-reader");
       html5QrcodeRef.current = html5Qrcode;
 
-      html5Qrcode
-        .start(
-          { facingMode: "environment" },
-          {
-            fps: 15,
-            videoConstraints: {
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
+      const handleDecodedText = async (decodedText: string) => {
+        const now = Date.now();
+        // Cooldown de 1.5s para la misma lectura consecutiva
+        if (
+          lastReadCodeRef.current &&
+          lastReadCodeRef.current.code === decodedText &&
+          now - lastReadCodeRef.current.time < 1500
+        ) {
+          return;
+        }
+        lastReadCodeRef.current = { code: decodedText, time: now };
+
+        console.log("[CameraScanner] Código decodificado de cámara:", decodedText);
+
+        try {
+          // Buscar producto en Dexie
+          const matchedProduct = await db.products
+            .where("codigo_interno")
+            .equalsIgnoreCase(decodedText)
+            .first();
+
+          if (matchedProduct) {
+            // Agregar al carrito
+            onAddToCart(matchedProduct.id);
+
+            // Feedback sonoro y háptico
+            playBeep();
+            triggerVibration();
+
+            // Mostrar toast visual flotante de 1.2s sin pausar el escaneo
+            if (toastTimeoutRef.current) {
+              clearTimeout(toastTimeoutRef.current);
             }
-          },
-          async (decodedText) => {
-            const now = Date.now();
-            // Cooldown de 1.5s para la misma lectura consecutiva
-            if (
-              lastReadCodeRef.current &&
-              lastReadCodeRef.current.code === decodedText &&
-              now - lastReadCodeRef.current.time < 1500
-            ) {
-              return;
+            setToast({
+              id: now,
+              nombre: matchedProduct.nombre,
+              precio: matchedProduct.precio_publico,
+              type: 'success',
+            });
+            toastTimeoutRef.current = setTimeout(() => {
+              setToast(null);
+            }, 1200);
+          } else {
+            console.warn(`[CameraScanner] Código leído pero no encontrado en IndexedDB: ${decodedText}`);
+            playErrorBeep();
+            
+            if (toastTimeoutRef.current) {
+              clearTimeout(toastTimeoutRef.current);
             }
-            lastReadCodeRef.current = { code: decodedText, time: now };
-
-            console.log("[CameraScanner] Código decodificado de cámara:", decodedText);
-
-            try {
-              // Buscar producto en Dexie
-              const matchedProduct = await db.products
-                .where("codigo_interno")
-                .equalsIgnoreCase(decodedText)
-                .first();
-
-              if (matchedProduct) {
-                // Agregar al carrito
-                onAddToCart(matchedProduct.id);
-
-                // Feedback sonoro y háptico
-                playBeep();
-                triggerVibration();
-
-                // Mostrar toast visual flotante de 1.2s sin pausar el escaneo
-                if (toastTimeoutRef.current) {
-                  clearTimeout(toastTimeoutRef.current);
-                }
-                setToast({
-                  id: now,
-                  nombre: matchedProduct.nombre,
-                  precio: matchedProduct.precio_publico,
-                  type: 'success',
-                });
-                toastTimeoutRef.current = setTimeout(() => {
-                  setToast(null);
-                }, 1200);
-              } else {
-                console.warn(`[CameraScanner] Código leído pero no encontrado en IndexedDB: ${decodedText}`);
-                playErrorBeep();
-                
-                if (toastTimeoutRef.current) {
-                  clearTimeout(toastTimeoutRef.current);
-                }
-                setToast({
-                  id: now,
-                  nombre: `No registrado: ${decodedText}`,
-                  precio: 0,
-                  type: 'error',
-                });
-                toastTimeoutRef.current = setTimeout(() => {
-                  setToast(null);
-                }, 1800);
-              }
-            } catch (err) {
-              console.error("Error al buscar código en la base local:", err);
-            }
-          },
-          () => {
-            // Ignoramos la mayoría de los errores por frame no detectado (html5-qrcode es muy ruidosa)
+            setToast({
+              id: now,
+              nombre: `No registrado: ${decodedText}`,
+              precio: 0,
+              type: 'error',
+            });
+            toastTimeoutRef.current = setTimeout(() => {
+              setToast(null);
+            }, 1800);
           }
-        )
-        .catch((err) => {
-          console.error("Error iniciando html5-qrcode:", err);
+        } catch (err) {
+          console.error("Error al buscar código en la base local:", err);
+        }
+      };
+
+      const qrConfig = {
+        fps: 15,
+        videoConstraints: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        }
+      };
+
+      try {
+        // 1. Obtener lista de cámaras disponibles
+        const devices = await Html5Qrcode.getCameras();
+        let selectedCameraIdOrConfig: any = { facingMode: "environment" };
+
+        if (devices && devices.length > 0) {
+          // Buscar explícitamente una cámara trasera ("back", "rear", "environment", "trasera", "posterior")
+          const backCamera = devices.find(device => {
+            const label = device.label.toLowerCase();
+            return (
+              label.includes("back") ||
+              label.includes("rear") ||
+              label.includes("environment") ||
+              label.includes("trasera") ||
+              label.includes("posterior")
+            );
+          });
+
+          if (backCamera) {
+            selectedCameraIdOrConfig = backCamera.id;
+          } else {
+            // Si hay varias cámaras y no tienen etiquetas descriptivas aún (previo a permisos),
+            // en móviles la última cámara de la lista suele ser la trasera principal
+            selectedCameraIdOrConfig = devices.length > 1 ? devices[devices.length - 1].id : { facingMode: "environment" };
+          }
+        }
+
+        await html5Qrcode.start(
+          selectedCameraIdOrConfig,
+          qrConfig,
+          handleDecodedText,
+          () => {}
+        );
+      } catch (err) {
+        console.warn("Fallo al iniciar con cámara específica, intentando fallback de facingMode:", err);
+        try {
+          await html5Qrcode.start(
+            { facingMode: "environment" },
+            qrConfig,
+            handleDecodedText,
+            () => {}
+          );
+        } catch (fallbackErr) {
+          console.error("Error iniciando cámara:", fallbackErr);
           setScannerError(
             "No se pudo acceder a la cámara trasera. Por favor, concede los permisos correspondientes."
           );
-        });
+        }
+      }
     }, 100);
 
     return () => {
