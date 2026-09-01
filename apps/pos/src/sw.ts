@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { clientsClaim } from 'workbox-core';
 import { pushToCloud } from './lib/sync-push';
 
 declare let self: ServiceWorkerGlobalScope & {
@@ -9,6 +10,10 @@ declare let self: ServiceWorkerGlobalScope & {
     listener: (event: any) => void
   ): void;
 };
+
+// Tomar control inmediato de todas las pestañas sin esperar recargas
+self.skipWaiting();
+clientsClaim();
 
 cleanupOutdatedCaches();
 
