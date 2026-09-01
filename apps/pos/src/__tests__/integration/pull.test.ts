@@ -8,7 +8,13 @@ describe('pullFromCloud integration', () => {
 
   beforeAll(async () => {
     // Definimos la variable global para apiClient.ts
-    vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000/api' } });
+    vi.stubGlobal('import.meta', {
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:3000/api',
+        VITE_SYNC_SECRET: 'ci-pos-sync-secret',
+        VITE_POS_SYNC_SECRET: 'ci-pos-sync-secret',
+      }
+    });
 
     // Ensure test Empresa exists
     const testEmpresa = await prisma.empresa.upsert({
@@ -20,13 +26,17 @@ describe('pullFromCloud integration', () => {
       }
     });
 
-    // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL
-    const userCount = await prisma.user.count({ where: { role: Role.CAJERO } });
+    // Configurar Dexie con la empresa para permitir sync
+    await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
+
+    // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL vinculados a testEmpresa con UUID válido
+    const userCount = await prisma.user.count({ where: { role: Role.CAJERO, empresa_id: testEmpresa.id } });
     if (userCount === 0) {
       await prisma.user.create({
         data: {
+          id: crypto.randomUUID(),
           name: 'Test Cajero Integra',
-          email: 'integra@cajero.com',
+          email: `integra-${Date.now()}@cajero.com`,
           role: Role.CAJERO,
           pin_hash: 'dummyhash',
           empresa_id: testEmpresa.id,
@@ -34,12 +44,13 @@ describe('pullFromCloud integration', () => {
       });
     }
 
-    const prodCount = await prisma.producto.count();
+    const prodCount = await prisma.producto.count({ where: { empresa_id: testEmpresa.id } });
     if (prodCount === 0) {
       await prisma.producto.create({
         data: {
+          id: crypto.randomUUID(),
           nombre: 'Test Producto Integra',
-          codigo_interno: 'INT-01',
+          codigo_interno: `INT-${Date.now()}`,
           precio_publico: 100,
           costo: 50,
           empresa_id: testEmpresa.id,
@@ -47,30 +58,26 @@ describe('pullFromCloud integration', () => {
       });
     }
     
-    // Asumimos que la Sucursal "branch-1" y una inyección de inventario ya existen o creamos algo dummy
-    const branchCount = await prisma.sucursal.count();
-    let branch;
-    if (branchCount === 0) {
+    // Sucursal vinculada a testEmpresa con UUID válido
+    let branch = await prisma.sucursal.findFirst({ where: { empresa_id: testEmpresa.id } });
+    if (!branch) {
       branch = await prisma.sucursal.create({
-        data: { id: "branch-1", nombre: "Sucursal Integra", empresa_id: testEmpresa.id }
+        data: { id: crypto.randomUUID(), nombre: "Sucursal Integra", empresa_id: testEmpresa.id }
       });
     }
 
-    // Le damos algo de stock para que no falle al serializar "p.inventario" en sync/pull/route.ts
-    const testProd = await prisma.producto.findFirst();
-    const invCount = testProd ? await prisma.inventario_Sucursal.count({ where: { producto_id: testProd.id } }) : 0;
-    
-    if (testProd && invCount === 0) {
-      const sucursalToUse = branch || await prisma.sucursal.findFirst();
-      if(sucursalToUse) {
-        await prisma.inventario_Sucursal.create({
-          data: {
-            producto_id: testProd.id,
-            sucursal_id: sucursalToUse.id,
-            cantidad: 10
-          }
-        });
-      }
+    // Le damos stock de forma atómica con upsert
+    const testProd = await prisma.producto.findFirst({ where: { empresa_id: testEmpresa.id } });
+    if (testProd && branch) {
+      await prisma.inventario_Sucursal.upsert({
+        where: { sucursal_id_producto_id: { sucursal_id: branch.id, producto_id: testProd.id } },
+        update: { cantidad: 10 },
+        create: {
+          producto_id: testProd.id,
+          sucursal_id: branch.id,
+          cantidad: 10
+        }
+      });
     }
   });
 
@@ -79,10 +86,11 @@ describe('pullFromCloud integration', () => {
   });
 
   it('debe barrer la base de datos local y poblarla con los datos traidos de PostgreSQL', async () => {
-    // 2. Limpiamos la base local de Dexie
+    // 2. Limpiamos la base local de Dexie pero mantenemos la empresa configurada
     await db.products.clear();
     await db.users.clear();
     await db.meta.clear();
+    await db.meta.put({ key: 'empresaId', value: 'test-empresa-id' });
     await db.inventory.clear();
 
     const initialUsersCount = await db.users.count();

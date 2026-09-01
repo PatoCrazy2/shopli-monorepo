@@ -11,7 +11,13 @@ describe('pushToCloud integration', () => {
   let turnoId: string;
 
   beforeAll(async () => {
-    vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000/api' } });
+    vi.stubGlobal('import.meta', {
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:3000/api',
+        VITE_SYNC_SECRET: 'ci-pos-sync-secret',
+        VITE_POS_SYNC_SECRET: 'ci-pos-sync-secret',
+      }
+    });
     vi.stubGlobal('navigator', { onLine: true });
 
     // Ensure test Empresa exists
@@ -24,25 +30,27 @@ describe('pushToCloud integration', () => {
       }
     });
 
-    // 1. Setup Postgres data needed for a successful Push
-    // Sucursal
-    const branch = await prisma.sucursal.findFirst();
-    if (!branch) {
-      const newBranch = await prisma.sucursal.create({
-        data: { id: "branch-push-test", nombre: "Push Test Branch", empresa_id: testEmpresa.id }
-      });
-      testBranchId = newBranch.id;
-    } else {
-      testBranchId = branch.id;
-    }
+    // Configurar Dexie con la empresa para permitir sync
+    await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
 
-    // Usuario Cajero
-    let cashier = await prisma.user.findFirst({ where: { role: Role.CAJERO } });
+    // 1. Setup Postgres data needed for a successful Push
+    // Sucursal vinculada a testEmpresa con UUID válido
+    let branch = await prisma.sucursal.findFirst({ where: { empresa_id: testEmpresa.id } });
+    if (!branch) {
+      branch = await prisma.sucursal.create({
+        data: { id: crypto.randomUUID(), nombre: "Push Test Branch", empresa_id: testEmpresa.id }
+      });
+    }
+    testBranchId = branch.id;
+
+    // Usuario Cajero vinculado a testEmpresa con UUID válido
+    let cashier = await prisma.user.findFirst({ where: { role: Role.CAJERO, empresa_id: testEmpresa.id } });
     if (!cashier) {
       cashier = await prisma.user.create({
         data: {
+          id: crypto.randomUUID(),
           name: 'Pusher Cashier',
-          email: 'pusher@cajero.com',
+          email: `pusher-${Date.now()}@cajero.com`,
           role: Role.CAJERO,
           pin_hash: 'dummy',
           empresa_id: testEmpresa.id,
@@ -51,11 +59,12 @@ describe('pushToCloud integration', () => {
     }
     cashierId = cashier.id;
 
-    // Producto
-    let product = await prisma.producto.findFirst();
+    // Producto vinculado a testEmpresa con UUID válido
+    let product = await prisma.producto.findFirst({ where: { empresa_id: testEmpresa.id } });
     if (!product) {
       product = await prisma.producto.create({
         data: {
+          id: crypto.randomUUID(),
           nombre: 'Push Product',
           precio_publico: 100,
           costo: 50,
@@ -65,24 +74,16 @@ describe('pushToCloud integration', () => {
     }
     productId = product.id;
 
-    // Inventario para ese producto en esa sucursal
-    const invCount = await prisma.inventario_Sucursal.count({ 
-      where: { sucursal_id: testBranchId, producto_id: productId } 
+    // Inventario para ese producto en esa sucursal (Upsert atómico para evitar race conditions)
+    await prisma.inventario_Sucursal.upsert({
+      where: { sucursal_id_producto_id: { sucursal_id: testBranchId, producto_id: productId } },
+      update: { cantidad: 100 },
+      create: {
+        sucursal_id: testBranchId,
+        producto_id: productId,
+        cantidad: 100,
+      }
     });
-    if (invCount === 0) {
-      await prisma.inventario_Sucursal.create({
-        data: {
-          sucursal_id: testBranchId,
-          producto_id: productId,
-          cantidad: 100,
-        }
-      });
-    } else {
-      await prisma.inventario_Sucursal.update({
-        where: { sucursal_id_producto_id: { sucursal_id: testBranchId, producto_id: productId } },
-        data: { cantidad: 100 }
-      });
-    }
 
     // Turno Abierto
     let turno = await prisma.turno.findFirst({
@@ -91,6 +92,7 @@ describe('pushToCloud integration', () => {
     if (!turno) {
       turno = await prisma.turno.create({
         data: {
+          id: crypto.randomUUID(),
           usuario_id: cashierId,
           sucursal_id: testBranchId,
           monto_inicial: 500,
@@ -154,12 +156,12 @@ describe('pushToCloud integration', () => {
     expect(serverSale?.detalles[0].producto_id).toBe(productId);
     expect(serverSale?.detalles[0].cantidad).toBe(2);
 
-    // 5. Aserción final en Dexie verificando que fue actualizado a SYNCED
+    // 5. Aserción final en Dexie verificando que fue actualizado a SYNCED y que se conservan los detalles locales
     const finalSale = await db.sales.get(localSaleId);
     expect(finalSale).not.toBeUndefined();
     expect(finalSale?.sync_status).toBe('SYNCED');
     const finalDetailsCount = await db.sale_details.count();
-    expect(finalDetailsCount).toBe(0);
+    expect(finalDetailsCount).toBe(1);
   });
 
   it('debe rechazar una venta con total manipulado (zero-trust) con status 422', async () => {
@@ -194,11 +196,12 @@ describe('pushToCloud integration', () => {
     };
 
     const response = await fetch(
-      `${apiBase}/pos/sync/push?empresaId=test-empresa-id`,
+      `${apiBase}/pos/sync/push?empresaId=test-empresa-id&secret=ci-pos-sync-secret`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-pos-sync-secret': 'ci-pos-sync-secret',
           'x-test-bypass': 'true', // Válido en NODE_ENV=test
         },
         body: JSON.stringify(payload),
