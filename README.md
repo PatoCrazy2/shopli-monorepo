@@ -18,6 +18,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-Monorepo-EF4444?style=flat-square&logo=turborepo&logoColor=white)](https://turbo.build/)
 [![PWA](https://img.shields.io/badge/PWA-Offline--First-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
+[![CI Suite](https://img.shields.io/github/actions/workflow/status/PatoCrazy2/shopli/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/PatoCrazy2/shopli/actions)
 
 </div>
 
@@ -259,9 +260,29 @@ To run maintenance and custom development tests on the database and utility feat
 
 ---
 
+## Continuous Integration & Branch Protection
+
+ShopLI uses a strict GitHub Actions pipeline ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) executing on every `push` and `pull_request` against `main`:
+
+```
+┌─────────────────┐     ┌──────────────┐     ┌──────────────────────┐     ┌──────────────────────┐
+│ Production Mode │ ──> │ Lint Codebase│ ──> │ Background Server    │ ──> │ POS Test Suite       │
+│ Monorepo Build  │     │ (ESLint 9)   │     │ (Postgres + Next.js) │     │ (Unit & Integration) │
+└─────────────────┘     └──────────────┘     └──────────────────────┘     └──────────────────────┘
+```
+
+1. **Production-Grade Monorepo Build:** Executes `pnpm build` with `NODE_ENV: production` to guarantee zero bundling or TypeScript errors under strict Vercel deployment conditions.
+2. **ESLint 9 Flat Config Linting:** Runs unified linting across all monorepo packages (`@shopli/db`, `apps/admin`, `apps/pos`, `@repo/ui`).
+3. **Ephemeral PostgreSQL Service:** Provisions an isolated `postgres:16-alpine` instance with healthchecks and runs Prisma migrations (`prisma db push`).
+4. **Deterministic Server Bootstrap & Healthcheck:** Launches the Next.js API in the background (`NODE_ENV: test`) and polls the OPTIONS sync endpoint before running tests.
+5. **Full Test Execution:** Runs all unit suites (financial calculations, inventory audit discrepancy formulas, asynchronous 72h reconciliation, and offline auth) along with end-to-end sync integration tests.
+6. **Required Branch Checks:** Direct pushes to `main` are guarded; PRs require the `Build, Lint & Test` status check to pass before merging.
+
+---
+
 ## Engineering Standards
 
 * **RSC Dominance:** All backend operations in the Admin dashboard must use React Server Components and Server Actions. Avoid API endpoints except for POS synchronization.
 * **State Decoupling:** Keep business logic separated from the layout layer. Use custom hooks for reactivity.
 * **Strict Auditing:** sales modifications, stock transactions, and inventory transfers must write audit trails to the database.
-* **Unit Testing:** Write unit tests for all financial calculations, wholesale rule applications, and audit calculations.
+* **Unit Testing & CI Compliance:** Write unit tests for all financial calculations, wholesale rule applications, and audit calculations. All tests must pass in CI before PR merge.
