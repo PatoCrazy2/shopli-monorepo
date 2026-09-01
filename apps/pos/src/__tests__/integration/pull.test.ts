@@ -86,10 +86,11 @@ describe('pullFromCloud integration', () => {
   });
 
   it('debe barrer la base de datos local y poblarla con los datos traidos de PostgreSQL', async () => {
-    // 2. Limpiamos la base local de Dexie
+    // 2. Limpiamos la base local de Dexie pero mantenemos la empresa configurada
     await db.products.clear();
     await db.users.clear();
     await db.meta.clear();
+    await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
     await db.inventory.clear();
 
     const initialUsersCount = await db.users.count();

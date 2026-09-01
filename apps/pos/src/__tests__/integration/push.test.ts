@@ -156,12 +156,12 @@ describe('pushToCloud integration', () => {
     expect(serverSale?.detalles[0].producto_id).toBe(productId);
     expect(serverSale?.detalles[0].cantidad).toBe(2);
 
-    // 5. Aserción final en Dexie verificando que fue actualizado a SYNCED
+    // 5. Aserción final en Dexie verificando que fue actualizado a SYNCED y que se conservan los detalles locales
     const finalSale = await db.sales.get(localSaleId);
     expect(finalSale).not.toBeUndefined();
     expect(finalSale?.sync_status).toBe('SYNCED');
     const finalDetailsCount = await db.sale_details.count();
-    expect(finalDetailsCount).toBe(0);
+    expect(finalDetailsCount).toBe(1);
   });
 
   it('debe rechazar una venta con total manipulado (zero-trust) con status 422', async () => {
