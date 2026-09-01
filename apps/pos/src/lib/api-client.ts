@@ -12,8 +12,8 @@ export async function apiClient<T>(endpoint: string, options?: ApiClientOptions)
     rawBaseUrl = rawBaseUrl.replace(/\/+$/, '') + '/api';
   }
 
-  // Failsafe: Solo en desarrollo si está usando localhost intentar forzar el proxy relativo
-  if (import.meta.env.DEV && !import.meta.env.VITE_API_URL && (rawBaseUrl.startsWith('http://localhost') || rawBaseUrl.startsWith('http://127.0.0.1'))) {
+  // Failsafe: Solo en desarrollo de Vite (navegador) si está usando localhost intentar forzar el proxy relativo
+  if (import.meta.env.DEV && import.meta.env.MODE !== 'test' && !import.meta.env.VITE_API_URL && (rawBaseUrl.startsWith('http://localhost') || rawBaseUrl.startsWith('http://127.0.0.1'))) {
      rawBaseUrl = '/api';
   }
   

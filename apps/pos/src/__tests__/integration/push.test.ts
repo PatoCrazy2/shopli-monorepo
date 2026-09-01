@@ -34,19 +34,17 @@ describe('pushToCloud integration', () => {
     await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
 
     // 1. Setup Postgres data needed for a successful Push
-    // Sucursal
-    const branch = await prisma.sucursal.findFirst();
+    // Sucursal vinculada a testEmpresa
+    let branch = await prisma.sucursal.findFirst({ where: { empresa_id: testEmpresa.id } });
     if (!branch) {
-      const newBranch = await prisma.sucursal.create({
+      branch = await prisma.sucursal.create({
         data: { id: "branch-push-test", nombre: "Push Test Branch", empresa_id: testEmpresa.id }
       });
-      testBranchId = newBranch.id;
-    } else {
-      testBranchId = branch.id;
     }
+    testBranchId = branch.id;
 
-    // Usuario Cajero
-    let cashier = await prisma.user.findFirst({ where: { role: Role.CAJERO } });
+    // Usuario Cajero vinculado a testEmpresa
+    let cashier = await prisma.user.findFirst({ where: { role: Role.CAJERO, empresa_id: testEmpresa.id } });
     if (!cashier) {
       cashier = await prisma.user.create({
         data: {
@@ -60,8 +58,8 @@ describe('pushToCloud integration', () => {
     }
     cashierId = cashier.id;
 
-    // Producto
-    let product = await prisma.producto.findFirst();
+    // Producto vinculado a testEmpresa
+    let product = await prisma.producto.findFirst({ where: { empresa_id: testEmpresa.id } });
     if (!product) {
       product = await prisma.producto.create({
         data: {
