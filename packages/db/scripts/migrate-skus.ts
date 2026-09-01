@@ -1,26 +1,35 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+// Cargar variables de entorno
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), "packages/db/.env") });
+dotenv.config({ path: path.resolve(process.cwd(), "apps/admin/.env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../../apps/admin/.env") });
+
 import { PrismaClient } from "@prisma/client";
 
-// ==========================================
-// Script: Migración de SKUs para productos existentes
-//
-// Uso:
-//   pnpm --filter @shopli/db run db:migrate-skus -- <empresaId>
-//   pnpm --filter @shopli/db run db:migrate-skus -- <empresaId> --dry-run
-//
-// Requisitos:
-//   - empresaId es obligatorio para garantizar aislamiento multi-tenant.
-//   - Ejecutar únicamente con el sistema fuera de uso (sin sesiones activas de cajeros).
-//   - Verificar con --dry-run antes de ejecutar en producción.
-//
-// Comportamiento:
-//   - Solo asigna SKUs a productos que tienen codigo_interno NULL o vacío.
-//   - Nunca modifica productos que ya tienen un SKU asignado.
-//   - Es idempotente: ejecutar dos veces produce el mismo resultado.
-//   - Toda la operación es atómica: o se actualizan todos o ninguno (transacción).
-// ==========================================
+let dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) {
+  console.warn("⚠️  ADVERTENCIA: No se encontró DATABASE_URL en ningún archivo .env");
+} else {
+  // En Windows Node.js a veces resuelve localhost como IPv6 (::1) fallando la conexión con Docker
+  if (dbUrl.includes("@localhost:")) {
+    dbUrl = dbUrl.replace("@localhost:", "@127.0.0.1:");
+  }
+  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ":****@");
+  console.log(`🔌 Conectando a BD: ${maskedUrl}`);
+}
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: dbUrl,
+    },
+  },
+});
 
 const args = process.argv.slice(2);
 const empresaId = args.find((a) => !a.startsWith("--"));

@@ -1,28 +1,36 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+// Cargar variables de entorno
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), "packages/db/.env") });
+dotenv.config({ path: path.resolve(process.cwd(), "apps/admin/.env") });
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../../apps/admin/.env") });
+
 import { PrismaClient } from "@prisma/client";
 
-// ==========================================
-// Script: Limpieza de empresas de prueba
-//
-// Uso:
-//   # Ver todas las empresas con sus datos (punto de partida obligatorio)
-//   pnpm --filter @shopli/db run db:cleanup-companies -- --list
-//
-//   # Ver qué se borraría (sin escribir nada)
-//   pnpm --filter @shopli/db run db:cleanup-companies -- --keep "Nombre Exacto de Empresa" --dry-run
-//
-//   # Ejecutar limpieza real
-//   pnpm --filter @shopli/db run db:cleanup-companies -- --keep "Nombre Exacto de Empresa"
-//
-// Comportamiento:
-//   - La empresa indicada en --keep NUNCA es tocada.
-//   - Todas las demás empresas y sus datos son eliminados en el orden correcto
-//     respetando las restricciones de FK del schema.
-//   - Toda la operación es atómica: o se borra todo o nada.
-//   - Ejecutar siempre --dry-run antes de la operación real.
-// ==========================================
+let dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) {
+  console.warn("⚠️  ADVERTENCIA: No se encontró DATABASE_URL en ningún archivo .env");
+} else {
+  // En Windows Node.js a veces resuelve localhost como IPv6 (::1) fallando la conexión con Docker
+  if (dbUrl.includes("@localhost:")) {
+    dbUrl = dbUrl.replace("@localhost:", "@127.0.0.1:");
+  }
+  // Ocultar contraseña para log seguro
+  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ":****@");
+  console.log(`🔌 Conectando a BD: ${maskedUrl}`);
+}
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: dbUrl,
+    },
+  },
+});
 
 const args = process.argv.slice(2);
 const isList = args.includes("--list");
@@ -178,12 +186,18 @@ async function cleanupEmpresas(keepName: string) {
   ).map((p) => p.id);
 
   await prisma.$transaction(async (tx) => {
-    // El schema tiene un BEFORE DELETE trigger en Detalle_Venta que bloquea
-    // eliminaciones para garantizar inmutabilidad en operación normal.
-    // En este script de limpieza administrativa (sistema fuera de uso),
-    // lo desactivamos solo para esta transacción con SET LOCAL.
-    // El setting se revierte automáticamente al terminar la transacción.
-    await tx.$executeRaw`SET LOCAL session_replication_role = 'replica'`;
+    // Buscar dinámicamente si existe algún trigger de usuario en Detalle_Venta
+    const triggers: Array<{ tgname: string }> = await tx.$queryRaw`
+      SELECT tgname 
+      FROM pg_trigger 
+      WHERE tgrelid = '"Detalle_Venta"'::regclass 
+        AND NOT tgisinternal;
+    `;
+
+    // Desactivar triggers de usuario existentes
+    for (const t of triggers) {
+      await tx.$executeRawUnsafe(`ALTER TABLE "Detalle_Venta" DISABLE TRIGGER "${t.tgname}"`);
+    }
 
     // 1. DynamicAuditItem y AuditItem (dependen de Producto y Audit → Cascade, pero
     //    Producto tiene Restrict en algunos, borramos explícitamente por seguridad)
@@ -207,6 +221,11 @@ async function cleanupEmpresas(keepName: string) {
     ).map((v) => v.id);
 
     await tx.detalle_Venta.deleteMany({ where: { venta_id: { in: ventaIds } } });
+
+    // Re-habilitar los triggers que existían
+    for (const t of triggers) {
+      await tx.$executeRawUnsafe(`ALTER TABLE "Detalle_Venta" ENABLE TRIGGER "${t.tgname}"`);
+    }
 
     // 5. Ventas
     await tx.venta.deleteMany({ where: { id: { in: ventaIds } } });
