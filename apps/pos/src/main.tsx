@@ -7,7 +7,22 @@ import App from './App.tsx'
 
 // Registrar el Service Worker globalmente y preparar listeners para Background Sync
 if ('serviceWorker' in navigator) {
-  registerSW({ immediate: true })
+  registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      console.log('[SW] Nueva versión detectada y lista.');
+    },
+  });
+
+  // Cuando el nuevo SW tome el control con clientsClaim(), recargar suavemente para usar el nuevo JS
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      console.log('[SW] Controlador actualizado, recargando aplicación...');
+      window.location.reload();
+    }
+  });
 
   navigator.serviceWorker.ready.then((registration) => {
     // Buscar actualizaciones proactivamente al iniciar
@@ -24,12 +39,12 @@ if ('serviceWorker' in navigator) {
       }
     });
 
-    // Buscar actualizaciones cada 60 minutos
+    // Buscar actualizaciones cada 15 minutos en vez de 60
     setInterval(() => {
       registration.update().catch((err) => {
         console.error('[SW] Error al buscar actualizaciones programadas:', err);
       });
-    }, 60 * 60 * 1000); // 60 minutos
+    }, 15 * 60 * 1000); // 15 minutos
   });
 }
 

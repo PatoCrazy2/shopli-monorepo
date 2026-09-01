@@ -37,7 +37,15 @@ export function PWASettingsModal({ isOpen, onClose }: PWASettingsModalProps) {
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
           await registration.update();
-          setUpdateStatus('Búsqueda de actualización finalizada.');
+          // Si hay un worker esperando o instalándose, avisar que se recargará
+          if (registration.waiting || registration.installing) {
+            setUpdateStatus('Nueva versión encontrada. Actualizando aplicación...');
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            setUpdateStatus('El sistema ya cuenta con la última versión.');
+          }
         } else {
           setUpdateStatus('No se encontró Service Worker activo.');
         }
