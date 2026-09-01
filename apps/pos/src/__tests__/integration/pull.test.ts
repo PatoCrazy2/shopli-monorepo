@@ -29,13 +29,14 @@ describe('pullFromCloud integration', () => {
     // Configurar Dexie con la empresa para permitir sync
     await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
 
-    // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL vinculados a testEmpresa
+    // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL vinculados a testEmpresa con UUID válido
     const userCount = await prisma.user.count({ where: { role: Role.CAJERO, empresa_id: testEmpresa.id } });
     if (userCount === 0) {
       await prisma.user.create({
         data: {
+          id: crypto.randomUUID(),
           name: 'Test Cajero Integra',
-          email: 'integra@cajero.com',
+          email: `integra-${Date.now()}@cajero.com`,
           role: Role.CAJERO,
           pin_hash: 'dummyhash',
           empresa_id: testEmpresa.id,
@@ -47,8 +48,9 @@ describe('pullFromCloud integration', () => {
     if (prodCount === 0) {
       await prisma.producto.create({
         data: {
+          id: crypto.randomUUID(),
           nombre: 'Test Producto Integra',
-          codigo_interno: 'INT-01',
+          codigo_interno: `INT-${Date.now()}`,
           precio_publico: 100,
           costo: 50,
           empresa_id: testEmpresa.id,
@@ -56,32 +58,26 @@ describe('pullFromCloud integration', () => {
       });
     }
     
-    // Sucursal vinculada a testEmpresa
-    const branchCount = await prisma.sucursal.count({ where: { empresa_id: testEmpresa.id } });
-    let branch;
-    if (branchCount === 0) {
+    // Sucursal vinculada a testEmpresa con UUID válido
+    let branch = await prisma.sucursal.findFirst({ where: { empresa_id: testEmpresa.id } });
+    if (!branch) {
       branch = await prisma.sucursal.create({
-        data: { id: "branch-1", nombre: "Sucursal Integra", empresa_id: testEmpresa.id }
+        data: { id: crypto.randomUUID(), nombre: "Sucursal Integra", empresa_id: testEmpresa.id }
       });
-    } else {
-      branch = await prisma.sucursal.findFirst({ where: { empresa_id: testEmpresa.id } });
     }
 
-    // Le damos stock para que la sucursal tenga inventario
+    // Le damos stock de forma atómica con upsert
     const testProd = await prisma.producto.findFirst({ where: { empresa_id: testEmpresa.id } });
     if (testProd && branch) {
-      const invCount = await prisma.inventario_Sucursal.count({
-        where: { sucursal_id: branch.id, producto_id: testProd.id }
+      await prisma.inventario_Sucursal.upsert({
+        where: { sucursal_id_producto_id: { sucursal_id: branch.id, producto_id: testProd.id } },
+        update: { cantidad: 10 },
+        create: {
+          producto_id: testProd.id,
+          sucursal_id: branch.id,
+          cantidad: 10
+        }
       });
-      if (invCount === 0) {
-        await prisma.inventario_Sucursal.create({
-          data: {
-            producto_id: testProd.id,
-            sucursal_id: branch.id,
-            cantidad: 10
-          }
-        });
-      }
     }
   });
 
