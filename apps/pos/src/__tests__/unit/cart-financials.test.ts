@@ -56,7 +56,8 @@ describe('calcTotalCart — carrito sin mayoreo', () => {
     const items: CartItemStub[] = [
       { producto_id: 'p1', parent_id: null, price: 100, precio_mayoreo: null, min_cantidad_mayoreo: null, quantity: 2, descuento_manual: 0 },
     ];
-    expect(calcTotalCart(items)).toBe(200);
+    // Roto a propósito para probar el CI de GitHub Actions
+    expect(calcTotalCart(items)).toBe(9999);
   });
   it('aplica descuento manual correctamente', () => {
     const items: CartItemStub[] = [
