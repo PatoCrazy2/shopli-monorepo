@@ -126,19 +126,32 @@ if (familyQuantity >= minQuantityForWholesale) {
 }
 ```
 
+### Client-Side QR Code & PDF Label Generation
+To eliminate server load and avoid external microservice/render dependencies, ShopLI generates QR codes and compiles high-definition print-ready PDFs 100% on the client side using `jspdf` and `qrcode`.
+
+* **Avery 5160 Grid Layout:** Compiles a standard Letter-sized sheet (3 columns x 10 rows, 30 labels total) with precise grid spacing. Automatically handles pagination and overflows.
+* **Thermal Roll Layout:** Generates a continuous, single-label landscape PDF (50mm x 25mm) customized for standard barcode and thermal roll printers.
+* **Metadata Overlay:** Each label embeds a generated vector QR code mapped to the product's unique SKU, alongside wrapped text including the product name, variant name, and price.
+
 ---
 
 ## Security Architecture
 
 ### Zero-Trust Client Verification
-POS client computations are treated as untrusted. 
-* All sales details, costs, and discounts are re-calculated on the server using secure database metrics before database insertion.
-* Transactions with invalid recalculation parameters are rejected.
+POS client computations are treated as untrusted input. The server enforces the following invariants on every sync:
+* **Price recalculation:** For each incoming sale, the server fetches the official `precio_publico` and wholesale pricing rules (`precio_mayoreo`, `min_cantidad_mayoreo`) directly from the `Producto` catalog table and recalculates the expected total server-side. Any payload where the client-reported `total` deviates by more than ±$0.01 from the server-recalculated total is rejected with `422 Unprocessable Entity`.
+* **Discount cap enforcement:** The server validates that each line-item `descuento_manual` does not exceed the item's subtotal (`precio × cantidad`). Negative totals from over-discounting are rejected at the API boundary.
+* **Tenant isolation:** All product lookups during recalculation are scoped to the authenticated `empresaId`, preventing cross-tenant price spoofing.
 
-### Offline Bcrypt Verification
+### Offline Bcrypt Verification & Defense-in-Depth
 For cashier authentication without cloud access:
-* Salted Bcrypt hashes of cashiers' PINs are securely synced to the local client's IndexedDB during initial online pairing.
-* Local authentication compares PIN inputs against local hashes using a client-side Bcrypt implementation.
+* **6-Digit PIN & Tenant Uniqueness:** All cashiers and store managers use a 6-digit numeric PIN, validated for uniqueness across active users of the tenant company via salted Bcrypt comparisons during creation and reset workflows.
+* **Direct 1:1 User Resolution:** The POS interface provides a visual cashier selector, executing targeted 1:1 `bcrypt.compare` checks against IndexedDB records instead of blind iterative loops.
+* **72-Hour Offline Session TTL:** Disconnected devices verify credentials locally against a `lastOnlineVerification` timestamp refreshed on every successful synchronization. If offline continuously for > 72 hours, the POS locks access and requests network connectivity.
+* **2-Tier Lockout Protection:**
+  * *Tier 1 (Per-User Anti-DoS):* 3 consecutive failures trigger a 30s penalty; 5 failures trigger a 5min penalty; 10 failures permanently lock the cashier profile until online revalidation or manager assistance.
+  * *Tier 2 (Global Terminal Anti-Spraying):* A 5-minute sliding window accumulates terminal-wide failures. Reaching 10 global failures freezes the login screen for 2 minutes, preventing horizontal brute-force attacks across cached employee profiles.
+  * *Sync Isolation:* Network synchronization updates TTL verification timestamps without resetting active lockouts.
 
 ### Diagnostic & Rescue Module
 An embedded settings drawer allows troubleshooting browser-level storage and caching:
@@ -211,6 +224,30 @@ pnpm dev
 
 * **Admin Dashboard:** http://localhost:3000
 * **POS Client:** http://localhost:5173
+
+### 5. Utility & Test Scripts
+To run maintenance and custom development tests on the database and utility features:
+
+* **SKU Batch Migration Script:** Generates unique sequential SKUs for all existing products and variants without a SKU:
+  ```bash
+  pnpm --filter @shopli/db run db:migrate-skus
+  ```
+* **Offline Auth & Security Suite:** Runs automated tests for 72-hour TTL expiration, 2-tier progressive lockout, and targeted 6-digit Bcrypt verification:
+  ```bash
+  pnpm --filter pos test:auth
+  ```
+* **Financial Logic Unit Suite:** Runs pure unit tests for cart financial calculations including wholesale family grouping, boundary conditions (familyQty === threshold), cross-family isolation, negative discount guards, and the roundCustom rounding function:
+  ```bash
+  pnpm --filter pos test
+  ```
+* **Zero-Trust Integration Suite:** Runs end-to-end integration tests that verify the server rejects price-manipulated payloads with 422 Unprocessable Entity:
+  ```bash
+  pnpm --filter pos test
+  ```
+* **PDF Label Generator Layout Test:** Runs a local dry-run generation of PDF labels (Avery 3x10 grid and Thermal rolls) using mock data, saving them locally as `test-carta.pdf` and `test-termico.pdf` (both are git-ignored):
+  ```bash
+  pnpm --filter @shopli/db run db:test-pdf
+  ```
 
 ---
 

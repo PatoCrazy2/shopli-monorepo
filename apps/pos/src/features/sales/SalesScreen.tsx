@@ -6,11 +6,13 @@ import CartScreen from "./components/CartScreen";
 import { useCart } from "./hooks/useCart";
 import { useSalesHistory } from "./hooks/useSalesHistory";
 import ExpenseModal from "./components/ExpenseModal";
-import { Wallet } from "lucide-react";
+import CameraScannerModal from "./components/CameraScannerModal";
+import { Wallet, Scan } from "lucide-react";
 
 export default function SalesScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showScannerModal, setShowScannerModal] = useState(false);
     const {
         cartItems,
         showCart,
@@ -48,10 +50,18 @@ export default function SalesScreen() {
                     <div className="flex justify-between items-center mb-4">
                         <button
                             onClick={() => setShowExpenseModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-all text-gray-700"
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 active:scale-95 transition-none text-gray-700"
                         >
                             <Wallet className="w-5 h-5 text-gray-400" />
                             Gasto Caja Chica
+                        </button>
+
+                        <button
+                            onClick={() => setShowScannerModal(true)}
+                            className="w-12 h-12 flex items-center justify-center bg-black hover:bg-zinc-800 text-white rounded-xl active:scale-95 shadow-sm"
+                            aria-label="Escáner QR"
+                        >
+                            <Scan className="w-6 h-6" />
                         </button>
                     </div>
                     <ProductGrid onAddToCart={handleAddToCart} />
@@ -84,6 +94,14 @@ export default function SalesScreen() {
 
             {showExpenseModal && (
                 <ExpenseModal onClose={() => setShowExpenseModal(false)} />
+            )}
+
+            {showScannerModal && (
+                <CameraScannerModal
+                    isOpen={showScannerModal}
+                    onClose={() => setShowScannerModal(false)}
+                    onAddToCart={handleAddToCart}
+                />
             )}
         </div>
     );

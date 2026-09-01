@@ -18,10 +18,10 @@ export type PosAuthResponse = {
   } | null;
 };
 
-// Validación con Zod: email opcional y PIN de 4 dígitos numéricos exactos
+// Validación con Zod: email y PIN de 4 a 6 dígitos numéricos (modo transicional)
 const posAuthSchema = z.object({
   email: z.string().email("Email inválido"),
-  pin: z.string().length(4, "PIN inválido").regex(/^\d+$/, "PIN inválido"),
+  pin: z.string().min(4, "PIN inválido").max(6, "PIN inválido").regex(/^\d+$/, "PIN inválido"),
 });
 
 // Rate limiting básico en memoria

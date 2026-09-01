@@ -25,18 +25,33 @@ export interface Shift {
     closedAt?: Date;
 }
 
+export interface LoginResult {
+    success: boolean;
+    error?: string;
+    lockedUntil?: number;
+    isDeviceLocked?: boolean;
+    isPermanentLock?: boolean;
+}
+
 interface AuthContextType {
     user: User | null;
     activeShift: Shift | null;
     isAuthenticated: boolean;
     hasActiveShift: boolean;
-    login: (pin: string, email?: string) => Promise<boolean>;
+    login: (pin: string, email?: string, userId?: string) => Promise<LoginResult>;
     logout: () => void;
     openShift: (initialAmount: number, branchId: string) => Promise<void>;
     closeShift: (physicalAmount: number) => Promise<void>;
+    unlockUser: (userId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Constantes de Seguridad Offline
+const OFFLINE_TTL_MS = 72 * 60 * 60 * 1000; // 72 horas
+const DEVICE_LOCKOUT_THRESHOLD = 10; // 10 fallos globales
+const DEVICE_LOCKOUT_WINDOW_MS = 5 * 60 * 1000; // 5 minutos
+const DEVICE_LOCKOUT_DURATION_MS = 2 * 60 * 1000; // 2 minutos
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(() => {
@@ -49,15 +64,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return saved ? JSON.parse(saved) : null;
     });
 
-    const login = async (pin: string, email?: string): Promise<boolean> => {
-        let localUser = null;
+    const unlockUser = async (userId: string) => {
+        await db.meta.delete(`lockout_${userId}`);
+    };
+
+    const login = async (pin: string, email?: string, userId?: string): Promise<LoginResult> => {
+        let localUser: any = null;
         let recoveredShift: Shift | null = null;
 
-        if (email) {
+        // 1. Verificación de Bloqueo Global de Dispositivo (Nivel 2: Anti-Fuerza Bruta Horizontal)
+        const deviceLockRecord = await db.meta.get('device_locked_until');
+        const deviceLockedUntil = deviceLockRecord ? Number(deviceLockRecord.value) : 0;
+        if (deviceLockedUntil && deviceLockedUntil > Date.now()) {
+            return {
+                success: false,
+                isDeviceLocked: true,
+                lockedUntil: deviceLockedUntil,
+                error: 'Dispositivo temporalmente bloqueado por múltiples intentos fallidos. Espere 2 minutos.'
+            };
+        }
+
+        // 2. Verificación de Bloqueo por Usuario (Nivel 1: Anti-DoS y Protección Individual)
+        if (userId) {
+            const userLockRecord = await db.meta.get(`lockout_${userId}`);
+            if (userLockRecord?.value) {
+                const { failedAttempts = 0, lockedUntil = null } = userLockRecord.value;
+                if (failedAttempts >= 10) {
+                    return {
+                        success: false,
+                        isPermanentLock: true,
+                        error: 'Usuario bloqueado por superar 10 intentos fallidos. Requiere conexión online o asistencia de Encargado/Dueño.'
+                    };
+                }
+                if (lockedUntil && lockedUntil > Date.now()) {
+                    return {
+                        success: false,
+                        lockedUntil,
+                        error: `Usuario bloqueado temporalmente. Intente nuevamente en unos instantes.`
+                    };
+                }
+            }
+        }
+
+        if (email && !userId) {
             // Login inicial online para configurar la empresa del dispositivo
             if (!navigator.onLine) {
                 console.warn('Se requiere conexión a internet para el login inicial.');
-                return false;
+                return {
+                    success: false,
+                    error: 'Se requiere conexión a internet para el primer emparejamiento del dispositivo.'
+                };
             }
 
             try {
@@ -76,8 +132,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     body: { email, pin }
                 });
                 
-                // Guardar empresaId en db.meta antes del pull
+                // Guardar empresaId y registrar verificación online
                 await db.meta.put({ key: 'empresaId', value: data.empresa_id });
+                await db.meta.put({ key: 'lastOnlineVerification', value: new Date().toISOString() });
 
                 // Hacemos el pull para descargar el catálogo de esa empresa
                 await pullFromCloud();
@@ -85,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Ahora buscamos al usuario localmente ya guardado en IndexedDB
                 localUser = await db.users.get(data.id);
 
-                // Si viene un turno activo desde el servidor, lo guardamos localmente
                 if (data.active_shift) {
                     await db.turnos.put({
                         id: data.active_shift.id,
@@ -110,39 +166,128 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         openedAt: new Date(data.active_shift.fecha_apertura)
                     };
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error durante el login online inicial:', error);
-                return false;
+                return {
+                    success: false,
+                    error: error?.message || 'Error al conectar con el servidor para la autenticación inicial.'
+                };
             }
         } else {
-            // Login offline-first regular por PIN
+            // Login offline-first regular
             if (navigator.onLine) {
-                console.log("Intentando pull de base de datos desde la nube local first...");
                 try {
                     await pullFromCloud();
                 } catch (e) {
                     console.warn('Error silencioso al jalar catálogo durante el login:', e);
                 }
+            } else {
+                // 3. Verificación de TTL de Sesión Offline (Máximo 72 horas sin internet)
+                const lastVerificationRecord = await db.meta.get('lastOnlineVerification');
+                if (lastVerificationRecord?.value) {
+                    const lastVerificationTime = new Date(lastVerificationRecord.value).getTime();
+                    if (!isNaN(lastVerificationTime) && Date.now() - lastVerificationTime > OFFLINE_TTL_MS) {
+                        return {
+                            success: false,
+                            error: 'Sesión offline expirada (límite de 72h sin conexión). Conecte el dispositivo a internet para renovar credenciales.'
+                        };
+                    }
+                }
             }
 
-            // Obtenemos todos los usuarios con rol de POS y comparamos el PIN con bcrypt
-            const allUsers = await db.users
-                .where('role').anyOf(['CAJERO', 'ENCARGADO'])
-                .toArray();
+            // Búsqueda del usuario local: Dirigida por userId si viene del selector
+            if (userId) {
+                localUser = await db.users.get(userId);
+                if (!localUser || !localUser.pin || !(await bcrypt.compare(pin, localUser.pin))) {
+                    localUser = null;
+                }
+            } else if (email) {
+                const found = await db.users.where('email').equalsIgnoreCase(email).first();
+                if (found && found.pin && (await bcrypt.compare(pin, found.pin))) {
+                    localUser = found;
+                }
+            } else {
+                // Fallback por PIN único (para compatibilidad)
+                const allUsers = await db.users
+                    .where('role').anyOf(['CAJERO', 'ENCARGADO'])
+                    .toArray();
 
-            // En un entorno local-first offline el PIN debe haber sido guardado previemente como un hash bcrypt (via pullFromCloud).
-            for (const u of allUsers) {
-                if (u.pin && await bcrypt.compare(pin, u.pin)) {
-                    localUser = u;
-                    break;
+                for (const u of allUsers) {
+                    if (u.pin && (await bcrypt.compare(pin, u.pin))) {
+                        localUser = u;
+                        break;
+                    }
                 }
             }
         }
 
+        // Manejo de fallo de credenciales: registrar en lockout global y de usuario
         if (!localUser) {
-            console.warn('PIN Incorrecto o usuario no encontrado en base de datos local');
-            return false;
+            // A. Registrar en ventana deslizante de fallos globales del dispositivo
+            const attemptsRecord = await db.meta.get('device_failed_attempts');
+            const pastAttempts: number[] = Array.isArray(attemptsRecord?.value) ? attemptsRecord.value : [];
+            const recentFailures = pastAttempts.filter(t => Date.now() - t < DEVICE_LOCKOUT_WINDOW_MS);
+            recentFailures.push(Date.now());
+
+            if (recentFailures.length >= DEVICE_LOCKOUT_THRESHOLD) {
+                const globalLockedUntil = Date.now() + DEVICE_LOCKOUT_DURATION_MS;
+                await db.meta.put({ key: 'device_locked_until', value: globalLockedUntil });
+                await db.meta.put({ key: 'device_failed_attempts', value: [] });
+                return {
+                    success: false,
+                    isDeviceLocked: true,
+                    lockedUntil: globalLockedUntil,
+                    error: 'Demasiados intentos fallidos en la terminal. Dispositivo bloqueado por 2 minutos.'
+                };
+            } else {
+                await db.meta.put({ key: 'device_failed_attempts', value: recentFailures });
+            }
+
+            // B. Registrar en lockout individual del usuario si fue seleccionado
+            const targetUserId = userId || (email ? (await db.users.where('email').equalsIgnoreCase(email).first())?.id : null);
+            if (targetUserId) {
+                const userLockRecord = await db.meta.get(`lockout_${targetUserId}`);
+                const currentAttempts = (userLockRecord?.value?.failedAttempts || 0) + 1;
+                let userLockedUntil: number | null = null;
+                let isPermanent = false;
+
+                if (currentAttempts >= 10) {
+                    isPermanent = true;
+                } else if (currentAttempts >= 5) {
+                    userLockedUntil = Date.now() + 5 * 60 * 1000; // 5 min
+                } else if (currentAttempts >= 3) {
+                    userLockedUntil = Date.now() + 30 * 1000; // 30 seg
+                }
+
+                await db.meta.put({
+                    key: `lockout_${targetUserId}`,
+                    value: { failedAttempts: currentAttempts, lockedUntil: userLockedUntil }
+                });
+
+                if (isPermanent) {
+                    return {
+                        success: false,
+                        isPermanentLock: true,
+                        error: 'PIN incorrecto. Usuario bloqueado permanentemente por superar 10 intentos fallidos.'
+                    };
+                }
+                if (userLockedUntil) {
+                    return {
+                        success: false,
+                        lockedUntil: userLockedUntil,
+                        error: `PIN incorrecto. Usuario temporalmente bloqueado.`
+                    };
+                }
+            }
+
+            return {
+                success: false,
+                error: 'PIN incorrecto. Verifique sus datos.'
+            };
         }
+
+        // Login Exitoso: Limpiar lockout del usuario autenticado
+        await db.meta.delete(`lockout_${localUser.id}`);
 
         const branches = await db.branches.toArray();
         let branch = null;
@@ -170,7 +315,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem('pos_shift');
         }
         localStorage.setItem('auth_user', JSON.stringify(authUser));
-        return true;
+        return { success: true };
     };
 
     const logout = () => {
@@ -260,6 +405,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 logout,
                 openShift,
                 closeShift,
+                unlockUser,
             }}
         >
             {children}

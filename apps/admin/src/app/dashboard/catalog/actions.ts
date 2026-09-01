@@ -21,6 +21,48 @@ const productSchema = z.object({
   ),
 });
 
+export async function generateUniqueSKU(): Promise<string> {
+  let attempts = 0;
+  while (attempts < 10) {
+    const slProducts = await db.producto.findMany({
+      where: {
+        codigo_interno: {
+          startsWith: "SL-",
+        },
+      },
+      select: {
+        codigo_interno: true,
+      },
+    });
+
+    let maxNumber = 0;
+    for (const p of slProducts) {
+      if (p.codigo_interno) {
+        const match = p.codigo_interno.match(/^SL-(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNumber) {
+            maxNumber = num;
+          }
+        }
+      }
+    }
+
+    const nextSku = `SL-${String(maxNumber + 1).padStart(6, "0")}`;
+
+    const exists = await db.producto.findUnique({
+      where: { codigo_interno: nextSku },
+      select: { id: true },
+    });
+
+    if (!exists) {
+      return nextSku;
+    }
+    attempts++;
+  }
+  throw new Error("No se pudo generar un SKU único después de varios intentos");
+}
+
 export async function upsertProduct(formData: FormData) {
   const parseResult = productSchema.safeParse({
     id: formData.get("id"),
@@ -61,17 +103,22 @@ export async function upsertProduct(formData: FormData) {
       // Editar Padre
       const product = await db.producto.findUnique({
         where: { id: data.id },
-        select: { empresa_id: true }
+        select: { empresa_id: true, codigo_interno: true }
       });
       if (!product || product.empresa_id !== empresaId) {
         throw new Error("No autorizado");
+      }
+
+      let parentSku = data.codigo_interno?.trim() || null;
+      if (!parentSku) {
+        parentSku = product.codigo_interno || (await generateUniqueSKU());
       }
 
       await db.producto.update({
         where: { id: data.id },
         data: {
           nombre: data.nombre,
-          codigo_interno: data.codigo_interno || null,
+          codigo_interno: parentSku,
           precio_publico: data.precio_publico,
           costo: data.costo,
           precio_mayoreo: data.precio_mayoreo ?? null,
@@ -100,12 +147,20 @@ export async function upsertProduct(formData: FormData) {
       // Procesar variantes
       for (const v of variants) {
         const variantFullName = `${data.nombre} (${v.variante_nombre})`;
+        let varSku = v.codigo_interno?.trim() || null;
         if (v.id) {
+          const existingVar = await db.producto.findUnique({
+            where: { id: v.id },
+            select: { codigo_interno: true }
+          });
+          if (!varSku) {
+            varSku = existingVar?.codigo_interno || (await generateUniqueSKU());
+          }
           await db.producto.update({
             where: { id: v.id },
             data: {
               nombre: variantFullName,
-              codigo_interno: v.codigo_interno || null,
+              codigo_interno: varSku,
               costo: data.costo,
               precio_publico: data.precio_publico,
               precio_mayoreo: data.precio_mayoreo ?? null,
@@ -116,10 +171,11 @@ export async function upsertProduct(formData: FormData) {
             }
           });
         } else {
+          const newVarSku = varSku || (await generateUniqueSKU());
           const newVar = await db.producto.create({
             data: {
               nombre: variantFullName,
-              codigo_interno: v.codigo_interno || null,
+              codigo_interno: newVarSku,
               costo: data.costo,
               precio_publico: data.precio_publico,
               precio_mayoreo: data.precio_mayoreo ?? null,
@@ -146,10 +202,11 @@ export async function upsertProduct(formData: FormData) {
       }
     } else {
       // Crear Padre
+      const parentSku = data.codigo_interno?.trim() || (await generateUniqueSKU());
       const newProduct = await db.producto.create({
         data: {
           nombre: data.nombre,
-          codigo_interno: data.codigo_interno || null,
+          codigo_interno: parentSku,
           precio_publico: data.precio_publico,
           costo: data.costo,
           precio_mayoreo: data.precio_mayoreo ?? null,
@@ -175,10 +232,11 @@ export async function upsertProduct(formData: FormData) {
       // Crear variantes de este nuevo producto
       for (const v of variants) {
         const variantFullName = `${data.nombre} (${v.variante_nombre})`;
+        const varSku = v.codigo_interno?.trim() || (await generateUniqueSKU());
         const newVar = await db.producto.create({
           data: {
             nombre: variantFullName,
-            codigo_interno: v.codigo_interno || null,
+            codigo_interno: varSku,
             costo: data.costo,
             precio_publico: data.precio_publico,
             precio_mayoreo: data.precio_mayoreo ?? null,
@@ -319,48 +377,33 @@ export async function importCatalogAction(products: any[]) {
         const initialStock = parseInt(item.stock, 10) || 0;
 
         // 3. Upsert por codigo_interno
-        if (item.codigo_interno) {
-          const existing = await db.producto.findUnique({
-            where: { codigo_interno: item.codigo_interno }
-          });
+        let sku = item.codigo_interno?.trim() || null;
+        if (!sku) {
+          sku = await generateUniqueSKU();
+        }
 
-          if (existing) {
-            if (existing.empresa_id !== empresaId) {
-              throw new Error(`El producto con SKU ${item.codigo_interno} pertenece a otra empresa.`);
-            }
-            await db.producto.update({
-              where: { id: existing.id },
-              data: productData
-            });
-            results.updated++;
-          } else {
-            const newProduct = await db.producto.create({
-              data: {
-                ...productData,
-                codigo_interno: item.codigo_interno
-              }
-            });
-            
-            // Si hay stock inicial, lo creamos para todas las sucursales (opcional)
-            if (initialStock > 0) {
-              const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
-              await db.inventario_Sucursal.createMany({
-                data: sucursales.map(s => ({
-                  sucursal_id: s.id,
-                  producto_id: newProduct.id,
-                  cantidad: initialStock
-                }))
-              });
-            }
-            
-            results.created++;
+        const existing = await db.producto.findUnique({
+          where: { codigo_interno: sku }
+        });
+
+        if (existing) {
+          if (existing.empresa_id !== empresaId) {
+            throw new Error(`El producto con SKU ${sku} pertenece a otra empresa.`);
           }
-        } else {
-          // Si no hay código interno, creamos uno nuevo siempre
-          const newProduct = await db.producto.create({
+          await db.producto.update({
+            where: { id: existing.id },
             data: productData
           });
-
+          results.updated++;
+        } else {
+          const newProduct = await db.producto.create({
+            data: {
+              ...productData,
+              codigo_interno: sku
+            }
+          });
+          
+          // Si hay stock inicial, lo creamos para todas las sucursales (opcional)
           if (initialStock > 0) {
             const sucursales = await db.sucursal.findMany({ where: { activo: true, empresa_id: empresaId } });
             await db.inventario_Sucursal.createMany({
@@ -371,7 +414,7 @@ export async function importCatalogAction(products: any[]) {
               }))
             });
           }
-
+          
           results.created++;
         }
       } catch (e) {

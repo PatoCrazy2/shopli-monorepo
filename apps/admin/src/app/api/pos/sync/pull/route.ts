@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       const session = await auth();
       const isAdminAuthorized = !!session?.user;
       // Bypass para tests
-      const isTestBypass = process.env.NODE_ENV === 'test' || req.headers.get("x-test-bypass") === "true";
+      const isTestBypass = process.env.NODE_ENV === 'test' && req.headers.get("x-test-bypass") === "true";
 
       if (!isAdminAuthorized && !isTestBypass) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

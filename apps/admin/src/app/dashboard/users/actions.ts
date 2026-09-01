@@ -11,7 +11,7 @@ const userSchema = z.object({
   email: z.string().email("Email inválido"),
   numero_tel: z.string().optional().nullable(),
   role: z.enum(["ENCARGADO", "CAJERO"]),
-  pin: z.string().regex(/^\d{4}$/, "El PIN debe ser de 4 dígitos exactos"),
+  pin: z.string().regex(/^\d{6}$/, "El PIN debe ser de 6 dígitos exactos"),
 });
 
 export async function createUser(formData: FormData) {
@@ -35,6 +35,28 @@ export async function createUser(formData: FormData) {
   const data = parseResult.data;
 
   try {
+    // 1. Validar que el PIN no esté en uso por otro empleado activo en la misma empresa
+    const activeUsers = await db.user.findMany({
+      where: {
+        empresa_id: session.user.empresa_id,
+        active: true,
+        pin_hash: { not: null },
+      },
+      select: {
+        id: true,
+        name: true,
+        pin_hash: true,
+      },
+    });
+
+    for (const u of activeUsers) {
+      if (u.pin_hash && (await bcrypt.compare(data.pin, u.pin_hash))) {
+        return {
+          error: "Este PIN ya está asignado a otro empleado activo en la empresa",
+        };
+      }
+    }
+
     const pin_hash = await bcrypt.hash(data.pin, 10);
     
     await db.user.create({
@@ -65,11 +87,11 @@ export async function resetPin(id: string, newPin: string) {
     return { error: "No autorizado" };
   }
 
-  const pinSchema = z.string().regex(/^\d{4}$/, "El PIN debe ser de 4 dígitos exactos");
+  const pinSchema = z.string().regex(/^\d{6}$/, "El PIN debe ser de 6 dígitos exactos");
   const parseResult = pinSchema.safeParse(newPin);
 
   if (!parseResult.success) {
-    return { error: "PIN inválido" };
+    return { error: "El PIN debe ser de 6 dígitos exactos" };
   }
 
   try {
@@ -79,6 +101,27 @@ export async function resetPin(id: string, newPin: string) {
     });
     if (!targetUser || targetUser.empresa_id !== session.user.empresa_id) {
       return { error: "No autorizado" };
+    }
+
+    // Validar que el nuevo PIN no colisione con otro usuario activo de la misma empresa (excluyendo a este usuario)
+    const otherActiveUsers = await db.user.findMany({
+      where: {
+        empresa_id: session.user.empresa_id,
+        active: true,
+        id: { not: id },
+        pin_hash: { not: null },
+      },
+      select: {
+        pin_hash: true,
+      },
+    });
+
+    for (const u of otherActiveUsers) {
+      if (u.pin_hash && (await bcrypt.compare(parseResult.data, u.pin_hash))) {
+        return {
+          error: "Este PIN ya está asignado a otro empleado activo en la empresa",
+        };
+      }
     }
 
     const pin_hash = await bcrypt.hash(parseResult.data, 10);
