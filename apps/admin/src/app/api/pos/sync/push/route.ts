@@ -110,7 +110,7 @@ const pushSyncSchema = z.object({
       items: z.array(
         z.object({
           productId: z.string().uuid(),
-          countedQuantity: z.number().int().nullable(),
+          countedQuantity: z.number().int().nonnegative().nullable(),
           countedAt: z.string().datetime().nullable()
         })
       )
@@ -448,6 +448,92 @@ export async function POST(req: Request) {
               }
             }
           });
+
+          // Reconciliación Retroactiva Idempotente de Auditorías Dinámicas (Hard Cutoff 72h)
+          if (venta.estado === 'COMPLETADA') {
+            const saleDate = new Date(venta.fecha);
+            const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
+            const saleProductIds = venta.detalles.map(d => d.producto_id);
+
+            // Buscar items de auditorías que intersecten con la fecha de la venta y pertenezcan a la sucursal
+            const targetAuditItems = await tx.dynamicAuditItem.findMany({
+              where: {
+                productId: { in: saleProductIds },
+                countedQuantity: { not: null },
+                countedAt: { gte: saleDate },
+                audit: {
+                  sucursalId: venta.sucursal_id,
+                  isApplied: false,
+                  startedAt: {
+                    gte: seventyTwoHoursAgo,
+                    lte: saleDate
+                  }
+                }
+              },
+              include: {
+                audit: true
+              }
+            });
+
+            // Obtener el usuario_id del turno de la venta para los logs de trazabilidad
+            const turnoVenta = await tx.turno.findUnique({
+              where: { id: venta.turno_id },
+              select: { usuario_id: true }
+            });
+            const fallbackUserId = turnoVenta?.usuario_id;
+
+            for (const item of targetAuditItems) {
+              if (item.countedQuantity === null || !item.countedAt) continue;
+
+              // Recalcular soldQty vía tx.detalle_Venta.aggregate fresco
+              const salesAggregate = await tx.detalle_Venta.aggregate({
+                _sum: { cantidad: true },
+                where: {
+                  producto_id: item.productId,
+                  venta: {
+                    sucursal_id: item.audit.sucursalId,
+                    fecha: {
+                      gte: item.audit.startedAt,
+                      lte: item.countedAt
+                    },
+                    estado: 'COMPLETADA'
+                  }
+                }
+              });
+
+              const freshSoldQty = salesAggregate._sum.cantidad || 0;
+              const newExpectedAtCount = item.initialStock - freshSoldQty;
+              const newDifference = item.countedQuantity - newExpectedAtCount;
+              const oldDifference = item.difference;
+
+              // Actualizar el item con los nuevos valores recalculados
+              await tx.dynamicAuditItem.update({
+                where: { id: item.id },
+                data: {
+                  expectedAtCount: newExpectedAtCount,
+                  difference: newDifference
+                }
+              });
+
+              // Trazabilidad estricta: Si la auditoría está CLOSED y la discrepancia cambia, registrar log en MovimientoInventario
+              if (item.audit.status === 'CLOSED' && oldDifference !== null && oldDifference !== newDifference) {
+                if (fallbackUserId) {
+                  await tx.movimientoInventario.create({
+                    data: {
+                      id: crypto.randomUUID(),
+                      producto_id: item.productId,
+                      sucursal_id: item.audit.sucursalId,
+                      cantidad: newDifference - oldDifference,
+                      tipo: 'AJUSTE',
+                      motivo: `Reconciliación retroactiva por venta tardía ${venta.id}. Discrepancia previa: ${oldDifference}, nueva discrepancia: ${newDifference}`,
+                      usuario_id: fallbackUserId,
+                      referencia_id: item.audit.id
+                    }
+                  });
+                }
+              }
+            }
+          }
         }
         procesados.ventas.push(venta.id);
       }
