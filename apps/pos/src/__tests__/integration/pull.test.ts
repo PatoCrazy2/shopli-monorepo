@@ -8,7 +8,13 @@ describe('pullFromCloud integration', () => {
 
   beforeAll(async () => {
     // Definimos la variable global para apiClient.ts
-    vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000/api' } });
+    vi.stubGlobal('import.meta', {
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:3000/api',
+        VITE_SYNC_SECRET: 'ci-pos-sync-secret',
+        VITE_POS_SYNC_SECRET: 'ci-pos-sync-secret',
+      }
+    });
 
     // Ensure test Empresa exists
     const testEmpresa = await prisma.empresa.upsert({
@@ -19,6 +25,9 @@ describe('pullFromCloud integration', () => {
         nombre: 'Test Empresa'
       }
     });
+
+    // Configurar Dexie con la empresa para permitir sync
+    await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
 
     // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL
     const userCount = await prisma.user.count({ where: { role: Role.CAJERO } });

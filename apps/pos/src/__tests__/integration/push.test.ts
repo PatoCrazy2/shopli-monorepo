@@ -11,7 +11,13 @@ describe('pushToCloud integration', () => {
   let turnoId: string;
 
   beforeAll(async () => {
-    vi.stubGlobal('import.meta', { env: { VITE_API_BASE_URL: 'http://localhost:3000/api' } });
+    vi.stubGlobal('import.meta', {
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:3000/api',
+        VITE_SYNC_SECRET: 'ci-pos-sync-secret',
+        VITE_POS_SYNC_SECRET: 'ci-pos-sync-secret',
+      }
+    });
     vi.stubGlobal('navigator', { onLine: true });
 
     // Ensure test Empresa exists
@@ -23,6 +29,9 @@ describe('pushToCloud integration', () => {
         nombre: 'Test Empresa'
       }
     });
+
+    // Configurar Dexie con la empresa para permitir sync
+    await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
 
     // 1. Setup Postgres data needed for a successful Push
     // Sucursal
@@ -194,11 +203,12 @@ describe('pushToCloud integration', () => {
     };
 
     const response = await fetch(
-      `${apiBase}/pos/sync/push?empresaId=test-empresa-id`,
+      `${apiBase}/pos/sync/push?empresaId=test-empresa-id&secret=ci-pos-sync-secret`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-pos-sync-secret': 'ci-pos-sync-secret',
           'x-test-bypass': 'true', // Válido en NODE_ENV=test
         },
         body: JSON.stringify(payload),
