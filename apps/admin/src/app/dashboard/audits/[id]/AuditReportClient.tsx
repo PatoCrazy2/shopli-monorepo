@@ -23,6 +23,7 @@ type TAudit = {
     branchName: string;
     status: string;
     isApplied: boolean;
+    hasAdjustments?: boolean;
     startedAt: string;
     items: TItem[];
 };
@@ -72,7 +73,14 @@ export default function AuditReportClient({ audit }: { audit: TAudit }) {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">Reporte de Auditoría</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">Reporte de Auditoría</h1>
+            {audit.hasAdjustments && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" title="Esta auditoría registró ajustes retroactivos por ventas tardías">
+                <History className="w-3 h-3" /> Reconciliada con Ajustes
+              </span>
+            )}
+          </div>
           <p className="text-zinc-500 font-medium mt-1">
             Sucursal {audit.branchName} • {new Date(audit.startedAt).toLocaleDateString()}
           </p>

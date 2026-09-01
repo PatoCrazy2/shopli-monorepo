@@ -326,4 +326,60 @@ describe('Auditorías Dinámicas - Reconciliación Asíncrona y Ventas Tardías'
     expect(ctx.movimientos.length).toBe(1);
     expect(ctx.sales.length).toBe(1);
   });
+
+  // Test 4: Hard Cutoff (>72h): Venta tardía recibida para auditoría sellada (>72h) no altera el stock esperado ni genera MovimientoInventario
+  it('Test 4: Hard Cutoff (>72h): Venta tardía para auditoría sellada (>72h) es ignorada por reconciliación', async () => {
+    // Auditoría iniciada hace 80 horas respecto a la venta
+    const startedAt = new Date('2026-08-25T08:00:00.000Z');
+    const countedAt = new Date('2026-08-25T12:00:00.000Z');
+
+    const auditId = 'audit-sealed-old';
+    ctx.audits.push({
+      id: auditId,
+      sucursalId: SUCURSAL_ID,
+      status: 'CLOSED',
+      startedAt,
+      isApplied: false,
+    });
+
+    const item: DynamicAuditItemRecord = {
+      id: 'item-sealed-1',
+      auditId,
+      productId: PROD_ID,
+      initialStock: 50,
+      countedQuantity: 45,
+      countedAt,
+      expectedAtCount: 50,
+      difference: -5,
+    };
+    ctx.auditItems.push(item);
+
+    // Venta sincronizada hoy (más de 72h después del startedAt de la auditoría)
+    const lateSale: SalePayload = {
+      id: 'sale-past-cutoff-1',
+      turno_id: TURNO_ID,
+      sucursal_id: SUCURSAL_ID,
+      estado: 'COMPLETADA',
+      fecha: '2026-08-25T09:00:00.000Z', // fecha de la venta original
+      detalles: [{ producto_id: PROD_ID, cantidad: 5 }],
+    };
+
+    // Al procesar la venta en la actualidad (2026-08-31), la auditoría inició hace > 72h
+    // Simulamos la venta procesándose en la actualidad
+    const saleDate = new Date('2026-08-31T12:00:00.000Z');
+    const seventyTwoHoursAgo = new Date(saleDate.getTime() - 72 * 60 * 60 * 1000);
+
+    // La auditoría startedAt (25 ago) < 72h cutoff (28 ago), por lo tanto está sellada
+    expect(startedAt.getTime() < seventyTwoHoursAgo.getTime()).toBe(true);
+
+    await ctx.processSalePush({
+      ...lateSale,
+      fecha: '2026-08-31T12:00:00.000Z', // fecha actual de procesamiento
+    });
+
+    // La auditoría permanece intacta y no se generan movimientos de ajuste
+    expect(item.expectedAtCount).toBe(50);
+    expect(item.difference).toBe(-5);
+    expect(ctx.movimientos.length).toBe(0);
+  });
 });

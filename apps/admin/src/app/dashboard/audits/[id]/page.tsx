@@ -29,6 +29,14 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
     redirect("/dashboard/inventory");
   }
 
+  // Verificar si la auditoría tuvo reconciliaciones retroactivas (ajustes contables registrados)
+  const ajusteCount = await db.movimientoInventario.count({
+    where: {
+      referencia_id: audit.id,
+      tipo: "AJUSTE"
+    }
+  });
+
   // Pre-calculate sales during the audit period for context in the view
   // Actually, we already have initialStock, expectedAtCount, and difference.
   // The sales can be derived: Sales = initialStock - expectedAtCount.
@@ -44,6 +52,7 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
     branchName: audit.sucursal.nombre,
     status: audit.status,
     isApplied: audit.isApplied,
+    hasAdjustments: ajusteCount > 0,
     startedAt: audit.startedAt.toISOString(),
     items: filteredItems.map(item => ({
       id: item.id,
