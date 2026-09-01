@@ -18,7 +18,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-Monorepo-EF4444?style=flat-square&logo=turborepo&logoColor=white)](https://turbo.build/)
 [![PWA](https://img.shields.io/badge/PWA-Offline--First-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![CI Suite](https://img.shields.io/github/actions/workflow/status/PatoCrazy2/shopli/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/PatoCrazy2/shopli/actions)
+[![CI Suite](https://img.shields.io/github/actions/workflow/status/PatoCrazy2/shopli-monorepo/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/PatoCrazy2/shopli-monorepo/actions)
 
 </div>
 
