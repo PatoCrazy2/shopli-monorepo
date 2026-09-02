@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { db, Role } from "@shopli/db";
+import { db, Role, SubscriptionStatus } from "@shopli/db";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { getEffectiveSubscription } from "@/lib/subscription-plans";
 
 export type PosAuthResponse = {
   id: string;
@@ -121,6 +122,37 @@ export async function POST(req: Request) {
         { error: "Credenciales inválidas" },
         { status: 401, headers: responseHeaders }
       );
+    }
+
+    // 6. Validar estado de la suscripción de la empresa vinculada
+    if (user.empresa_id) {
+      const empresa = await db.empresa.findUnique({
+        where: { id: user.empresa_id },
+        select: {
+          id: true,
+          plan: true,
+          subscriptionStatus: true,
+          trialEndsAt: true,
+          gracePeriodEndsAt: true,
+          stripeSubscriptionId: true,
+        },
+      });
+
+      if (empresa) {
+        const effectiveSub = getEffectiveSubscription(empresa);
+        if (
+          effectiveSub.effectiveStatus === SubscriptionStatus.PAST_DUE ||
+          effectiveSub.effectiveStatus === SubscriptionStatus.UNPAID
+        ) {
+          return NextResponse.json(
+            {
+              error: "SUBSCRIPTION_SUSPENDED",
+              message: "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
+            },
+            { status: 402, headers: responseHeaders }
+          );
+        }
+      }
     }
 
     // Buscar si el usuario tiene un turno abierto (ordenado por el más reciente)

@@ -125,6 +125,9 @@ export async function pushToCloud(): Promise<PushResult> {
 
     // Reconciliación Local (ACK). Si es 200 OK, procedemos a marcar como 'SYNCED'
     if (data.success && data.procesados) {
+      // Limpiar bandera de suspensión si hubo éxito
+      await db.meta.put({ key: 'subscriptionSuspended', value: false });
+
       const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [], gastos: procGastos = [], auditoriasDinamicas: procAuditoriasDinamicas = [] } = data.procesados;
 
       await db.transaction('rw', [db.turnos, db.sales, db.audits, db.gastos, db.dynamicAudits, db.dynamicAuditItems], async () => {
@@ -168,6 +171,12 @@ export async function pushToCloud(): Promise<PushResult> {
     }
 
   } catch (error: any) {
+    if (error?.status === 402 || error?.isSubscriptionSuspended) {
+      console.warn('⚠️ Suscripción de empresa suspendida durante Push (HTTP 402).');
+      await db.meta.put({ key: 'subscriptionSuspended', value: true });
+      return { success: false, reason: 'subscription_suspended' };
+    }
+
     // Manejo de errores de red precisos (Ej: Cuando el fetch colapsa por red no disponible)
     if (error instanceof TypeError && (error.message === 'Failed to fetch' || error.message.includes('fetch'))) {
       return { success: false, reason: 'offline' };

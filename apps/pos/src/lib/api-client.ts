@@ -58,8 +58,18 @@ export async function apiClient<T>(endpoint: string, options?: ApiClientOptions)
 
   if (!response.ok) {
     const errorBody = await response.text();
-    const error = new Error(`HTTP Error: ${response.status} - ${errorBody}`);
+    let parsedBody: any = null;
+    try {
+      parsedBody = JSON.parse(errorBody);
+    } catch (_) {
+      // Body is not JSON
+    }
+
+    const message = parsedBody?.message || parsedBody?.error || `HTTP Error: ${response.status} - ${errorBody}`;
+    const error = new Error(message);
     (error as any).status = response.status;
+    (error as any).data = parsedBody;
+    (error as any).isSubscriptionSuspended = response.status === 402;
     throw error;
   }
 

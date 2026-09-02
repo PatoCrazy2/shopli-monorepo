@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, Role } from "@shopli/db";
+import { db, Role, SubscriptionStatus } from "@shopli/db";
 import crypto from "crypto";
 import { auth } from "@/lib/auth";
+import { getEffectiveSubscription } from "@/lib/subscription-plans";
 
 export const revalidate = 0; // Evitar caché completo en Next.js App Router
 
@@ -106,6 +107,37 @@ export async function GET(req: NextRequest) {
 
     if (!empresaId) {
       return NextResponse.json({ error: "Falta empresaId" }, { status: 400 });
+    }
+
+    // 0. Validación de Suscripción SaaS (Lazy Evaluation)
+    const empresa = await db.empresa.findUnique({
+      where: { id: empresaId },
+      select: {
+        id: true,
+        plan: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        gracePeriodEndsAt: true,
+        stripeSubscriptionId: true,
+      },
+    });
+
+    if (!empresa) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+    }
+
+    const effectiveSub = getEffectiveSubscription(empresa);
+    if (
+      effectiveSub.effectiveStatus === SubscriptionStatus.PAST_DUE ||
+      effectiveSub.effectiveStatus === SubscriptionStatus.UNPAID
+    ) {
+      return NextResponse.json(
+        {
+          error: "SUBSCRIPTION_SUSPENDED",
+          message: "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
+        },
+        { status: 402 }
+      );
     }
 
     // Límite de 1000 productos por request
