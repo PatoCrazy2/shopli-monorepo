@@ -184,30 +184,37 @@ export function BillingClientView({
       {/* Resumen de Estado Actual */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Plan Activo */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-zinc-700">
           <div className="text-xs uppercase font-bold tracking-wider text-gray-400 mb-2">
             Plan Actual
           </div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {PLAN_CONFIG[effectiveSub.plan].name}
-            </h2>
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-2xl text-gray-500 dark:text-zinc-400 font-light">
+              Plan
+            </span>
             <span
-              className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                effectiveSub.effectiveStatus === SubscriptionStatus.ACTIVE
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-                  : effectiveSub.effectiveStatus === SubscriptionStatus.TRIALING
-                  ? "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+              className={`text-2xl font-black tracking-tight ${
+                effectiveSub.plan === SubscriptionPlan.ARRANQUE
+                  ? "bg-gradient-to-r from-slate-700 via-gray-500 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm font-extrabold"
+                  : effectiveSub.plan === SubscriptionPlan.CRECIMIENTO
+                  ? "bg-gradient-to-r from-zinc-900 via-slate-700 to-zinc-950 dark:from-white dark:via-zinc-200 dark:to-gray-400 bg-clip-text text-transparent font-extrabold"
+                  : "bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-900 dark:from-amber-200 dark:via-yellow-300 dark:to-amber-400 bg-clip-text text-transparent font-extrabold"
               }`}
             >
-              {effectiveSub.effectiveStatus === SubscriptionStatus.ACTIVE
+              {effectiveSub.plan === SubscriptionPlan.ARRANQUE
+                ? "Arranque"
+                : effectiveSub.plan === SubscriptionPlan.CRECIMIENTO
+                ? "Crecimiento"
+                : "Multi-Sucursal"}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-zinc-500 font-medium ml-1">
+              ({effectiveSub.effectiveStatus === SubscriptionStatus.ACTIVE
                 ? "Activo"
                 : effectiveSub.effectiveStatus === SubscriptionStatus.TRIALING
-                ? "Periodo de Prueba"
+                ? "Prueba"
                 : effectiveSub.effectiveStatus === SubscriptionStatus.GRACE_PERIOD
-                ? "Periodo de Gracia"
-                : "Suspendido"}
+                ? "Gracia"
+                : "Suspendido"})
             </span>
           </div>
 
@@ -227,7 +234,7 @@ export function BillingClientView({
         </div>
 
         {/* Card 2: Uso de Recursos */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-zinc-700">
           <div className="text-xs uppercase font-bold tracking-wider text-gray-400 mb-2">
             Uso de tu Catálogo
           </div>
@@ -251,7 +258,7 @@ export function BillingClientView({
         </div>
 
         {/* Card 3: Sucursales y Usuarios */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 border border-gray-100 dark:border-zinc-800 shadow-sm transition-all duration-300 hover:shadow-md hover:border-gray-300 dark:hover:border-zinc-700">
           <div className="text-xs uppercase font-bold tracking-wider text-gray-400 mb-2">
             Sucursales y Personal
           </div>
@@ -274,8 +281,8 @@ export function BillingClientView({
           </div>
           <p className="text-xs text-gray-500 dark:text-zinc-400 mt-3">
             {PLAN_CONFIG[effectiveSub.plan].hasDynamicAudits
-              ? "✅ Auditorías Dinámicas habilitadas"
-              : "❌ Auditorías Dinámicas bloqueadas"}
+              ? "Auditorías Dinámicas habilitadas"
+              : "Auditorías Dinámicas no disponibles"}
           </p>
         </div>
       </div>
@@ -327,10 +334,10 @@ export function BillingClientView({
           return (
             <div
               key={plan.id}
-              className={`rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 relative ${
+              className={`rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 relative group cursor-default ${
                 isFeatured
-                  ? "bg-black text-white dark:bg-white dark:text-black shadow-xl ring-2 ring-black dark:ring-white md:-translate-y-2"
-                  : "bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white shadow-sm hover:shadow-md"
+                  ? "bg-black text-white dark:bg-white dark:text-black shadow-xl ring-2 ring-black dark:ring-white md:-translate-y-2 hover:shadow-2xl hover:-translate-y-3"
+                  : "bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:border-gray-300 dark:hover:border-zinc-700"
               }`}
             >
               {plan.badge && (
