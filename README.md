@@ -260,6 +260,10 @@ To run maintenance and custom development tests on the database and utility feat
   ```bash
   pnpm --filter @shopli/db run db:test-pdf
   ```
+* **Multi-Tenant Client Data Isolation & Purge Suite:** Runs automated tests verifying that unlinking or switching companies completely purges local IndexedDB tables and prevents cross-tenant data leakage:
+  ```bash
+  pnpm --filter pos test src/__tests__/unit/tenant-isolation.test.ts
+  ```
 * **SaaS Subscriptions, Plan Limits, Resource Gating & POS 402 Suite:** Runs automated tests for lazy evaluation (`getEffectiveSubscription`), grace periods, atomic webhook synchronization, resource limits (`canAddProduct`, `canAddBranch`, `canAddUser`), module gating (`canAccessAnalytics`, `canAccessDynamicAudits`), strict downgrade eligibility, and POS endpoint HTTP 402 suspension gates:
   ```bash
   pnpm --filter admin test
