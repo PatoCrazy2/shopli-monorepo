@@ -9,6 +9,7 @@
         "db:push": "prisma db push",
         "db:migrate": "prisma migrate dev",
         "db:seed": "prisma db seed",
+        "db:grant-founder": "tsx scripts/grant-founder-plan.ts",
         "db:migrate-skus": "tsx scripts/migrate-skus.ts",
         "db:cleanup-companies": "tsx scripts/cleanup-test-companies.ts",
         "db:test-pdf": "tsx scripts/test-pdf.ts",
