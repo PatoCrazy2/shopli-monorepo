@@ -284,8 +284,43 @@ model Empresa {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
 
+  // Suscripciones y Facturación
+  // AVISO DE SEGURIDAD: NUNCA consultar subscriptionStatus directamente para control de acceso
+  // en tiempo de ejecución. Usar siempre getEffectiveSubscription(empresa).
+  plan                     SubscriptionPlan    @default(CRECIMIENTO)
+  subscriptionStatus       SubscriptionStatus  @default(TRIALING)
+  trialEndsAt              DateTime?
+  gracePeriodEndsAt        DateTime?
+  stripeCustomerId         String?             @unique
+  stripeSubscriptionId     String?             @unique
+  stripeSubscriptionItemId String?
+  stripePriceId            String?
+  currentPeriodEnd         DateTime?
+
   usuarios    User[]
   sucursales  Sucursal[]
   productos   Producto[]
   proveedores Proveedor[]
 }
+
+enum SubscriptionPlan {
+  ARRANQUE
+  CRECIMIENTO
+  MULTISUCURSAL
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  GRACE_PERIOD
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+model StripeWebhookEvent {
+  id        String   @id // evt_... de Stripe
+  type      String
+  createdAt DateTime @default(now())
+}
+
