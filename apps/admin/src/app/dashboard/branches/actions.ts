@@ -11,13 +11,15 @@ export async function createSucursal(formData: FormData) {
 
   const check = await canAddBranch(session.user.empresa_id);
   if (!check.allowed) {
-    throw new Error(check.reason || "Límite de sucursales alcanzado");
+    return { error: check.reason || "Límite de sucursales alcanzado" };
   }
 
   const nombre = formData.get("nombre") as string;
   const direccion = formData.get("direccion") as string;
 
-  if (!nombre) throw new Error("Nombre es requerido");
+  if (!nombre) {
+    return { error: "Nombre es requerido" };
+  }
 
   await db.sucursal.create({
     data: {
@@ -28,6 +30,7 @@ export async function createSucursal(formData: FormData) {
   });
 
   revalidatePath("/dashboard/branches");
+  return { success: true };
 }
 
 export async function updateSucursal(id: string, formData: FormData) {

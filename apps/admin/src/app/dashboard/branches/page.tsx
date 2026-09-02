@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getSucursales } from "./queries";
-import { createSucursal } from "./actions";
 import { DeactivateBranchButton } from "./_components/deactivate-branch-button";
+import { CreateBranchForm } from "./_components/create-branch-form";
 
 export default async function BranchesPage() {
   const session = await auth();
@@ -24,38 +24,7 @@ export default async function BranchesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Formulario de Alta */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm sticky top-24">
-            <h2 className="text-lg font-bold mb-4">Nueva Sucursal</h2>
-            <form action={createSucursal} className="space-y-4">
-              <div className="space-y-1">
-                <label htmlFor="nombre" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Nombre Comercial</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  id="nombre"
-                  required
-                  className="flex h-11 w-full rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black placeholder:text-zinc-300 transition-all"
-                  placeholder="Ej: ShopLI Central"
-                />
-              </div>
-              <div className="space-y-1">
-                <label htmlFor="direccion" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Ubicación</label>
-                <input
-                  type="text"
-                  name="direccion"
-                  id="direccion"
-                  className="flex h-11 w-full rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black placeholder:text-zinc-300 transition-all"
-                  placeholder="Calle, Ciudad, Estado"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full h-11 bg-black text-white rounded-lg font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg active:scale-[0.98] mt-2"
-              >
-                Abrir Punto de Venta
-              </button>
-            </form>
-          </div>
+          <CreateBranchForm />
         </div>
 
         {/* Listado de Sucursales Activas */}
