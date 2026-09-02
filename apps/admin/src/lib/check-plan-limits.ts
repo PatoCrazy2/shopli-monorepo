@@ -165,12 +165,13 @@ export async function canAccessDynamicAudits(empresaId: string): Promise<boolean
  */
 export async function validateDowngradeEligibility(
   empresaId: string,
-  targetPlan: SubscriptionPlan
+  targetPlan: SubscriptionPlan,
+  client: any = db
 ): Promise<{ allowed: boolean; reason?: string }> {
   const targetConfig = PLAN_CONFIG[targetPlan];
 
   // 1. Validar sucursales activas
-  const activeBranches = await db.sucursal.count({
+  const activeBranches = await client.sucursal.count({
     where: { empresa_id: empresaId, activo: true },
   });
   if (activeBranches > targetConfig.maxBranches) {
@@ -182,7 +183,7 @@ export async function validateDowngradeEligibility(
 
   // 2. Validar productos en catálogo
   if (targetConfig.maxProducts !== Infinity) {
-    const productCount = await db.producto.count({
+    const productCount = await client.producto.count({
       where: { empresa_id: empresaId, parent_id: null },
     });
     if (productCount > targetConfig.maxProducts) {
@@ -195,7 +196,7 @@ export async function validateDowngradeEligibility(
 
   // 3. Validar usuarios activos
   if (targetConfig.maxUsers !== Infinity) {
-    const activeUsers = await db.user.count({
+    const activeUsers = await client.user.count({
       where: { empresa_id: empresaId, active: true },
     });
     if (activeUsers > targetConfig.maxUsers) {
