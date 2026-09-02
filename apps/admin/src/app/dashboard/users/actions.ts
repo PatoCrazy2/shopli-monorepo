@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { canAddUser } from "@/lib/check-plan-limits";
 
 const userSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -35,6 +36,12 @@ export async function createUser(formData: FormData) {
   const data = parseResult.data;
 
   try {
+    // 0. Validar límite de usuarios de acuerdo al plan de suscripción
+    const checkLimit = await canAddUser(session.user.empresa_id);
+    if (!checkLimit.allowed) {
+      return { error: checkLimit.reason };
+    }
+
     // 1. Validar que el PIN no esté en uso por otro empleado activo en la misma empresa
     const activeUsers = await db.user.findMany({
       where: {

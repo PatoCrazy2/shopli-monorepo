@@ -1,10 +1,22 @@
 import { db, DynamicAudit, DynamicAuditItem, Producto } from "@shopli/db";
 import { redirect } from "next/navigation";
 import AuditReportClient from "./AuditReportClient";
+import { auth } from "@/lib/auth";
+import { canAccessDynamicAudits } from "@/lib/check-plan-limits";
+import { UpgradeGateBanner } from "@/components/UpgradeGateBanner";
 
 export const dynamic = "force-dynamic";
 
 export default async function AuditReportPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.empresa_id) redirect("/login");
+  const empresaId = session.user.empresa_id;
+
+  const hasAuditsAccess = await canAccessDynamicAudits(empresaId);
+  if (!hasAuditsAccess) {
+    redirect("/dashboard/audits");
+  }
+
   const { id } = await params;
 
   const audit = await db.dynamicAudit.findUnique({

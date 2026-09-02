@@ -4,6 +4,7 @@ import { db } from "@shopli/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { canAddProduct } from "@/lib/check-plan-limits";
 
 const productSchema = z.object({
   id: z.string().optional().or(z.literal("new")),
@@ -201,6 +202,12 @@ export async function upsertProduct(formData: FormData) {
         }
       }
     } else {
+      // Validar candado de plan de suscripción antes de crear un nuevo producto
+      const checkLimit = await canAddProduct(empresaId);
+      if (!checkLimit.allowed) {
+        return { error: checkLimit.reason };
+      }
+
       // Crear Padre
       const parentSku = data.codigo_interno?.trim() || (await generateUniqueSKU());
       const newProduct = await db.producto.create({
@@ -396,6 +403,12 @@ export async function importCatalogAction(products: any[]) {
           });
           results.updated++;
         } else {
+          // Validar candado de plan antes de dar de alta nuevo producto
+          const checkLimit = await canAddProduct(empresaId);
+          if (!checkLimit.allowed) {
+            throw new Error(checkLimit.reason || "Límite de productos alcanzado.");
+          }
+
           const newProduct = await db.producto.create({
             data: {
               ...productData,

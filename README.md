@@ -260,7 +260,7 @@ To run maintenance and custom development tests on the database and utility feat
   ```bash
   pnpm --filter @shopli/db run db:test-pdf
   ```
-* **SaaS Subscriptions & Plan Limits Suite:** Runs automated tests for lazy evaluation (`getEffectiveSubscription`), grace periods, atomic webhook synchronization, and strict downgrade eligibility:
+* **SaaS Subscriptions, Plan Limits & Resource Gating Suite:** Runs automated tests for lazy evaluation (`getEffectiveSubscription`), grace periods, atomic webhook synchronization, resource limits (`canAddProduct`, `canAddBranch`, `canAddUser`), module gating (`canAccessAnalytics`, `canAccessDynamicAudits`), and strict downgrade eligibility:
   ```bash
   pnpm --filter admin test
   ```

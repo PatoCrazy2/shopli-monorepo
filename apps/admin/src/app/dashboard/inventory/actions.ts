@@ -3,6 +3,7 @@
 import { db } from "@shopli/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { canAccessDynamicAudits } from "@/lib/check-plan-limits";
 
 export async function adjustStock(productId: string, amountToAdd: number, reason: string, sucursalId: string) {
   const session = await auth();
@@ -198,6 +199,11 @@ export async function createDynamicAudit(sucursalId: string) {
   const empresaId = session.user.empresa_id;
 
   try {
+    const hasAudits = await canAccessDynamicAudits(empresaId);
+    if (!hasAudits) {
+      return { error: "Tu plan no incluye Auditorías Dinámicas. Actualiza al Plan Crecimiento." };
+    }
+
     const sucursal = await db.sucursal.findUnique({
       where: { id: sucursalId },
       select: { empresa_id: true }
@@ -260,6 +266,11 @@ export async function applyAuditAdjustments(auditId: string) {
   const empresaId = session.user.empresa_id;
 
   try {
+    const hasAudits = await canAccessDynamicAudits(empresaId);
+    if (!hasAudits) {
+      return { error: "Tu plan no incluye Auditorías Dinámicas. Actualiza al Plan Crecimiento." };
+    }
+
     const audit = await db.dynamicAudit.findUnique({
       where: { id: auditId },
       include: { 
