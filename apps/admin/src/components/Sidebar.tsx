@@ -17,6 +17,7 @@ const CloseIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" heig
 const LogOutIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>);
 const MapPinIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>);
 const ClipboardIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>);
+const CreditCardIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>);
 
 const NAV_LINKS = [
     { name: "Inicio", href: "/dashboard/inicio", icon: HomeIcon },
@@ -29,9 +30,10 @@ const NAV_LINKS = [
     { name: "Auditorías", href: "/dashboard/audits", icon: ClipboardIcon },
     { name: "Gastos", href: "/dashboard/gastos", icon: ReceiptIcon },
     { name: "Analítica", href: "/dashboard/analytics", icon: BarChartIcon },
+    { name: "Suscripción", href: "/dashboard/billing", icon: CreditCardIcon, ownerOnly: true },
 ];
 
-export function Sidebar({ user }: { user: { name?: string | null; role?: string } }) {
+export function Sidebar({ user }: { user: { name?: string | null; role?: string; planBadge?: string | null } }) {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -72,6 +74,9 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string 
                 <div className="flex-1 overflow-y-auto px-4 py-6 mt-12 md:mt-2 space-y-1">
                     <nav className="flex flex-col space-y-1">
                         {NAV_LINKS.map((link) => {
+                            if ((link as any).ownerOnly && user.role !== "DUENO") {
+                                return null;
+                            }
                             const Icon = link.icon;
                             // Check if pathname starts with the link's href to activate properly
                             const isActive = pathname.startsWith(link.href);
@@ -103,9 +108,16 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string 
                         <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                             {user.name || "Usuario"}
                         </span>
-                        <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-zinc-800 py-0.5 px-2 rounded-full w-max">
-                            {user.role}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-zinc-800 py-0.5 px-2 rounded-full w-max">
+                                {user.role}
+                            </span>
+                            {user.planBadge && (
+                                <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 py-0.5 px-2 rounded-full w-max">
+                                    {user.planBadge}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <button
                         onClick={() => signOut()}
