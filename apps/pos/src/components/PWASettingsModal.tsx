@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Wifi, WifiOff, RefreshCw, LogOut, Trash2 } from 'lucide-react';
-import { db } from '../lib/db';
+import { db, purgeAllTenantData } from '../lib/db';
 
 interface PWASettingsModalProps {
   isOpen: boolean;
@@ -63,9 +63,10 @@ export function PWASettingsModal({ isOpen, onClose }: PWASettingsModalProps) {
   // 2. Desvincular dispositivo
   const handleUnlink = async () => {
     try {
-      await db.meta.delete('empresaId');
-      localStorage.removeItem('auth_user');
-      localStorage.removeItem('pos_shift');
+      // Purgar exhaustivamente todos los datos del tenant anterior en IndexedDB
+      await purgeAllTenantData();
+      localStorage.clear();
+      sessionStorage.clear();
       window.location.reload();
     } catch (error) {
       console.error('Error al desvincular dispositivo:', error);
