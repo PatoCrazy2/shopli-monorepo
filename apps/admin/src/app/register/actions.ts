@@ -4,11 +4,14 @@ import { db, Role, SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 
+import { verifyTurnstileToken } from "@/lib/turnstile";
+
 const registerSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
   email: z.string().email("Correo electrónico inválido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  password: z.string().min(10, "La contraseña debe tener al menos 10 caracteres"),
   companyName: z.string().min(1, "El nombre de la empresa es requerido"),
+  turnstileToken: z.string().optional().nullable(),
 });
 
 export async function registerCompany(formData: FormData) {
@@ -17,16 +20,23 @@ export async function registerCompany(formData: FormData) {
     email: formData.get("email"),
     password: formData.get("password"),
     companyName: formData.get("companyName"),
+    turnstileToken: formData.get("turnstileToken"),
   });
 
   if (!parseResult.success) {
     return { 
-      error: "Datos inválidos", 
+      error: parseResult.error.issues[0]?.message || "Datos inválidos", 
       details: parseResult.error.flatten().fieldErrors 
     };
   }
 
-  const { name, email, password, companyName } = parseResult.data;
+  const { name, email, password, companyName, turnstileToken } = parseResult.data;
+
+  // Verificación de Turnstile
+  const isCaptchaValid = await verifyTurnstileToken(turnstileToken);
+  if (!isCaptchaValid) {
+    return { error: "Verificación de seguridad fallida (Captcha). Por favor recarga e intenta de nuevo." };
+  }
 
   try {
     // 1. Verificar si el email ya existe

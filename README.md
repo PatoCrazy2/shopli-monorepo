@@ -198,7 +198,9 @@ Configure environment files:
 DATABASE_URL="postgresql://shopli:shopli@localhost:5432/shoplidb"
 NEXTAUTH_SECRET="development-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
-POS_SYNC_SECRET="development-sync-handshake"
+# Token independiente de sincronización POS (JWT HMAC-SHA256)
+SYNC_JWT_SECRET="development-sync-jwt-secret-minimum-32-characters"
+ALLOWED_POS_ORIGINS="http://localhost:5173"
 # Stripe & SaaS Subscriptions (Test Mode)
 STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
@@ -207,7 +209,8 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 **`apps/pos/.env`**
 ```env
 VITE_API_BASE_URL="http://localhost:3000"
-VITE_SYNC_SECRET="development-sync-handshake"
+# NOTA: apps/pos ya no requiere secretos estáticos de sincronización.
+# El terminal recibe un token firmado en el login y lo almacena en Dexie de forma segura.
 ```
 
 ### 3. Generate Database Client & Seeds

@@ -119,54 +119,61 @@ const pushSyncSchema = z.object({
   ).default([])
 });
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, PATCH, DELETE",
-      "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-pos-sync-secret",
-    },
-  });
+import { getCorsHeaders, handleCorsPreflight } from "@/lib/cors";
+import { verifyPosSyncToken } from "@/lib/pos-token";
+
+export async function OPTIONS(req: Request) {
+  return handleCorsPreflight(req);
 }
 
 export async function POST(req: Request) {
+  const corsHeaders = getCorsHeaders(req);
+  const responseHeaders = new Headers({
+    ...corsHeaders,
+    "Cache-Control": "no-store",
+  });
+
   try {
-    // Validación de autenticación: acepta secret del POS via header O query param
-    const validPosSecret = process.env.POS_SYNC_SECRET || process.env.VITE_SYNC_SECRET;
-    const posSecretHeader = req.headers.get("x-pos-sync-secret");
-    
-    // Fallback URL parse explicitly for secret query param if preferred over header
+    // 1. Extraer y verificar Token de Sincronización Bearer
+    const authHeader = req.headers.get("authorization");
+    let syncPayload = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7).trim();
+      syncPayload = verifyPosSyncToken(token);
+    }
+
+    // Bypass exclusivo para CI en modo test con cabecera de control
+    const isTestBypass =
+      process.env.NODE_ENV === "test" && req.headers.get("x-test-bypass") === "true";
+
     const { searchParams } = new URL(req.url);
-    const posSecretQuery = searchParams.get("secret");
-    const empresaId = searchParams.get("empresaId");
+    let empresaId: string | null = null;
 
-    const isPosAuthorized =
-      validPosSecret &&
-      (posSecretHeader === validPosSecret || posSecretQuery === validPosSecret);
-
-    if (!isPosAuthorized) {
-      // Fallback: verificar sesión de NextAuth (acceso desde el admin dashboard local)
+    if (syncPayload) {
+      empresaId = syncPayload.empresa_id;
+    } else if (isTestBypass) {
+      empresaId = searchParams.get("empresaId");
+    } else {
       const session = await auth();
-      const isAdminAuthorized = !!session?.user;
-      
-      // Bypass para scripts de test / integración 
-      const isTestBypass = process.env.NODE_ENV === 'test' && req.headers.get("x-test-bypass") === "true";
-
-      if (!isAdminAuthorized && !isTestBypass) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (session?.user?.empresa_id) {
+        empresaId = session.user.empresa_id;
       }
     }
 
     if (!empresaId) {
-      return NextResponse.json({ error: "Falta empresaId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No autorizado. Token de sincronización inválido o expirado." },
+        { status: 401, headers: responseHeaders }
+      );
     }
 
-    // 0. Validación de Suscripción SaaS (Lazy Evaluation)
+    // 2. Consulta y validación de la Empresa (tokenVersion y Suscripción SaaS)
     const empresa = await db.empresa.findUnique({
       where: { id: empresaId },
       select: {
         id: true,
+        tokenVersion: true,
         plan: true,
         subscriptionStatus: true,
         trialEndsAt: true,
@@ -176,9 +183,25 @@ export async function POST(req: Request) {
     });
 
     if (!empresa) {
-      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Empresa no encontrada" },
+        { status: 404, headers: responseHeaders }
+      );
     }
 
+    // 3. Validar tokenVersion contra la BD si vino por token POS
+    if (syncPayload && syncPayload.tokenVersion !== empresa.tokenVersion) {
+      return NextResponse.json(
+        {
+          error: "TOKEN_REVOKED",
+          message:
+            "El token del dispositivo ha sido revocado o la sesión fue reiniciada. Por favor vuelva a vincular el terminal.",
+        },
+        { status: 401, headers: responseHeaders }
+      );
+    }
+
+    // 4. Validación de Suscripción SaaS
     const effectiveSub = getEffectiveSubscription(empresa);
     if (
       effectiveSub.effectiveStatus === SubscriptionStatus.PAST_DUE ||
@@ -187,9 +210,10 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: "SUBSCRIPTION_SUSPENDED",
-          message: "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
+          message:
+            "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
         },
-        { status: 402 }
+        { status: 402, headers: responseHeaders }
       );
     }
 
@@ -729,13 +753,13 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       procesados
-    } satisfies PushSyncResponse, { status: 200 });
+    } satisfies PushSyncResponse, { status: 200, headers: responseHeaders });
 
   } catch (error) {
     if (error instanceof Error && error.message.includes("Record to update not found")) {
       return NextResponse.json(
         { error: "Transacción abortada: Inconsistencia referencial (por ej. Inventario no encontrado)", details: error.message },
-        { status: 409 }
+        { status: 409, headers: responseHeaders }
       );
     }
 
@@ -743,14 +767,14 @@ export async function POST(req: Request) {
     if (error instanceof Error && (error as any).statusCode === 422) {
       return NextResponse.json(
         { error: "Validación de precio fallida", details: error.message },
-        { status: 422 }
+        { status: 422, headers: responseHeaders }
       );
     }
 
     console.error("Error in POST /api/pos/sync/push:", error);
     return NextResponse.json(
       { error: String(error) },
-      { status: 500 }
+      { status: 500, headers: responseHeaders }
     );
   }
 }

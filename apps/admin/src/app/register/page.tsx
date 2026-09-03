@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { registerCompany } from "./actions";
 
+import Script from "next/script";
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -12,8 +14,18 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  // Registrar callback global de Turnstile
+  if (typeof window !== "undefined") {
+    (window as any).onRegisterTurnstileCallback = (token: string) => {
+      setTurnstileToken(token);
+    };
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +36,9 @@ export default function RegisterPage() {
     formData.append("email", email);
     formData.append("password", password);
     formData.append("companyName", companyName);
+    if (turnstileToken) {
+      formData.append("turnstileToken", turnstileToken);
+    }
 
     startTransition(async () => {
       const result = await registerCompany(formData);
@@ -38,6 +53,13 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen grid items-center justify-center bg-gray-50 selection:bg-black selection:text-white font-sans p-4">
+      {siteKey && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+        />
+      )}
       <div className="w-full max-w-md bg-white rounded-2xl p-8 md:p-10 shadow-lg border border-gray-100 transition-shadow duration-300 hover:shadow-xl relative overflow-hidden">
         {/* Decorative premium accent */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-black via-gray-700 to-black"></div>
@@ -103,19 +125,30 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
-              Contraseña
+              Contraseña (mínimo 10 caracteres)
             </label>
             <input
               id="password"
               type="password"
+              minLength={10}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isPending}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50"
-              placeholder="••••••••"
+              placeholder="••••••••••"
             />
           </div>
+
+          {siteKey && (
+            <div className="flex justify-center my-2">
+              <div
+                className="cf-turnstile"
+                data-sitekey={siteKey}
+                data-callback="onRegisterTurnstileCallback"
+              />
+            </div>
+          )}
 
           {error && (
             <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-100 flex items-center gap-2 animate-in fade-in duration-300">
