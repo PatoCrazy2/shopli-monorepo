@@ -40,7 +40,14 @@ export async function pullFromCloud(): Promise<SyncResult> {
         method: 'GET',
         params // Pass params to apiClient
       });
+      // Si la petición tuvo éxito, aseguramos limpiar cualquier bandera previa de suspensión
+      await db.meta.put({ key: 'subscriptionSuspended', value: false });
     } catch (error: any) {
+      if (error?.status === 402 || error?.isSubscriptionSuspended) {
+        console.warn('⚠️ Suscripción de empresa suspendida (HTTP 402). Activando pantalla de bloqueo.');
+        await db.meta.put({ key: 'subscriptionSuspended', value: true });
+        return { source: 'cache' };
+      }
       // Offline o error de servidor (500)
       console.warn('Fallo la conexión con el servidor al sincronizar en el POS:', error.status || error);
       return { source: 'cache' };

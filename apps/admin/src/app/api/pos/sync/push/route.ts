@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { db, SyncStatus, EstadoTurno, EstadoVenta, GastoCategoria } from "@shopli/db";
+import { db, SyncStatus, EstadoTurno, EstadoVenta, GastoCategoria, SubscriptionStatus } from "@shopli/db";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { getEffectiveSubscription } from "@/lib/subscription-plans";
 
 // ==========================================
 // Utilidades Financieras (mirror del cliente)
@@ -159,6 +160,37 @@ export async function POST(req: Request) {
 
     if (!empresaId) {
       return NextResponse.json({ error: "Falta empresaId" }, { status: 400 });
+    }
+
+    // 0. Validación de Suscripción SaaS (Lazy Evaluation)
+    const empresa = await db.empresa.findUnique({
+      where: { id: empresaId },
+      select: {
+        id: true,
+        plan: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        gracePeriodEndsAt: true,
+        stripeSubscriptionId: true,
+      },
+    });
+
+    if (!empresa) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+    }
+
+    const effectiveSub = getEffectiveSubscription(empresa);
+    if (
+      effectiveSub.effectiveStatus === SubscriptionStatus.PAST_DUE ||
+      effectiveSub.effectiveStatus === SubscriptionStatus.UNPAID
+    ) {
+      return NextResponse.json(
+        {
+          error: "SUBSCRIPTION_SUSPENDED",
+          message: "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
+        },
+        { status: 402 }
+      );
     }
 
     const body = await req.json().catch(() => ({}));

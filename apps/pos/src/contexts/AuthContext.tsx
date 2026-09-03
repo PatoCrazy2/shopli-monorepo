@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
-import { db } from '../lib/db';
+import { db, purgeAllTenantData } from '../lib/db';
 import bcrypt from 'bcryptjs';
 import { pullFromCloud, pushToCloud } from '../lib/sync';
 import { apiClient } from '../lib/api-client';
@@ -132,11 +132,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     body: { email, pin }
                 });
                 
+                // Blindaje Multi-Tenant: Si el dispositivo tenía datos de otra empresa, purgamos todo antes de registrar la nueva
+                const existingEmpresaRecord = await db.meta.get('empresaId');
+                if (existingEmpresaRecord?.value !== data.empresa_id) {
+                    await purgeAllTenantData();
+                }
+
                 // Guardar empresaId y registrar verificación online
                 await db.meta.put({ key: 'empresaId', value: data.empresa_id });
                 await db.meta.put({ key: 'lastOnlineVerification', value: new Date().toISOString() });
 
-                // Hacemos el pull para descargar el catálogo de esa empresa
+                // Hacemos el pull limpio para descargar el catálogo de esa empresa
                 await pullFromCloud();
 
                 // Ahora buscamos al usuario localmente ya guardado en IndexedDB

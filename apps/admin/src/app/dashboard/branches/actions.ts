@@ -3,15 +3,23 @@
 import { db } from "@shopli/db";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { canAddBranch } from "@/lib/check-plan-limits";
 
 export async function createSucursal(formData: FormData) {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
 
+  const check = await canAddBranch(session.user.empresa_id);
+  if (!check.allowed) {
+    return { error: check.reason || "Límite de sucursales alcanzado" };
+  }
+
   const nombre = formData.get("nombre") as string;
   const direccion = formData.get("direccion") as string;
 
-  if (!nombre) throw new Error("Nombre es requerido");
+  if (!nombre) {
+    return { error: "Nombre es requerido" };
+  }
 
   await db.sucursal.create({
     data: {
@@ -22,6 +30,7 @@ export async function createSucursal(formData: FormData) {
   });
 
   revalidatePath("/dashboard/branches");
+  return { success: true };
 }
 
 export async function updateSucursal(id: string, formData: FormData) {

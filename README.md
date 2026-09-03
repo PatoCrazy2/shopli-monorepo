@@ -199,6 +199,9 @@ DATABASE_URL="postgresql://shopli:shopli@localhost:5432/shoplidb"
 NEXTAUTH_SECRET="development-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 POS_SYNC_SECRET="development-sync-handshake"
+# Stripe & SaaS Subscriptions (Test Mode)
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
 
 **`apps/pos/.env`**
@@ -256,6 +259,14 @@ To run maintenance and custom development tests on the database and utility feat
 * **PDF Label Generator Layout Test:** Runs a local dry-run generation of PDF labels (Avery 3x10 grid and Thermal rolls) using mock data, saving them locally as `test-carta.pdf` and `test-termico.pdf` (both are git-ignored):
   ```bash
   pnpm --filter @shopli/db run db:test-pdf
+  ```
+* **Multi-Tenant Client Data Isolation & Purge Suite:** Runs automated tests verifying that unlinking or switching companies completely purges local IndexedDB tables and prevents cross-tenant data leakage:
+  ```bash
+  pnpm --filter pos test src/__tests__/unit/tenant-isolation.test.ts
+  ```
+* **SaaS Subscriptions, Plan Limits, Resource Gating & POS 402 Suite:** Runs automated tests for lazy evaluation (`getEffectiveSubscription`), grace periods, atomic webhook synchronization, resource limits (`canAddProduct`, `canAddBranch`, `canAddUser`), module gating (`canAccessAnalytics`, `canAccessDynamicAudits`), strict downgrade eligibility, and POS endpoint HTTP 402 suspension gates:
+  ```bash
+  pnpm --filter admin test
   ```
 
 ---

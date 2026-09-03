@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ClipboardCheck, ArrowRight, Calendar, MapPin, CheckCircle2, Clock, Filter } from "lucide-react";
 import { SucursalFilter } from "./SucursalFilter";
+import { canAccessDynamicAudits } from "@/lib/check-plan-limits";
+import { UpgradeGateBanner } from "@/components/UpgradeGateBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,35 @@ export default async function AuditsListPage({
   const session = await auth();
   if (!session?.user?.empresa_id) redirect("/login");
   const empresaId = session.user.empresa_id;
+
+  const hasAuditsAccess = await canAccessDynamicAudits(empresaId);
+
+  if (!hasAuditsAccess) {
+    return (
+      <div className="flex-1 w-full flex flex-col p-8 bg-zinc-50 dark:bg-black min-h-screen space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Auditorías Dinámicas</h1>
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+              Historial de conteos ciegos realizados desde el POS y estado de conciliación.
+            </p>
+          </div>
+        </div>
+
+        <UpgradeGateBanner
+          title="Auditorías Dinámicas de Inventario"
+          description="Controla mermas y previene robos ejecutando conteos ciegos en el POS con conciliación automática en tiempo real."
+          featureList={[
+            "Conteos ciegos en POS sin revelar el stock del sistema",
+            "Conciliación de diferencias con registro automático de ajustes",
+            "Historial de discrepancias por producto y sucursal",
+            "Mapeo de pérdidas monetarias por faltantes",
+          ]}
+          requiredPlanName="Plan Crecimiento"
+        />
+      </div>
+    );
+  }
 
   const resolvedSearchParams = await searchParams;
   const sucursalId = resolvedSearchParams.sucursalId;

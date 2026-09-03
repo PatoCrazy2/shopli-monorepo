@@ -170,19 +170,39 @@ export class ShopLIPOSDatabase extends Dexie {
 export const db = new ShopLIPOSDatabase();
 
 /**
- * Limpia completamente la base de datos local.
- * Útil para forzar un pull fresco desde la nube.
+ * Purga absoluta de todos los datos locales del tenant.
+ * Limpia todas y cada una de las tablas en Dexie y la metadata completa.
+ * Garantiza cero fuga de datos al desvincular o cambiar de empresa.
  */
-export async function clearLocalData(): Promise<void> {
-  // Dexie's typed API accepts at most 6 tables per transaction.
-  // We clear meta outside so the transaction stays within limits.
-  await db.transaction('rw', db.users, db.branches, db.products, db.inventory, async () => {
+export async function purgeAllTenantData(): Promise<void> {
+  // Dexie permite hasta 6 tablas por transacción tipada, por lo que agrupamos por lotes seguros.
+  await db.transaction('rw', [db.users, db.branches, db.products, db.inventory, db.cart, db.turnos], async () => {
     await db.users.clear();
     await db.branches.clear();
     await db.products.clear();
     await db.inventory.clear();
+    await db.cart.clear();
+    await db.turnos.clear();
   });
+
+  await db.transaction('rw', [db.sales, db.sale_details, db.audits, db.gastos, db.dynamicAudits, db.dynamicAuditItems], async () => {
+    await db.sales.clear();
+    await db.sale_details.clear();
+    await db.audits.clear();
+    await db.gastos.clear();
+    await db.dynamicAudits.clear();
+    await db.dynamicAuditItems.clear();
+  });
+
   await db.meta.clear();
+}
+
+/**
+ * Limpia completamente la base de datos local.
+ * Útil para forzar un pull fresco desde la nube.
+ */
+export async function clearLocalData(): Promise<void> {
+  await purgeAllTenantData();
 }
 
 /**
