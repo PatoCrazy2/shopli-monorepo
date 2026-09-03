@@ -20,15 +20,24 @@ describe('pushToCloud integration', () => {
     });
     vi.stubGlobal('navigator', { onLine: true });
 
-    // Ensure test Empresa exists
-    const testEmpresa = await prisma.empresa.upsert({
-      where: { id: 'test-empresa-id' },
-      update: {},
-      create: {
-        id: 'test-empresa-id',
-        nombre: 'Test Empresa'
+    // Ensure test Empresa exists safely without concurrency race conditions
+    let testEmpresa = await prisma.empresa.findUnique({ where: { id: 'test-empresa-id' } });
+    if (!testEmpresa) {
+      try {
+        testEmpresa = await prisma.empresa.create({
+          data: {
+            id: 'test-empresa-id',
+            nombre: 'Test Empresa',
+          }
+        });
+      } catch (_) {
+        testEmpresa = await prisma.empresa.findUnique({ where: { id: 'test-empresa-id' } });
       }
-    });
+    }
+
+    if (!testEmpresa) {
+      throw new Error('No se pudo inicializar la empresa de prueba');
+    }
 
     // Configurar Dexie con la empresa para permitir sync
     await db.meta.put({ key: 'empresaId', value: testEmpresa.id });

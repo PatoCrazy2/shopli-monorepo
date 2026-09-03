@@ -59,6 +59,9 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         }
       }
+    },
+    test: {
+      fileParallelism: false,
     }
   };
 })
