@@ -14,7 +14,10 @@ export function generateTestPosToken(payload: {
   role: string;
   tokenVersion: number;
 }): string {
-  const secret = process.env.SYNC_JWT_SECRET || 'ci-sync-jwt-secret-test-32-chars-min';
+  const secret =
+    process.env.SYNC_JWT_SECRET ||
+    process.env.POS_SYNC_SECRET ||
+    'shopli-pos-sync-secret-2026';
   const header = { alg: 'HS256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
   const fullPayload = {
