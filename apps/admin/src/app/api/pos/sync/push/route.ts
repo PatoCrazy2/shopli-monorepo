@@ -143,16 +143,26 @@ export async function POST(req: Request) {
       syncPayload = verifyPosSyncToken(token);
     }
 
+    const { searchParams } = new URL(req.url);
+
+    // Compatibilidad Transicional: Soporte temporal para el cliente POS en producción
+    // que aún envía x-pos-sync-secret mientras sus cajeros se actualizan a la nueva versión
+    const legacySecretHeader = req.headers.get("x-pos-sync-secret");
+    const legacySecretQuery = searchParams.get("secret");
+    const configuredLegacySecret = process.env.POS_SYNC_SECRET;
+    const isLegacySecretValid =
+      configuredLegacySecret &&
+      (legacySecretHeader === configuredLegacySecret || legacySecretQuery === configuredLegacySecret);
+
     // Bypass exclusivo para CI en modo test con cabecera de control
     const isTestBypass =
       process.env.NODE_ENV === "test" && req.headers.get("x-test-bypass") === "true";
 
-    const { searchParams } = new URL(req.url);
     let empresaId: string | null = null;
 
     if (syncPayload) {
       empresaId = syncPayload.empresa_id;
-    } else if (isTestBypass) {
+    } else if (isLegacySecretValid || isTestBypass) {
       empresaId = searchParams.get("empresaId");
     } else {
       const session = await auth();
@@ -163,7 +173,7 @@ export async function POST(req: Request) {
 
     if (!empresaId) {
       return NextResponse.json(
-        { error: "No autorizado. Token de sincronización inválido o expirado." },
+        { error: "No autorizado. Token de sincronización inválido o ausente." },
         { status: 401, headers: responseHeaders }
       );
     }
