@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
 import { PLAN_CONFIG, EffectiveSubscriptionResult } from "@/lib/subscription-plans";
-import { Check, ShieldCheck, Sparkles, AlertCircle, CreditCard, ExternalLink, Loader2, ArrowRight } from "lucide-react";
+import { Check, ShieldCheck, AlertCircle, CreditCard, ExternalLink, Loader2, ArrowRight, Layers, PartyPopper, Sparkles } from "lucide-react";
 
 interface BillingClientViewProps {
   empresa: {
@@ -32,9 +32,7 @@ export function BillingClientView({
   const [loadingPlan, setLoadingPlan] = useState<SubscriptionPlan | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(
-    initialSuccess ? "¡Suscripción confirmada exitosamente! Tu plan ha sido activado." : null
-  );
+  const [successModalOpen, setSuccessModalOpen] = useState<boolean>(initialSuccess);
 
   const [downgradeModal, setDowngradeModal] = useState<{
     isOpen: boolean;
@@ -50,7 +48,6 @@ export function BillingClientView({
 
   const handleSelectPlan = async (planKey: SubscriptionPlan) => {
     setErrorMsg(null);
-    setSuccessMsg(null);
 
     // Si ya tiene este plan activo
     if (effectiveSub.plan === planKey && hasActiveStripeSub && effectiveSub.effectiveStatus === SubscriptionStatus.ACTIVE) {
@@ -85,7 +82,7 @@ export function BillingClientView({
           return;
         }
 
-        setSuccessMsg(data.message || "Plan actualizado correctamente.");
+        setSuccessModalOpen(true);
         window.location.reload();
       } else {
         // Primer checkout (/api/stripe/checkout)
@@ -169,14 +166,7 @@ export function BillingClientView({
         )}
       </div>
 
-      {/* Alertas de Notificación */}
-      {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 flex items-center gap-3 text-sm font-medium">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
-
+      {/* Alerta de Error */}
       {errorMsg && (
         <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 flex items-center gap-3 text-sm font-medium">
           <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
@@ -290,28 +280,34 @@ export function BillingClientView({
         </div>
       </div>
 
-      {/* Botón para Mostrar / Mejorar Planes si ya tiene un plan activo */}
+      {/* Botón Glassmorphism para Mostrar / Mejorar Planes si ya tiene un plan activo */}
       {isPlanActive && !showPlans && (
-        <div className="flex flex-col sm:flex-row items-center justify-between bg-gradient-to-r from-zinc-900 via-zinc-800 to-black text-white p-6 rounded-3xl shadow-xl gap-4">
-          <div className="space-y-1 text-center sm:text-left">
-            <h3 className="text-lg font-bold flex items-center justify-center sm:justify-start gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              ¿Deseas cambiar o mejorar tu suscripción?
-            </h3>
-            <p className="text-zinc-400 text-xs sm:text-sm">
-              Puedes explorar nuestros otros planes o cambiar el ciclo de facturación en cualquier momento.
-            </p>
+        <div className="relative overflow-hidden rounded-3xl p-[1px] bg-gradient-to-r from-emerald-500/30 via-zinc-400/20 to-amber-500/30 shadow-xl transition-all duration-300 hover:shadow-2xl group">
+          <div className="relative flex flex-col sm:flex-row items-center justify-between gap-6 p-7 rounded-[23px] bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800/60">
+            <div className="flex items-center gap-4 text-center sm:text-left">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/20 dark:from-emerald-500/20 dark:to-teal-500/30 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                <Layers className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                  ¿Deseas escalar tu negocio o cambiar tu plan?
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                  Explora las prestaciones de otros planes y administra tu ciclo de facturación mensual o anual.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowPlans(true)}
+              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-zinc-900 to-black dark:from-white dark:to-zinc-200 text-white dark:text-black font-extrabold text-xs tracking-wide uppercase hover:opacity-90 active:scale-95 transition-all shadow-md shrink-0 cursor-pointer"
+            >
+              Mejorar Plan
+            </button>
           </div>
-          <button
-            onClick={() => setShowPlans(true)}
-            className="px-6 py-3 bg-white text-black font-extrabold text-sm rounded-xl hover:bg-zinc-100 active:scale-95 transition-all shadow-lg shrink-0 cursor-pointer"
-          >
-            Ver y Mejorar Planes
-          </button>
         </div>
       )}
 
-      {/* Sección de Selección de Planes (Visible si no tiene plan activo o si presionó Ver y Mejorar Planes) */}
+      {/* Sección de Selección de Planes (Visible si no tiene plan activo o si presionó Mejorar Plan) */}
       {showPlans && (
         <div className="space-y-8 animate-in fade-in duration-300">
           {isPlanActive && (
@@ -566,6 +562,46 @@ export function BillingClientView({
           );
         })}
       </div>
+        </div>
+      )}
+
+      {/* Modal Celebratorio de Lujo al volver de Stripe */}
+      {successModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="relative overflow-hidden bg-zinc-950 max-w-md w-full rounded-3xl p-8 sm:p-10 border border-zinc-800/80 shadow-[0_0_50px_-12px_rgba(16,185,129,0.25)] text-center space-y-6 animate-in zoom-in-95 duration-300">
+            {/* Glow ambiental esmeralda */}
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Círculo verde grande con palomita animada */}
+            <div className="relative mx-auto w-24 h-24 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 p-[2px] shadow-2xl shadow-emerald-500/30 flex items-center justify-center animate-in zoom-in duration-500">
+              <div className="w-full h-full rounded-full bg-emerald-500 flex items-center justify-center">
+                <Check className="w-12 h-12 text-white stroke-[3] animate-in zoom-in duration-300 delay-150" />
+              </div>
+            </div>
+
+            {/* Tipografía minimalista de lujo */}
+            <div className="space-y-3">
+              <span className="inline-block text-[11px] font-black uppercase tracking-[0.25em] text-white/90">
+                PAGO CONFIRMADO
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                ¡Gracias por tu suscripción!
+              </h3>
+              <p className="text-sm text-zinc-400 leading-relaxed font-normal">
+                Tu plan <strong className="text-white font-semibold">{PLAN_CONFIG[effectiveSub.plan].name}</strong> ha sido activado exitosamente. Todas tus sucursales y herramientas del punto de venta ya están listas para operar.
+              </p>
+            </div>
+
+            {/* Botón de lujo blanco con tipografía en negro */}
+            <div className="pt-2">
+              <button
+                onClick={() => setSuccessModalOpen(false)}
+                className="w-full py-4 px-6 rounded-2xl bg-white hover:bg-zinc-100 text-black font-black text-sm tracking-wider uppercase transition-all duration-200 shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
+              >
+                Comenzar a Usar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

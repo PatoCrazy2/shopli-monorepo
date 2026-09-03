@@ -115,10 +115,12 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                             {user.planBadge && (
                                 <span className={`text-xs font-black uppercase tracking-wider ${
                                     user.planBadge.toLowerCase().includes("arranque")
-                                        ? "bg-gradient-to-r from-slate-700 via-gray-400 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm"
+                                        ? "bg-gradient-to-r from-slate-700 via-gray-500 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm font-extrabold"
                                         : user.planBadge.toLowerCase().includes("crecimiento")
-                                        ? "bg-gradient-to-r from-zinc-900 via-slate-600 to-zinc-950 dark:from-white dark:via-zinc-200 dark:to-gray-400 bg-clip-text text-transparent font-black drop-shadow-sm"
-                                        : "bg-gradient-to-r from-amber-700 via-yellow-500 to-amber-900 dark:from-amber-200 dark:via-yellow-300 dark:to-amber-400 bg-clip-text text-transparent font-black drop-shadow-sm"
+                                        ? "bg-gradient-to-r from-zinc-900 via-slate-700 to-zinc-950 dark:from-white dark:via-zinc-200 dark:to-gray-400 bg-clip-text text-transparent font-extrabold"
+                                        : user.planBadge.toLowerCase().includes("multi") || user.planBadge.toLowerCase().includes("sucursal")
+                                        ? "bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-900 dark:from-amber-200 dark:via-yellow-300 dark:to-amber-400 bg-clip-text text-transparent font-extrabold"
+                                        : "text-zinc-500 font-bold"
                                 }`}>
                                     {user.planBadge}
                                 </span>
