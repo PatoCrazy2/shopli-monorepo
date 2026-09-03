@@ -565,34 +565,38 @@ export function BillingClientView({
         </div>
       )}
 
-      {/* Modal Celebratorio de Éxito al volver de Stripe */}
+      {/* Modal Celebratorio de Lujo al volver de Stripe */}
       {successModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="relative overflow-hidden bg-white dark:bg-zinc-900 max-w-md w-full rounded-3xl p-8 border border-emerald-500/20 shadow-2xl text-center space-y-5 animate-in zoom-in-95 duration-300">
-            {/* Glow background */}
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="relative overflow-hidden bg-zinc-950 max-w-md w-full rounded-3xl p-8 sm:p-10 border border-zinc-800/80 shadow-[0_0_50px_-12px_rgba(16,185,129,0.25)] text-center space-y-6 animate-in zoom-in-95 duration-300">
+            {/* Glow ambiental esmeralda */}
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30">
-              <PartyPopper className="w-8 h-8" />
+            {/* Círculo verde grande con palomita animada */}
+            <div className="relative mx-auto w-24 h-24 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600 p-[2px] shadow-2xl shadow-emerald-500/30 flex items-center justify-center animate-in zoom-in duration-500">
+              <div className="w-full h-full rounded-full bg-emerald-500 flex items-center justify-center">
+                <Check className="w-12 h-12 text-white stroke-[3] animate-in zoom-in duration-300 delay-150" />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                ¡Pago Confirmado!
+            {/* Tipografía minimalista de lujo */}
+            <div className="space-y-3">
+              <span className="inline-block text-[11px] font-black uppercase tracking-[0.25em] text-white/90">
+                PAGO CONFIRMADO
               </span>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 ¡Gracias por tu suscripción!
               </h3>
-              <p className="text-sm text-gray-600 dark:text-zinc-400 leading-relaxed">
-                Tu plan <strong className="text-gray-900 dark:text-white font-bold">{PLAN_CONFIG[effectiveSub.plan].name}</strong> ha sido activado exitosamente. Todas tus sucursales y herramientas del punto de venta ya están disponibles.
+              <p className="text-sm text-zinc-400 leading-relaxed font-normal">
+                Tu plan <strong className="text-white font-semibold">{PLAN_CONFIG[effectiveSub.plan].name}</strong> ha sido activado exitosamente. Todas tus sucursales y herramientas del punto de venta ya están listas para operar.
               </p>
             </div>
 
+            {/* Botón de lujo blanco con tipografía en negro */}
             <div className="pt-2">
               <button
                 onClick={() => setSuccessModalOpen(false)}
-                className="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-all shadow-lg shadow-emerald-600/30 active:scale-95 cursor-pointer"
+                className="w-full py-4 px-6 rounded-2xl bg-white hover:bg-zinc-100 text-black font-black text-sm tracking-wider uppercase transition-all duration-200 shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
               >
                 Comenzar a Usar
               </button>
