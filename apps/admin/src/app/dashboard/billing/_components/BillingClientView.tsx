@@ -36,12 +36,15 @@ export function BillingClientView({
     initialSuccess ? "¡Suscripción confirmada exitosamente! Tu plan ha sido activado." : null
   );
 
-  // Estado para el modal preventivo de downgrade
   const [downgradeModal, setDowngradeModal] = useState<{
     isOpen: boolean;
     reason: string;
     targetPlanName: string;
   }>({ isOpen: false, reason: "", targetPlanName: "" });
+
+  // Si el usuario ya tiene un plan activo (o vitalicio), ocultamos el catálogo de planes por defecto
+  const isPlanActive = effectiveSub.effectiveStatus === SubscriptionStatus.ACTIVE;
+  const [showPlans, setShowPlans] = useState<boolean>(!isPlanActive);
 
   const hasActiveStripeSub = Boolean(empresa.stripeSubscriptionId);
 
@@ -287,37 +290,72 @@ export function BillingClientView({
         </div>
       </div>
 
-      {/* Selector de Intervalo (Mensual vs Anual con descuento) */}
-      <div className="flex flex-col items-center justify-center pt-4">
-        <div className="bg-gray-100 dark:bg-zinc-800 p-1.5 rounded-2xl flex items-center gap-1">
+      {/* Botón para Mostrar / Mejorar Planes si ya tiene un plan activo */}
+      {isPlanActive && !showPlans && (
+        <div className="flex flex-col sm:flex-row items-center justify-between bg-gradient-to-r from-zinc-900 via-zinc-800 to-black text-white p-6 rounded-3xl shadow-xl gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <h3 className="text-lg font-bold flex items-center justify-center sm:justify-start gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              ¿Deseas cambiar o mejorar tu suscripción?
+            </h3>
+            <p className="text-zinc-400 text-xs sm:text-sm">
+              Puedes explorar nuestros otros planes o cambiar el ciclo de facturación en cualquier momento.
+            </p>
+          </div>
           <button
-            onClick={() => setInterval("month")}
-            className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-              interval === "month"
-                ? "bg-white dark:bg-black text-black dark:text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-            }`}
+            onClick={() => setShowPlans(true)}
+            className="px-6 py-3 bg-white text-black font-extrabold text-sm rounded-xl hover:bg-zinc-100 active:scale-95 transition-all shadow-lg shrink-0 cursor-pointer"
           >
-            Facturación Mensual
-          </button>
-          <button
-            onClick={() => setInterval("year")}
-            className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-              interval === "year"
-                ? "bg-white dark:bg-black text-black dark:text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-            }`}
-          >
-            Facturación Anual
-            <span className="bg-emerald-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-              2 meses gratis
-            </span>
+            Ver y Mejorar Planes
           </button>
         </div>
-        <span className="text-xs text-gray-400 mt-2">
-          Precios netos en MXN con IVA (16%) incluido. Sin cargos ocultos.
-        </span>
-      </div>
+      )}
+
+      {/* Sección de Selección de Planes (Visible si no tiene plan activo o si presionó Ver y Mejorar Planes) */}
+      {showPlans && (
+        <div className="space-y-8 animate-in fade-in duration-300">
+          {isPlanActive && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowPlans(false)}
+                className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline cursor-pointer"
+              >
+                Ocultar planes disponibles
+              </button>
+            </div>
+          )}
+
+          {/* Selector de Intervalo (Mensual vs Anual con descuento) */}
+          <div className="flex flex-col items-center justify-center pt-2">
+            <div className="bg-gray-100 dark:bg-zinc-800 p-1.5 rounded-2xl flex items-center gap-1">
+              <button
+                onClick={() => setInterval("month")}
+                className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  interval === "month"
+                    ? "bg-white dark:bg-black text-black dark:text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                Facturación Mensual
+              </button>
+              <button
+                onClick={() => setInterval("year")}
+                className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                  interval === "year"
+                    ? "bg-white dark:bg-black text-black dark:text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                Facturación Anual
+                <span className="bg-emerald-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                  2 meses gratis
+                </span>
+              </button>
+            </div>
+            <span className="text-xs text-gray-400 mt-2">
+              Precios netos en MXN con IVA (16%) incluido. Sin cargos ocultos.
+            </span>
+          </div>
 
       {/* Grid de Tarjetas de Planes */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-2">
@@ -528,6 +566,8 @@ export function BillingClientView({
           );
         })}
       </div>
+        </div>
+      )}
 
       {/* Modal Preventivo de Downgrade con Recursos Excedentes */}
       {downgradeModal.isOpen && (

@@ -135,8 +135,17 @@ export function getEffectiveSubscription(empresa: {
 }): EffectiveSubscriptionResult {
   const now = new Date();
 
+  // CASO 0: Cliente con estado ACTIVE explícito (Fundador / Vitalicio / Stripe Activo)
+  if (empresa.subscriptionStatus === SubscriptionStatus.ACTIVE) {
+    return {
+      effectiveStatus: SubscriptionStatus.ACTIVE,
+      plan: empresa.plan,
+      isExpiringSoon: false,
+    };
+  }
+
   // CASO 1: Trial Interno (Sin suscripción de Stripe todavía)
-  if (!empresa.stripeSubscriptionId) {
+  if (!empresa.stripeSubscriptionId && empresa.subscriptionStatus === SubscriptionStatus.TRIALING) {
     const trialEnd = empresa.trialEndsAt ? new Date(empresa.trialEndsAt) : now;
     const graceEnd = empresa.gracePeriodEndsAt
       ? new Date(empresa.gracePeriodEndsAt)

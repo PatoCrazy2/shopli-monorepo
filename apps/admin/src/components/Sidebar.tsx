@@ -104,16 +104,22 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
 
                 {/* Bottom User Info Section */}
                 <div className="p-4 border-t border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-black/50">
-                    <div className="flex flex-col gap-1 mb-3">
+                    <div className="flex flex-col gap-1.5 mb-3">
                         <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                             {user.name || "Usuario"}
                         </span>
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-zinc-800 py-0.5 px-2 rounded-full w-max">
                                 {user.role}
                             </span>
                             {user.planBadge && (
-                                <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 py-0.5 px-2 rounded-full w-max">
+                                <span className={`text-xs font-black uppercase tracking-wider ${
+                                    user.planBadge.toLowerCase().includes("arranque")
+                                        ? "bg-gradient-to-r from-slate-700 via-gray-400 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm"
+                                        : user.planBadge.toLowerCase().includes("crecimiento")
+                                        ? "bg-gradient-to-r from-zinc-900 via-slate-600 to-zinc-950 dark:from-white dark:via-zinc-200 dark:to-gray-400 bg-clip-text text-transparent font-black drop-shadow-sm"
+                                        : "bg-gradient-to-r from-amber-700 via-yellow-500 to-amber-900 dark:from-amber-200 dark:via-yellow-300 dark:to-amber-400 bg-clip-text text-transparent font-black drop-shadow-sm"
+                                }`}>
                                     {user.planBadge}
                                 </span>
                             )}
