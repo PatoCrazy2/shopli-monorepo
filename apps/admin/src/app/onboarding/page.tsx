@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Store, MapPin, ArrowRight, ArrowLeft, Check, AlertCircle } from "lucide-react";
+import { Building2, MapPin, ArrowRight, ArrowLeft, Check, AlertCircle } from "lucide-react";
 import { completeOnboarding } from "./actions";
 
 export default function OnboardingPage() {
@@ -27,7 +27,7 @@ export default function OnboardingPage() {
       setStep(2);
     } else {
       if (!branchName.trim() || branchName.trim().length < 2) {
-        setError("Nombra tu primera sucursal (mínimo 2 caracteres).");
+        setError("Nombra tu sucursal principal (mínimo 2 caracteres).");
         return;
       }
 
@@ -44,7 +44,6 @@ export default function OnboardingPage() {
         if (result?.error) {
           setError(result.error);
         } else {
-          // Redirigir directamente a la página principal del dashboard
           router.push("/dashboard/inicio");
           router.refresh();
         }
@@ -53,49 +52,61 @@ export default function OnboardingPage() {
   };
 
   return (
-    <main className="min-h-screen grid items-center justify-center bg-gray-50 selection:bg-black selection:text-white font-sans p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 md:p-10 shadow-lg border border-gray-100 transition-shadow duration-300 hover:shadow-xl relative overflow-hidden">
+    <main className="min-h-screen grid items-center justify-center bg-gray-50/70 selection:bg-black selection:text-white font-sans p-4 sm:p-6">
+      <div className="w-full max-w-xl bg-white rounded-2xl p-8 sm:p-12 shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden">
         {/* Decorative accent */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-black via-gray-700 to-black"></div>
 
-        {/* Header con Logo */}
-        <div className="text-center">
+        {/* Encabezado con Identidad ShopLI */}
+        <div className="text-center mb-8">
           <img
             src="/shopli_snbg.svg"
-            alt="Logo"
-            className="mx-auto w-24 h-24"
+            alt="ShopLI Logo"
+            className="mx-auto w-24 h-24 mb-1"
           />
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 mt-1 mb-1">
-            {step === 1 ? "Configura tu Negocio" : "Tu Primera Sucursal"}
-          </h2>
-          <p className="text-xs text-gray-500 mb-6">
-            Paso {step} de 2 &bull; {step === 1 ? "Identidad de la tienda" : "Punto de venta principal"}
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mb-2">
+            {step === 1 ? "Configuración de tu Negocio" : "Sucursal Principal"}
+          </h1>
+          <p className="text-sm text-gray-500 max-w-md mx-auto">
+            {step === 1
+              ? "Define la identidad comercial con la que operarás en la plataforma."
+              : "Establece el punto de venta o sucursal donde comenzarás operaciones."}
           </p>
         </div>
 
-        {/* Barra de progreso Apple Clean */}
-        <div className="flex gap-2 mb-6">
-          <div
-            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-              step >= 1 ? "bg-black" : "bg-gray-200"
-            }`}
-          ></div>
-          <div
-            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-              step >= 2 ? "bg-black" : "bg-gray-200"
-            }`}
-          ></div>
+        {/* Indicador de Pasos Tipo Setup Wizard */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between text-xs font-medium text-gray-400 mb-2">
+            <span className={step >= 1 ? "text-black font-semibold" : ""}>
+              1. Identidad comercial
+            </span>
+            <span className={step === 2 ? "text-black font-semibold" : ""}>
+              2. Punto operativo
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <div
+              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                step >= 1 ? "bg-black" : "bg-gray-200"
+              }`}
+            ></div>
+            <div
+              className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                step >= 2 ? "bg-black" : "bg-gray-200"
+              }`}
+            ></div>
+          </div>
         </div>
 
-        <form onSubmit={handleNextStep} className="space-y-4">
+        <form onSubmit={handleNextStep} className="space-y-6">
           {step === 1 ? (
-            <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="space-y-5 animate-in fade-in duration-200">
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-800 mb-1.5"
                   htmlFor="businessName"
                 >
-                  ¿Cómo se llama tu tienda o negocio?
+                  Nombre de tu negocio o empresa
                 </label>
                 <div className="relative">
                   <input
@@ -107,23 +118,23 @@ export default function OnboardingPage() {
                     autoFocus
                     disabled={isPending}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50 text-sm"
-                    placeholder="Ej. Abarrotes El Trébol"
+                    placeholder="Ej. Distrito Café, Lumina Concept, Grupo Ámbar"
                   />
-                  <Store className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Building2 className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 </div>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Este nombre aparecerá en tus tickets de venta y reportes.
+                <p className="mt-2 text-xs text-gray-500">
+                  Este nombre figurará en tus comprobantes, reportes y cotizaciones.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="space-y-5 animate-in fade-in duration-200">
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-800 mb-1.5"
                   htmlFor="branchName"
                 >
-                  Nombra tu primera sucursal
+                  Nombre de la sucursal
                 </label>
                 <div className="relative">
                   <input
@@ -135,21 +146,21 @@ export default function OnboardingPage() {
                     autoFocus
                     disabled={isPending}
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50 text-sm"
-                    placeholder="Matriz"
+                    placeholder="Matriz o Sucursal Centro"
                   />
                   <MapPin className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 </div>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Puedes dejar &quot;Matriz&quot;, &quot;Sucursal Centro&quot; o el nombre que prefieras.
+                <p className="mt-2 text-xs text-gray-500">
+                  Podrás agregar y gestionar múltiples sucursales más adelante desde el dashboard.
                 </p>
               </div>
 
               <div>
                 <label
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-800 mb-1.5"
                   htmlFor="branchAddress"
                 >
-                  Dirección (Opcional)
+                  Ubicación física o dirección (opcional)
                 </label>
                 <input
                   id="branchAddress"
@@ -158,20 +169,20 @@ export default function OnboardingPage() {
                   onChange={(e) => setBranchAddress(e.target.value)}
                   disabled={isPending}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50 text-sm"
-                  placeholder="Av. Principal #123, Col. Centro"
+                  placeholder="Av. Paseo de la Reforma 222, CDMX"
                 />
               </div>
             </div>
           )}
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-100 flex items-center gap-2 animate-in fade-in duration-300">
+            <div className="p-3.5 rounded-xl bg-red-50 text-red-600 text-sm border border-red-100 flex items-center gap-2.5 animate-in fade-in duration-300">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="pt-2 flex items-center gap-3">
+          <div className="pt-3 flex items-center gap-3">
             {step === 2 && (
               <button
                 type="button"
@@ -180,7 +191,7 @@ export default function OnboardingPage() {
                   setStep(1);
                 }}
                 disabled={isPending}
-                className="py-3 px-4 flex items-center justify-center gap-1 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black transition-all duration-200 font-medium text-sm disabled:opacity-50 cursor-pointer"
+                className="py-3 px-5 flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-black focus:outline-none focus:ring-2 focus:ring-black transition-all duration-200 font-medium text-sm disabled:opacity-50 cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Atrás</span>
@@ -190,7 +201,7 @@ export default function OnboardingPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 py-3 px-4 flex justify-center items-center gap-2 rounded-xl text-white bg-black hover:bg-gray-800 focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-200 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex-1 py-3 px-5 flex justify-center items-center gap-2 rounded-xl text-white bg-black hover:bg-neutral-800 focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-200 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isPending ? (
                 <svg
@@ -221,7 +232,7 @@ export default function OnboardingPage() {
               ) : (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>Finalizar y Entrar</span>
+                  <span>Comenzar a operar</span>
                 </>
               )}
             </button>
@@ -231,3 +242,4 @@ export default function OnboardingPage() {
     </main>
   );
 }
+
