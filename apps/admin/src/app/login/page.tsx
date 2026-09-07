@@ -4,6 +4,7 @@ import { useState, useTransition, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 function LoginForm() {
     const router = useRouter();
@@ -106,7 +107,7 @@ function LoginForm() {
                     <button
                         type="submit"
                         disabled={isPending}
-                        className="w-full py-3 px-4 flex justify-center items-center gap-2 rounded-xl text-white bg-black hover:bg-gray-800 focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full py-3 px-4 flex justify-center items-center gap-2 rounded-xl text-white bg-black hover:bg-gray-800 focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isPending ? (
                             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -119,12 +120,23 @@ function LoginForm() {
                     </button>
                 </form>
 
+                <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-3 text-gray-500 font-medium tracking-wider">o</span>
+                    </div>
+                </div>
+
+                <GoogleSignInButton callbackUrl="/dashboard/inicio" label="Continuar con Google" />
+
                 <div className="mt-6 text-center">
                     <Link
                         href="/register"
                         className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
                     >
-                        ¿No tienes cuenta? Registra tu empresa
+                        ¿No tienes cuenta? Regístrate aquí
                     </Link>
                 </div>
             </div>

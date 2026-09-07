@@ -1,6 +1,7 @@
 import NextAuth, { type DefaultSession } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { db, Role } from "@shopli/db";
 import bcrypt from "bcryptjs";
 
@@ -8,6 +9,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(db as any),
   session: { strategy: "jwt" },
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -21,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await db.user.findUnique({
           where: {
-            email: credentials.email as string,
+            email: (credentials.email as string).toLowerCase().trim(),
           },
         });
 
@@ -49,11 +54,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        if (!user.email) return false;
+
+        const normalizedEmail = user.email.toLowerCase().trim();
+
+        // Buscar si ya existe el usuario
+        const existingUser = await db.user.findUnique({
+          where: { email: normalizedEmail },
+        });
+
+        if (existingUser) {
+          // El usuario ya existe, actualizar sus datos si es necesario y asignar al objeto user
+          user.id = existingUser.id;
+          user.role = existingUser.role;
+          user.empresa_id = existingUser.empresa_id;
+        } else {
+          // Crear nuevo usuario automáticamente como DUEÑO sin empresa para que pase al onboarding
+          const newUser = await db.user.create({
+            data: {
+              name: user.name || "Usuario",
+              email: normalizedEmail,
+              role: Role.DUENO,
+              empresa_id: null,
+            },
+          });
+          user.id = newUser.id;
+          user.role = newUser.role;
+          user.empresa_id = newUser.empresa_id;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.empresa_id = user.empresa_id;
+        token.empresa_id = user.empresa_id ?? null;
       }
       return token;
     },
@@ -61,9 +99,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
-        session.user.empresa_id = token.empresa_id as string;
+        session.user.empresa_id = (token.empresa_id as string) ?? null;
       }
       return session;
     },
   },
 });
+
