@@ -44,8 +44,8 @@ export default function OnboardingPage() {
         if (result?.error) {
           setError(result.error);
         } else {
-          router.push("/dashboard/inicio");
-          router.refresh();
+          // Recarga completa para que el middleware/layout emita la cookie de sesión con el nuevo empresa_id
+          window.location.href = "/dashboard/inicio";
         }
       });
     }

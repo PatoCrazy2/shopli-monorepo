@@ -91,6 +91,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role;
         token.empresa_id = user.empresa_id ?? null;
       }
+
+      // Si el token aún no tiene empresa_id asignado, verificar en la BD si completó el onboarding
+      if (token.id && !token.empresa_id) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { empresa_id: true, role: true },
+        });
+
+        if (dbUser?.empresa_id) {
+          token.empresa_id = dbUser.empresa_id;
+          token.role = dbUser.role;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
