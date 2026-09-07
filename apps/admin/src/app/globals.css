@@ -1,1 +1,7 @@
 @import "@repo/ui/globals.css";
+
+/* Ocultar el icono nativo de revelar contraseña del navegador (Edge / Windows) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

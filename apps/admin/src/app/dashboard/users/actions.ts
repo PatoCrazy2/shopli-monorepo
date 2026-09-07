@@ -17,8 +17,8 @@ const userSchema = z.object({
 
 export async function createUser(formData: FormData) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "DUENO") {
-    return { error: "No autorizado" };
+  if (!session?.user || session.user.role !== "DUENO" || !session.user.empresa_id) {
+    return { error: "No autorizado o sin empresa asignada" };
   }
 
   const parseResult = userSchema.safeParse({

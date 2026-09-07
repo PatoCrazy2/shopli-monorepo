@@ -22,6 +22,11 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
+    // 3. Guardián de Onboarding: Si el usuario no ha configurado su empresa → /onboarding
+    if (!session.user.empresa_id) {
+        redirect("/onboarding");
+    }
+
     // 3. Consultar suscripción efectiva
     let planBadge: string | null = null;
     let effectiveSubscription = null;
