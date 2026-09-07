@@ -1,12 +1,10 @@
 import NextAuth, { type DefaultSession } from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { db, Role } from "@shopli/db";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(db as any),
   session: { strategy: "jwt" },
   providers: [
     GoogleProvider({
