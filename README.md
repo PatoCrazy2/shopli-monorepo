@@ -170,6 +170,13 @@ In addition to the client-side 2-tier PIN protections:
 * **Cloudflare Turnstile Verification:** Protects both the owner registration flow (`/register`) and unconfigured POS terminal onboarding (`/api/pos/auth`), thwarting automated credential spraying attacks.
 * **Strict CORS Whitelist:** The POS sync and auth endpoints enforce origin validation against `ALLOWED_POS_ORIGINS` in production, blocking cross-origin browser abuse.
 
+### Two-Phase Tenant Onboarding & Google OAuth 2.0
+To ensure zero friction during account registration while maintaining strict multi-tenant isolation:
+* **Frictionless Credential Provisioning:** The `/register` flow decouples user identity from company creation. Users register with standard credentials (or 1-click Google OAuth), validated with active DNS MX record deliverability checks (`node:dns/promises`) and realtime password strength criteria ($ \ge 8$ chars, numbers, letters).
+* **Pure JWT Google OAuth:** NextAuth v5 integrates Google OAuth without requiring intermediary database tables (`Account`, `Session`), preserving relational simplicity and preventing cold-start schema queries.
+* **Atomic Onboarding Handshake (`/onboarding`):** Users without a linked tenant (`empresa_id: null`) are intercepted by layout security guards and routed to the guided setup wizard. A single atomic database transaction (`db.$transaction`) creates the `Empresa` (with 14-day Growth trial and 3-day grace period), provisions the primary active `Sucursal`, and assigns the user as `DUENO`.
+* **Proactive JWT Synchronization:** The NextAuth JWT callback detects onboarding completion and hot-reloads the session token context without requiring manual re-authentication, delivering the merchant directly to `/dashboard/inicio`.
+
 ### Diagnostic & Rescue Module
 An embedded settings drawer allows troubleshooting browser-level storage and caching:
 * **Update Engine:** Triggers registration updates to force newer Service Worker iterations.
@@ -217,6 +224,9 @@ ALLOWED_POS_ORIGINS="http://localhost:5173"
 # Stripe & SaaS Subscriptions (Test Mode)
 STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
+# Google OAuth 2.0 (Admin Dashboard)
+GOOGLE_CLIENT_ID="development-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="development-client-secret"
 ```
 
 **`apps/pos/.env`**
@@ -287,6 +297,10 @@ To run maintenance and custom development tests on the database and utility feat
 * **POS Token Security & CORS Unit Suite:** Runs automated tests verifying HMAC-SHA256 signature integrity, expiration guards, secret rotation invalidation, and production CORS whitelist enforcement:
   ```bash
   pnpm --filter admin test src/lib/__tests__/pos-security.test.ts
+  ```
+* **Auth, Onboarding & Deliverability Suite:** Runs automated tests for realtime password complexity, DNS MX deliverability checks, disposable email mitigation, and typo domain suggestions:
+  ```bash
+  pnpm --filter admin test src/lib/__tests__/auth-onboarding.test.ts
   ```
 
 #### Manual Security & Revocation Testing Protocols
