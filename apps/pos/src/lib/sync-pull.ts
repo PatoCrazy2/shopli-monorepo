@@ -27,22 +27,47 @@ export async function pullFromCloud(): Promise<SyncResult> {
       return { source: 'cache' };
     }
 
+    const syncTokenRecord = await db.meta.get('syncToken');
+    const syncToken = syncTokenRecord?.value;
+
     const secret = import.meta.env.VITE_SYNC_SECRET || '';
-    const params: Record<string, string> = { secret, empresaId };
+    const params: Record<string, string> = {};
     if (lastSyncedAt) {
       params.updatedAfter = lastSyncedAt;
     }
+
+    // Si aún no hay Bearer token pero existe secret legado, enviarlo como fallback
+    if (!syncToken && secret) {
+      params.secret = secret;
+      params.empresaId = empresaId;
+    }
+
+    const headers: Record<string, string> = {};
+    if (syncToken) {
+      headers['Authorization'] = `Bearer ${syncToken}`;
+    } else if (secret) {
+      headers['x-pos-sync-secret'] = secret;
+    }
+
     const endpoint = `pos/sync/pull`;
 
     let data: PullSyncResponse;
     try {
       data = await apiClient<PullSyncResponse>(endpoint, {
         method: 'GET',
-        params // Pass params to apiClient
+        params,
+        headers,
       });
-      // Si la petición tuvo éxito, aseguramos limpiar cualquier bandera previa de suspensión
+      // Si la petición tuvo éxito, aseguramos limpiar cualquier bandera previa
       await db.meta.put({ key: 'subscriptionSuspended', value: false });
+      await db.meta.put({ key: 'tokenRevoked', value: false });
     } catch (error: any) {
+      if (error?.status === 401 && (error?.data?.error === 'TOKEN_REVOKED' || error?.message?.includes('revocado'))) {
+        console.warn('⚠️ Token POS revocado por el servidor (HTTP 401 TOKEN_REVOKED). Bloqueando terminal.');
+        await db.meta.put({ key: 'tokenRevoked', value: true });
+        return { source: 'cache' };
+      }
+
       if (error?.status === 402 || error?.isSubscriptionSuspended) {
         console.warn('⚠️ Suscripción de empresa suspendida (HTTP 402). Activando pantalla de bloqueo.');
         await db.meta.put({ key: 'subscriptionSuspended', value: true });

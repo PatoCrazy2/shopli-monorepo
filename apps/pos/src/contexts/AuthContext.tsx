@@ -38,7 +38,7 @@ interface AuthContextType {
     activeShift: Shift | null;
     isAuthenticated: boolean;
     hasActiveShift: boolean;
-    login: (pin: string, email?: string, userId?: string) => Promise<LoginResult>;
+    login: (pin: string, email?: string, userId?: string, turnstileToken?: string | null) => Promise<LoginResult>;
     logout: () => void;
     openShift: (initialAmount: number, branchId: string) => Promise<void>;
     closeShift: (physicalAmount: number) => Promise<void>;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await db.meta.delete(`lockout_${userId}`);
     };
 
-    const login = async (pin: string, email?: string, userId?: string): Promise<LoginResult> => {
+    const login = async (pin: string, email?: string, userId?: string, turnstileToken?: string | null): Promise<LoginResult> => {
         let localUser: any = null;
         let recoveredShift: Shift | null = null;
 
@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const data = await apiClient<{ 
                     id: string; 
                     empresa_id: string;
+                    sync_token?: string;
                     active_shift?: {
                         id: string;
                         sucursal_id: string;
@@ -129,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     } | null;
                 }>('pos/auth', {
                     method: 'POST',
-                    body: { email, pin }
+                    body: { email, pin, turnstileToken }
                 });
                 
                 // Blindaje Multi-Tenant: Si el dispositivo tenía datos de otra empresa, purgamos todo antes de registrar la nueva
@@ -138,8 +139,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     await purgeAllTenantData();
                 }
 
-                // Guardar empresaId y registrar verificación online
+                // Guardar empresaId, syncToken y registrar verificación online
                 await db.meta.put({ key: 'empresaId', value: data.empresa_id });
+                if (data.sync_token) {
+                    await db.meta.put({ key: 'syncToken', value: data.sync_token });
+                }
+                await db.meta.put({ key: 'tokenRevoked', value: false });
                 await db.meta.put({ key: 'lastOnlineVerification', value: new Date().toISOString() });
 
                 // Hacemos el pull limpio para descargar el catálogo de esa empresa

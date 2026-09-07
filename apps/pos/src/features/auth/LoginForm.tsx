@@ -7,7 +7,7 @@ import type { LoginResult } from '../../contexts/AuthContext';
 export function LoginForm({
     onLogin,
 }: {
-    onLogin: (pin: string, email?: string, userId?: string) => Promise<LoginResult | boolean> | void;
+    onLogin: (pin: string, email?: string, userId?: string, turnstileToken?: string | null) => Promise<LoginResult | boolean> | void;
 }) {
     const [pin, setPin] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -100,6 +100,16 @@ export function LoginForm({
         setPin((prev) => prev.slice(0, -1));
     };
 
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            (window as any).onPosTurnstileCallback = (token: string) => {
+                setTurnstileToken(token);
+            };
+        }
+    }, []);
+
     const executeLogin = async (pinToSubmit: string, emailToSubmit?: string, userIdToSubmit?: string) => {
         if (pinToSubmit.length < 4) return;
 
@@ -107,7 +117,7 @@ export function LoginForm({
         setErrorMessage(null);
 
         try {
-            const result = await onLogin(pinToSubmit, emailToSubmit, userIdToSubmit);
+            const result = await onLogin(pinToSubmit, emailToSubmit, userIdToSubmit, turnstileToken);
             setIsSyncing(false);
 
             if (typeof result === 'object' && result !== null) {
@@ -223,6 +233,16 @@ export function LoginForm({
                                 className="w-full h-12 px-4 rounded-lg border border-zinc-200 focus:outline-none focus:border-black text-black bg-white tracking-widest text-center text-xl font-bold"
                             />
                         </div>
+
+                        {import.meta.env.VITE_TURNSTILE_SITE_KEY && (
+                            <div className="flex justify-center my-1">
+                                <div
+                                    className="cf-turnstile"
+                                    data-sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                                    data-callback="onPosTurnstileCallback"
+                                />
+                            </div>
+                        )}
 
                         <button
                             type="submit"

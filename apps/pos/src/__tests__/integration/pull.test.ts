@@ -4,6 +4,8 @@ import { db } from '../../lib/db';
 import { pullFromCloud } from '../../lib/sync';
 import { db as prisma, Role } from '@shopli/db';
 
+import { generateTestPosToken } from './test-token-helper';
+
 describe('pullFromCloud integration', () => {
 
   beforeAll(async () => {
@@ -11,8 +13,6 @@ describe('pullFromCloud integration', () => {
     vi.stubGlobal('import.meta', {
       env: {
         VITE_API_BASE_URL: 'http://localhost:3000/api',
-        VITE_SYNC_SECRET: 'ci-pos-sync-secret',
-        VITE_POS_SYNC_SECRET: 'ci-pos-sync-secret',
       }
     });
 
@@ -24,6 +24,7 @@ describe('pullFromCloud integration', () => {
           data: {
             id: 'test-empresa-id',
             nombre: 'Test Empresa',
+            tokenVersion: 1,
           }
         });
       } catch (_) {
@@ -35,8 +36,16 @@ describe('pullFromCloud integration', () => {
       throw new Error('No se pudo inicializar la empresa de prueba');
     }
 
-    // Configurar Dexie con la empresa para permitir sync
+    // Configurar Dexie con la empresa y el syncToken firmado
+    const testSyncToken = generateTestPosToken({
+      empresa_id: testEmpresa.id,
+      user_id: 'test-user-id',
+      role: 'CAJERO',
+      tokenVersion: testEmpresa.tokenVersion || 1,
+    });
+
     await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
+    await db.meta.put({ key: 'syncToken', value: testSyncToken });
 
     // 1. Aseguramos que haya al menos 1 producto y 1 usuario en PostgreSQL vinculados a testEmpresa con UUID válido
     const userCount = await prisma.user.count({ where: { role: Role.CAJERO, empresa_id: testEmpresa.id } });
@@ -95,11 +104,15 @@ describe('pullFromCloud integration', () => {
   });
 
   it('debe barrer la base de datos local y poblarla con los datos traidos de PostgreSQL', async () => {
-    // 2. Limpiamos la base local de Dexie pero mantenemos la empresa configurada
+    // 2. Limpiamos la base local de Dexie pero mantenemos la empresa y token configurados
+    const syncToken = (await db.meta.get('syncToken'))?.value;
     await db.products.clear();
     await db.users.clear();
     await db.meta.clear();
     await db.meta.put({ key: 'empresaId', value: 'test-empresa-id' });
+    if (syncToken) {
+      await db.meta.put({ key: 'syncToken', value: syncToken });
+    }
     await db.inventory.clear();
 
     const initialUsersCount = await db.users.count();

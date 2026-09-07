@@ -16,6 +16,8 @@ model User {
   role       Role     @default(CAJERO)
   pin_hash   String?
   active     Boolean  @default(true)
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt @default(now())
   empresa_id String
@@ -281,6 +283,7 @@ enum AuditStatus {
 model Empresa {
   id        String   @id @default(uuid())
   nombre    String
+  tokenVersion Int   @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt @default(now())
 

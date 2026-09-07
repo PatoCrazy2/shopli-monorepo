@@ -114,19 +114,37 @@ export async function pushToCloud(): Promise<PushResult> {
       return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0 } }; // Also we can add auditoriasDinamicas here if needed
     }
 
+    const syncTokenRecord = await db.meta.get('syncToken');
+    const syncToken = syncTokenRecord?.value;
+
     const secret = import.meta.env.VITE_SYNC_SECRET || import.meta.env.VITE_POS_SYNC_SECRET || '';
 
-    // Hacemos el fetch POST al BFF con el secret injectado por query param (más robusto para CORS)
+    const params: Record<string, string> = {};
+    if (!syncToken && secret) {
+      params.secret = secret;
+      params.empresaId = empresaId;
+    }
+
+    const headers: Record<string, string> = {};
+    if (syncToken) {
+      headers['Authorization'] = `Bearer ${syncToken}`;
+    } else if (secret) {
+      headers['x-pos-sync-secret'] = secret;
+    }
+
+    // Hacemos el fetch POST al BFF con Bearer Token o fallback
     const data = await apiClient<any>('pos/sync/push', {
       method: 'POST',
-      params: { secret, empresaId },
+      params,
+      headers,
       body: payload
     });
 
     // Reconciliación Local (ACK). Si es 200 OK, procedemos a marcar como 'SYNCED'
     if (data.success && data.procesados) {
-      // Limpiar bandera de suspensión si hubo éxito
+      // Limpiar banderas de suspensión y revocación si hubo éxito
       await db.meta.put({ key: 'subscriptionSuspended', value: false });
+      await db.meta.put({ key: 'tokenRevoked', value: false });
 
       const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [], gastos: procGastos = [], auditoriasDinamicas: procAuditoriasDinamicas = [] } = data.procesados;
 
@@ -171,6 +189,12 @@ export async function pushToCloud(): Promise<PushResult> {
     }
 
   } catch (error: any) {
+    if (error?.status === 401 && (error?.data?.error === 'TOKEN_REVOKED' || error?.message?.includes('revocado'))) {
+      console.warn('⚠️ Token POS revocado durante Push (HTTP 401 TOKEN_REVOKED). Bloqueando terminal.');
+      await db.meta.put({ key: 'tokenRevoked', value: true });
+      return { success: false, reason: 'token_revoked' };
+    }
+
     if (error?.status === 402 || error?.isSubscriptionSuspended) {
       console.warn('⚠️ Suscripción de empresa suspendida durante Push (HTTP 402).');
       await db.meta.put({ key: 'subscriptionSuspended', value: true });

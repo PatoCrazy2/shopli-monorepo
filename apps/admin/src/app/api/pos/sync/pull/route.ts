@@ -66,54 +66,74 @@ export type PullSyncResponse = {
   nextCursor?: string;
 };
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, PATCH, DELETE",
-      "Access-Control-Allow-Headers": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-pos-sync-secret",
-    },
-  });
+import { getCorsHeaders, handleCorsPreflight } from "@/lib/cors";
+import { verifyPosSyncToken } from "@/lib/pos-token";
+
+export async function OPTIONS(req: Request) {
+  return handleCorsPreflight(req);
 }
 
 export async function GET(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
+  const responseHeaders = new Headers({
+    ...corsHeaders,
+    "Cache-Control": "no-store",
+  });
+
   try {
     const { searchParams } = new URL(req.url);
+    const updatedAfterParam = searchParams.get("updatedAfter");
+    const cursor = searchParams.get("cursor");
 
-    // Validación de autenticación: acepta secret del POS via header O query param
-    const validPosSecret = process.env.POS_SYNC_SECRET || process.env.VITE_SYNC_SECRET;
-    const posSecretHeader = req.headers.get("x-pos-sync-secret");
-    const posSecretQuery = searchParams.get("secret");
-    const isPosAuthorized =
-      validPosSecret &&
-      (posSecretHeader === validPosSecret || posSecretQuery === validPosSecret);
+    // 1. Extraer y verificar Token de Sincronización Bearer
+    const authHeader = req.headers.get("authorization");
+    let syncPayload = null;
 
-    if (!isPosAuthorized) {
-      // Fallback: verificar sesión de NextAuth (acceso desde el admin dashboard)
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7).trim();
+      syncPayload = verifyPosSyncToken(token);
+    }
+
+    // Compatibilidad Transicional: Soporte temporal para el cliente POS en producción
+    // que aún envía x-pos-sync-secret mientras sus cajeros se actualizan a la nueva versión
+    const legacySecretHeader = req.headers.get("x-pos-sync-secret");
+    const legacySecretQuery = searchParams.get("secret");
+    const configuredLegacySecret = process.env.POS_SYNC_SECRET;
+    const isLegacySecretValid =
+      configuredLegacySecret &&
+      (legacySecretHeader === configuredLegacySecret || legacySecretQuery === configuredLegacySecret);
+
+    // Bypass exclusivo para CI en modo test con cabecera de control
+    const isTestBypass =
+      process.env.NODE_ENV === "test" && req.headers.get("x-test-bypass") === "true";
+
+    // Determinación del tenant empresaId
+    let empresaId: string | null = null;
+
+    if (syncPayload) {
+      empresaId = syncPayload.empresa_id;
+    } else if (isLegacySecretValid || isTestBypass) {
+      empresaId = searchParams.get("empresaId");
+    } else {
       const session = await auth();
-      const isAdminAuthorized = !!session?.user;
-      // Bypass para tests
-      const isTestBypass = process.env.NODE_ENV === 'test' && req.headers.get("x-test-bypass") === "true";
-
-      if (!isAdminAuthorized && !isTestBypass) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (session?.user?.empresa_id) {
+        empresaId = session.user.empresa_id;
       }
     }
 
-    const updatedAfterParam = searchParams.get("updatedAfter");
-    const cursor = searchParams.get("cursor");
-    const empresaId = searchParams.get("empresaId");
-
     if (!empresaId) {
-      return NextResponse.json({ error: "Falta empresaId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No autorizado. Token de sincronización inválido o ausente." },
+        { status: 401, headers: responseHeaders }
+      );
     }
 
-    // 0. Validación de Suscripción SaaS (Lazy Evaluation)
+    // 2. Consulta y validación de la Empresa (tokenVersion y Suscripción SaaS)
     const empresa = await db.empresa.findUnique({
       where: { id: empresaId },
       select: {
         id: true,
+        tokenVersion: true,
         plan: true,
         subscriptionStatus: true,
         trialEndsAt: true,
@@ -123,9 +143,25 @@ export async function GET(req: NextRequest) {
     });
 
     if (!empresa) {
-      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Empresa no encontrada" },
+        { status: 404, headers: responseHeaders }
+      );
     }
 
+    // 3. Validar tokenVersion contra la BD si vino por token POS
+    if (syncPayload && syncPayload.tokenVersion !== empresa.tokenVersion) {
+      return NextResponse.json(
+        {
+          error: "TOKEN_REVOKED",
+          message:
+            "El token del dispositivo ha sido revocado o la sesión fue reiniciada. Por favor vuelva a vincular el terminal.",
+        },
+        { status: 401, headers: responseHeaders }
+      );
+    }
+
+    // 4. Validación de Suscripción SaaS
     const effectiveSub = getEffectiveSubscription(empresa);
     if (
       effectiveSub.effectiveStatus === SubscriptionStatus.PAST_DUE ||
@@ -134,9 +170,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           error: "SUBSCRIPTION_SUSPENDED",
-          message: "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
+          message:
+            "Tu suscripción ha vencido o se encuentra suspendida. Contacta al dueño de la cuenta para reactivar el servicio.",
         },
-        { status: 402 }
+        { status: 402, headers: responseHeaders }
       );
     }
 
@@ -302,22 +339,22 @@ export async function GET(req: NextRequest) {
     const eTag = `"${eTagHash}"`;
 
     if (req.headers.get("if-none-match") === eTag) {
-      return new NextResponse(null, { status: 304 });
+      return new NextResponse(null, { status: 304, headers: responseHeaders });
     }
+
+    const headersWithEtag = new Headers(responseHeaders);
+    headersWithEtag.set("ETag", eTag);
 
     return NextResponse.json(responseBody, {
       status: 200,
-      headers: {
-        "ETag": eTag,
-        "Cache-Control": "no-store", // Es importante debido al App Router behavior
-      }
+      headers: headersWithEtag,
     });
 
   } catch (error) {
     console.error("Error in GET /api/pos/sync/pull:", error);
     return NextResponse.json(
       { error: "Error al intentar sincronizar la información." },
-      { status: 500 }
+      { status: 500, headers: responseHeaders }
     );
   }
 }

@@ -157,6 +157,19 @@ For cashier authentication without cloud access:
   * *Tier 2 (Global Terminal Anti-Spraying):* A 5-minute sliding window accumulates terminal-wide failures. Reaching 10 global failures freezes the login screen for 2 minutes, preventing horizontal brute-force attacks across cached employee profiles.
   * *Sync Isolation:* Network synchronization updates TTL verification timestamps without resetting active lockouts.
 
+### POS Sync Token & Remote Revocation Lifecycle
+To eliminate shared static secrets while maintaining high security across thousands of physical devices:
+* **Native HMAC-SHA256 Token (HS256):** Issued at `/api/pos/auth` using `node:crypto` and signed with a dedicated `SYNC_JWT_SECRET`. Tokens carry a 30-day validity window (`exp`) with tenant context (`empresa_id`, `user_id`, `role`, `tokenVersion`).
+* **Secret Isolation:** `SYNC_JWT_SECRET` is decoupled from NextAuth web sessions (`AUTH_SECRET`). Rotating web dashboard secrets does not interrupt terminal operations, while rotating the sync secret invalidates all POS endpoints instantly.
+* **Instant Device Revocation via `tokenVersion`:** When an admin or security event increments `Empresa.tokenVersion` in PostgreSQL, all sync operations (`/pull` and `/push`) for that tenant fail immediately with `HTTP 401 TOKEN_REVOKED`.
+* **Reactive POS Lockout (`DeviceRevokedScreen`):** The POS client detects `TOKEN_REVOKED`, writes `tokenRevoked: true` to Dexie, halts transaction flows, and mounts a full-screen modal allowing the cashier to purge local state via `purgeAllTenantData()` and re-link the register.
+
+### Persistent Server-Side Brute-Force Lockout & Turnstile
+In addition to the client-side 2-tier PIN protections:
+* **Database-Persisted Lockout:** The server tracks `failedLoginAttempts` and `lockedUntil` on the PostgreSQL `User` model. After 5 consecutive failures, the account is locked for 15 minutes across cold starts and serverless container recycles.
+* **Cloudflare Turnstile Verification:** Protects both the owner registration flow (`/register`) and unconfigured POS terminal onboarding (`/api/pos/auth`), thwarting automated credential spraying attacks.
+* **Strict CORS Whitelist:** The POS sync and auth endpoints enforce origin validation against `ALLOWED_POS_ORIGINS` in production, blocking cross-origin browser abuse.
+
 ### Diagnostic & Rescue Module
 An embedded settings drawer allows troubleshooting browser-level storage and caching:
 * **Update Engine:** Triggers registration updates to force newer Service Worker iterations.
@@ -198,7 +211,9 @@ Configure environment files:
 DATABASE_URL="postgresql://shopli:shopli@localhost:5432/shoplidb"
 NEXTAUTH_SECRET="development-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
-POS_SYNC_SECRET="development-sync-handshake"
+# Token independiente de sincronización POS (JWT HMAC-SHA256)
+SYNC_JWT_SECRET="development-sync-jwt-secret-minimum-32-characters"
+ALLOWED_POS_ORIGINS="http://localhost:5173"
 # Stripe & SaaS Subscriptions (Test Mode)
 STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
@@ -207,7 +222,8 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 **`apps/pos/.env`**
 ```env
 VITE_API_BASE_URL="http://localhost:3000"
-VITE_SYNC_SECRET="development-sync-handshake"
+# NOTA: apps/pos ya no requiere secretos estáticos de sincronización.
+# El terminal recibe un token firmado en el login y lo almacena en Dexie de forma segura.
 ```
 
 ### 3. Generate Database Client & Seeds
@@ -268,6 +284,15 @@ To run maintenance and custom development tests on the database and utility feat
   ```bash
   pnpm --filter admin test
   ```
+* **POS Token Security & CORS Unit Suite:** Runs automated tests verifying HMAC-SHA256 signature integrity, expiration guards, secret rotation invalidation, and production CORS whitelist enforcement:
+  ```bash
+  pnpm --filter admin test src/lib/__tests__/pos-security.test.ts
+  ```
+
+#### Manual Security & Revocation Testing Protocols
+1. **Persistent Brute-Force Lockout:** Submit 5 consecutive incorrect PINs to `/api/pos/auth`. Verify that the endpoint returns `429 Too Many Requests` with a 15-minute cooldown, and verify in PostgreSQL that `failedLoginAttempts = 5` and `lockedUntil` is set.
+2. **Dynamic Device Revocation:** Trigger sync from an active POS terminal. Increment `tokenVersion` in PostgreSQL (`UPDATE "Empresa" SET "tokenVersion" = "tokenVersion" + 1;`). Trigger sync again: verify that the backend responds with `401 TOKEN_REVOKED` and the POS screen locks with the `DeviceRevokedScreen` modal offering the "Re-vincular terminal" action.
+3. **Secret Rotation Isolation:** Rotate `SYNC_JWT_SECRET` in `apps/admin/.env`. Verify that existing POS sync tokens are rejected while active NextAuth web dashboard sessions remain uninterrupted.
 
 ---
 

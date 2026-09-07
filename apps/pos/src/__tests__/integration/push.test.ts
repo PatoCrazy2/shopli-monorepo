@@ -4,18 +4,19 @@ import { db } from '../../lib/db';
 import { pushToCloud } from '../../lib/sync';
 import { db as prisma, Role, EstadoTurno } from '@shopli/db';
 
+import { generateTestPosToken } from './test-token-helper';
+
 describe('pushToCloud integration', () => {
   let cashierId: string;
   let testBranchId: string;
   let productId: string;
   let turnoId: string;
+  let testSyncToken: string;
 
   beforeAll(async () => {
     vi.stubGlobal('import.meta', {
       env: {
         VITE_API_BASE_URL: 'http://localhost:3000/api',
-        VITE_SYNC_SECRET: 'ci-pos-sync-secret',
-        VITE_POS_SYNC_SECRET: 'ci-pos-sync-secret',
       }
     });
     vi.stubGlobal('navigator', { onLine: true });
@@ -28,6 +29,7 @@ describe('pushToCloud integration', () => {
           data: {
             id: 'test-empresa-id',
             nombre: 'Test Empresa',
+            tokenVersion: 1,
           }
         });
       } catch (_) {
@@ -39,8 +41,16 @@ describe('pushToCloud integration', () => {
       throw new Error('No se pudo inicializar la empresa de prueba');
     }
 
-    // Configurar Dexie con la empresa para permitir sync
+    testSyncToken = generateTestPosToken({
+      empresa_id: testEmpresa.id,
+      user_id: 'test-user-id',
+      role: 'CAJERO',
+      tokenVersion: testEmpresa.tokenVersion || 1,
+    });
+
+    // Configurar Dexie con la empresa y token para permitir sync
     await db.meta.put({ key: 'empresaId', value: testEmpresa.id });
+    await db.meta.put({ key: 'syncToken', value: testSyncToken });
 
     // 1. Setup Postgres data needed for a successful Push
     // Sucursal vinculada a testEmpresa con UUID válido
@@ -205,12 +215,12 @@ describe('pushToCloud integration', () => {
     };
 
     const response = await fetch(
-      `${apiBase}/pos/sync/push?empresaId=test-empresa-id&secret=ci-pos-sync-secret`,
+      `${apiBase}/pos/sync/push`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-pos-sync-secret': 'ci-pos-sync-secret',
+          'Authorization': `Bearer ${testSyncToken}`,
           'x-test-bypass': 'true', // Válido en NODE_ENV=test
         },
         body: JSON.stringify(payload),
