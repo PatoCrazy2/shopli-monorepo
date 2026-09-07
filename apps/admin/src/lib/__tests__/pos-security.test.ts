@@ -101,14 +101,14 @@ describe('CORS Security Utility', () => {
   });
 
   it('allows localhost origins in development', () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as any).NODE_ENV = 'development';
     expect(isOriginAllowed('http://localhost:5173')).toBe(true);
     expect(isOriginAllowed('http://127.0.0.1:5173')).toBe(true);
     expect(isOriginAllowed('https://malicious-site.com')).toBe(false);
   });
 
   it('strictly restricts origins to ALLOWED_POS_ORIGINS in production', () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
     process.env.ALLOWED_POS_ORIGINS = 'https://pos.shopli.app,https://caja1.shopli.app';
 
     expect(isOriginAllowed('https://pos.shopli.app')).toBe(true);
@@ -118,7 +118,7 @@ describe('CORS Security Utility', () => {
   });
 
   it('injects Vary: Origin and credentials headers properly', () => {
-    process.env.NODE_ENV = 'development';
+    (process.env as any).NODE_ENV = 'development';
     const req = new Request('http://localhost:3000/api/pos/sync/pull', {
       headers: { Origin: 'http://localhost:5173' },
     });
@@ -130,7 +130,7 @@ describe('CORS Security Utility', () => {
   });
 
   it('does NOT set Access-Control-Allow-Origin for unauthorized origins', () => {
-    process.env.NODE_ENV = 'production';
+    (process.env as any).NODE_ENV = 'production';
     process.env.ALLOWED_POS_ORIGINS = 'https://trusted.com';
 
     const req = new Request('http://localhost:3000/api/pos/sync/pull', {

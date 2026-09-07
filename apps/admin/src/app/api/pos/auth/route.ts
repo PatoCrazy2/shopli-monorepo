@@ -132,10 +132,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // 6. Validar Rol
+    // 6. Validar Rol y Empresa
     if (![Role.CAJERO, Role.ENCARGADO, Role.DUENO].includes(user.role)) {
       return NextResponse.json(
         { error: "Rol sin autorización para operar el terminal POS." },
+        { status: 403, headers: responseHeaders }
+      );
+    }
+
+    if (!user.empresa_id) {
+      return NextResponse.json(
+        { error: "Usuario sin empresa asignada. Complete el registro en el panel de administración." },
         { status: 403, headers: responseHeaders }
       );
     }
