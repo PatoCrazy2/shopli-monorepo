@@ -22,16 +22,16 @@ export function PasswordChecklist({ password }: PasswordChecklistProps) {
         <div
           key={idx}
           className={`flex items-center gap-2 transition-colors duration-200 ${
-            item.met ? "text-emerald-600 font-medium" : "text-gray-400"
+            item.met ? "text-emerald-400 font-medium" : "text-neutral-400"
           }`}
         >
           {item.met ? (
-            <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-              <Check className="w-3 h-3 text-emerald-600" />
+            <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+              <Check className="w-2.5 h-2.5 text-emerald-400" />
             </div>
           ) : (
             <div className="w-4 h-4 flex items-center justify-center shrink-0">
-              <Circle className="w-2.5 h-2.5 text-gray-300 fill-gray-100" />
+              <Circle className="w-2.5 h-2.5 text-neutral-400" />
             </div>
           )}
           <span>{item.label}</span>

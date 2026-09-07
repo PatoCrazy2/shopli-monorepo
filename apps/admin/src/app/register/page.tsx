@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Script from "next/script";
 import { signIn } from "next-auth/react";
-import { Eye, EyeOff, Check, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Check, AlertCircle, ChevronLeft } from "lucide-react";
 import { registerUser } from "./actions";
 import { PasswordChecklist } from "@/components/auth/PasswordChecklist";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
@@ -90,7 +91,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen grid items-center justify-center bg-gray-50 selection:bg-black selection:text-white font-sans p-4">
+    <main className="relative min-h-screen w-full flex flex-col justify-between items-center bg-[#09090b] text-neutral-100 font-sans selection:bg-white selection:text-black overflow-x-hidden p-6 sm:p-8">
       {siteKey && (
         <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js"
@@ -98,23 +99,81 @@ export default function RegisterPage() {
           defer
         />
       )}
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 md:p-10 shadow-lg border border-gray-100 transition-shadow duration-300 hover:shadow-xl relative overflow-hidden">
-        {/* Decorative premium accent */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-black via-gray-700 to-black"></div>
 
-        <div className="text-center">
-          <img
-            src="/shopli_snbg.svg"
-            alt="Logo"
-            className="mx-auto w-32 h-32"
-          />
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 mt-0 mb-2">ShopLI</h2>
-          <p className="text-sm text-gray-500 mb-6">Crear Cuenta</p>
+      {/* Background Image con overlay y viñeta radial para integración profunda */}
+      <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
+        <Image
+          src="/shopli-hero-readme.webp"
+          alt="ShopLI Background"
+          fill
+          priority
+          className="object-cover object-center opacity-40 brightness-75"
+        />
+        <div className="absolute inset-0 bg-radial from-transparent via-[#09090b]/60 to-[#09090b]/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#09090b]/70 via-[#09090b]/30 to-[#09090b]/90" />
+      </div>
+
+      {/* Header / Navegación rápida superior */}
+      <header className="relative z-10 w-full max-w-7xl flex items-center justify-between">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors duration-200 group py-2"
+        >
+          <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+          <span>Inicio</span>
+        </Link>
+      </header>
+
+      {/* Contenedor Central del Formulario */}
+      <div className="relative z-10 w-full max-w-[420px] my-auto py-8">
+        {/* Isotipo Oficial ShopLI */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="mb-4">
+            <Image
+              src="/shopliWhite.svg"
+              alt="ShopLI Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12 object-contain filter drop-shadow-[0_2px_12px_rgba(255,255,255,0.12)]"
+              priority
+            />
+          </div>
+          <h1 className="text-2xl sm:text-[1.75rem] font-semibold tracking-tight text-white mb-2">
+            Crear cuenta en ShopLI
+          </h1>
+          <p className="text-xs sm:text-sm text-neutral-400">
+            ¿Ya tienes una cuenta?{" "}
+            <Link
+              href="/login"
+              className="text-neutral-200 font-medium hover:text-white underline underline-offset-4 decoration-neutral-600 hover:decoration-white transition-colors"
+            >
+              Inicia sesión
+            </Link>
+          </p>
         </div>
 
+        {/* Autenticación Social (OAuth) */}
+        <div className="mb-6">
+          <GoogleSignInButton
+            callbackUrl="/onboarding"
+            label="Registrarse con Google"
+            variant="dark"
+          />
+        </div>
+
+        {/* Separador Horizontal Minimalista */}
+        <div className="relative my-6 flex items-center justify-center">
+          <div className="w-full border-t border-white/[0.08]"></div>
+          <span className="absolute bg-[#0b0c0e]/80 px-3 text-[11px] uppercase tracking-wider text-neutral-400 font-medium">
+            o
+          </span>
+        </div>
+
+        {/* Formulario de Registro */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="name">
+          {/* Nombre Completo */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-neutral-300 tracking-wide" htmlFor="name">
               Nombre Completo
             </label>
             <input
@@ -124,13 +183,14 @@ export default function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               required
               disabled={isPending}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-xl bg-[#141416]/90 border border-white/[0.08] text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-white/[0.14] transition-all duration-200 disabled:opacity-50"
               placeholder="Juan Pérez"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
+          {/* Correo Electrónico */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-neutral-300 tracking-wide" htmlFor="email">
               Correo Electrónico
             </label>
             <input
@@ -140,16 +200,16 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isPending}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50"
-              placeholder="admin@shopli.com"
+              className="w-full px-4 py-3 rounded-xl bg-[#141416]/90 border border-white/[0.08] text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-white/[0.14] transition-all duration-200 disabled:opacity-50"
+              placeholder="nombre@empresa.com"
             />
             {emailSuggestion && (
-              <p className="mt-1 text-xs text-neutral-600 flex items-center gap-1">
+              <p className="mt-1 text-xs text-neutral-400 flex items-center gap-1">
                 <span>¿Quisiste decir</span>
                 <button
                   type="button"
                   onClick={() => setEmail(emailSuggestion)}
-                  className="font-medium underline hover:text-black cursor-pointer"
+                  className="font-medium underline text-neutral-200 hover:text-white cursor-pointer"
                 >
                   {emailSuggestion}
                 </button>
@@ -158,16 +218,17 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+          {/* Contraseña */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium text-neutral-300 tracking-wide" htmlFor="password">
                 Contraseña
               </label>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                className="text-xs text-gray-500 hover:text-gray-900 flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-xs text-neutral-400 hover:text-neutral-200 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 {showPassword ? (
                   <>
@@ -189,18 +250,19 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isPending}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50"
+              className="w-full px-4 py-3 rounded-xl bg-[#141416]/90 border border-white/[0.08] text-white placeholder:text-neutral-400 text-sm focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-white/[0.14] transition-all duration-200 disabled:opacity-50"
               placeholder="••••••••"
             />
             {password.length > 0 && (
-              <div className="mt-2">
+              <div className="mt-2 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                 <PasswordChecklist password={password} />
               </div>
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="confirmPassword">
+          {/* Confirmar Contraseña */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-neutral-300 tracking-wide" htmlFor="confirmPassword">
               Confirmar Contraseña
             </label>
             <input
@@ -210,29 +272,30 @@ export default function RegisterPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               disabled={isPending}
-              className={`w-full px-4 py-3 rounded-xl border bg-gray-50 text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all duration-200 disabled:opacity-50 ${
+              className={`w-full px-4 py-3 rounded-xl border text-sm transition-all duration-200 disabled:opacity-50 placeholder:text-neutral-400 text-white ${
                 passwordsMatch
-                  ? "border-emerald-500 bg-emerald-50/20"
+                  ? "border-emerald-500/50 bg-emerald-500/10 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30"
                   : passwordsMismatch
-                  ? "border-red-400 bg-red-50/20"
-                  : "border-gray-200"
+                  ? "border-red-500/50 bg-red-500/10 focus:border-red-400 focus:ring-1 focus:ring-red-400/30"
+                  : "bg-[#141416]/90 border-white/[0.08] focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-white/[0.14]"
               }`}
               placeholder="••••••••"
             />
             {passwordsMatch && (
-              <p className="mt-1.5 text-xs text-emerald-600 flex items-center gap-1 font-medium animate-in fade-in duration-200">
+              <p className="mt-1 text-xs text-emerald-400 flex items-center gap-1 font-medium animate-in fade-in duration-200">
                 <Check className="w-3.5 h-3.5 shrink-0" />
                 Las contraseñas coinciden
               </p>
             )}
             {passwordsMismatch && (
-              <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1 animate-in fade-in duration-200">
+              <p className="mt-1 text-xs text-red-400 flex items-center gap-1 animate-in fade-in duration-200">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 Las contraseñas no coinciden
               </p>
             )}
           </div>
 
+          {/* Cloudflare Turnstile */}
           {siteKey && (
             <div className="flex justify-center my-2">
               <div
@@ -243,49 +306,47 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Alerta de Error */}
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm border border-red-100 flex items-center gap-2 animate-in fade-in duration-300">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
           )}
 
+          {/* Botón Principal Submit */}
           <button
             type="submit"
             disabled={isPending || !passwordRules.isValid || !passwordsMatch}
-            className="w-full py-3 px-4 flex justify-center items-center gap-2 rounded-xl text-white bg-black hover:bg-gray-800 focus:ring-2 focus:ring-offset-2 focus:ring-black transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full mt-2 py-3 px-4 flex justify-center items-center gap-2 rounded-xl text-black bg-white hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-black focus:ring-white transition-all duration-200 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-md"
           >
             {isPending ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             ) : (
-              "Crear Cuenta"
+              "Crear cuenta"
             )}
           </button>
         </form>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-3 text-gray-500 font-medium tracking-wider">o</span>
-          </div>
-        </div>
-
-        <GoogleSignInButton callbackUrl="/onboarding" label="Continuar con Google" />
-
-        <div className="mt-6 text-center">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-gray-500 hover:text-black transition-colors"
-          >
-            ¿Ya tienes una cuenta? Inicia sesión
+        {/* Footer Legal Discreto */}
+        <p className="mt-8 text-center text-[11px] leading-relaxed text-neutral-400">
+          Al registrarte, aceptas nuestros{" "}
+          <Link href="/terms" className="underline underline-offset-2 text-neutral-300 hover:text-white transition-colors">
+            Términos de servicio
+          </Link>{" "}
+          y{" "}
+          <Link href="/privacy" className="underline underline-offset-2 text-neutral-300 hover:text-white transition-colors">
+            Aviso de privacidad
           </Link>
-        </div>
+          .
+        </p>
       </div>
+
+      {/* Bottom Spacer for Centering */}
+      <div className="relative z-10 w-full max-w-7xl h-4" />
     </main>
   );
 }
