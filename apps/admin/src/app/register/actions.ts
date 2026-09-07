@@ -4,7 +4,7 @@ import { db, Role } from "@shopli/db";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { verifyTurnstileToken } from "@/lib/turnstile";
-import { isDisposableEmail, checkPasswordRules } from "@/lib/validators/auth";
+import { checkEmailMxRecord, checkPasswordRules } from "@/lib/validators/auth";
 
 const registerUserSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -30,10 +30,11 @@ export async function registerUser(formData: FormData) {
 
   const { name, email, password, turnstileToken } = parseResult.data;
 
-  // 1. Validar correo temporal / desechable
-  if (isDisposableEmail(email)) {
+  // 1. Validar entregabilidad y dominio de correo profesionalmente (DNS MX Records)
+  const mxCheck = await checkEmailMxRecord(email);
+  if (!mxCheck.valid) {
     return {
-      error: "Por favor utiliza un proveedor de correo corporativo o personal válido (no desechable).",
+      error: mxCheck.reason || "Por favor ingresa un correo electrónico corporativo o personal válido.",
     };
   }
 

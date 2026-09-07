@@ -38,6 +38,49 @@ export function isDisposableEmail(email: string): boolean {
   return DISPOSABLE_EMAIL_DOMAINS.has(domain);
 }
 
+// Validación profesional de entregabilidad de correo comprobando existencia de registros MX por DNS
+export async function checkEmailMxRecord(email: string): Promise<{ valid: boolean; reason?: string }> {
+  if (!email || !email.includes("@")) {
+    return { valid: false, reason: "Formato de correo inválido" };
+  }
+
+  const domain = email.split("@")[1]?.toLowerCase().trim();
+  if (!domain) {
+    return { valid: false, reason: "Dominio de correo inválido" };
+  }
+
+  if (isDisposableEmail(email)) {
+    return { valid: false, reason: "Proveedor de correo temporal o desechable no permitido" };
+  }
+
+  try {
+    const dns = await import("node:dns/promises");
+    const addresses = await dns.resolveMx(domain);
+    if (!addresses || addresses.length === 0) {
+      return { valid: false, reason: "El dominio ingresado no tiene servidores de correo activos (registros MX)" };
+    }
+
+    // Comprobar si los servidores MX de destino pertenecen a infraestructura de servicios desechables conocidos
+    const disposableMxKeywords = ["mailinator", "guerrillamail", "trashmail", "tempmail", "yopmail", "sharklasers"];
+    const hasDisposableMx = addresses.some((mx) =>
+      disposableMxKeywords.some((keyword) => mx.exchange.toLowerCase().includes(keyword))
+    );
+
+    if (hasDisposableMx) {
+      return { valid: false, reason: "Proveedor de correo temporal no permitido" };
+    }
+
+    return { valid: true };
+  } catch (error: any) {
+    // Si el DNS falla con ENOTFOUND o ENODATA, el dominio no existe o no tiene MX
+    if (error.code === "ENOTFOUND" || error.code === "ENODATA") {
+      return { valid: false, reason: "El dominio del correo no existe o no acepta correos entrantes" };
+    }
+    // En caso de timeout de red o error de conectividad local, no bloquear
+    return { valid: true };
+  }
+}
+
 export function suggestEmailDomain(email: string): string | null {
   if (!email || !email.includes("@")) return null;
   const parts = email.split("@");
