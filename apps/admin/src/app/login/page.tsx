@@ -76,11 +76,11 @@ function LoginForm() {
                 <div className="flex flex-col items-center text-center mb-8">
                     <div className="mb-4">
                         <Image
-                            src="/shopli_snbg.svg"
-                            alt="ShopLI Isotipo"
-                            width={56}
-                            height={56}
-                            className="w-14 h-14 object-contain filter drop-shadow-[0_4px_16px_rgba(255,255,255,0.08)]"
+                            src="/shopliWhite.svg"
+                            alt="ShopLI Logo"
+                            width={48}
+                            height={48}
+                            className="w-12 h-12 object-contain filter drop-shadow-[0_2px_12px_rgba(255,255,255,0.12)]"
                             priority
                         />
                     </div>
