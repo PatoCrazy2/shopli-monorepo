@@ -12,6 +12,11 @@ export default function Hero3DViewer() {
     const container = containerRef.current;
     if (!container) return;
 
+    let isVisible = true;
+    let isMounted = true;
+    let animationFrameId: number;
+
+    // Escena y Cámara
     const scene = new THREE.Scene();
     const width = container.clientWidth || 500;
     const height = container.clientHeight || 500;
@@ -19,13 +24,19 @@ export default function Hero3DViewer() {
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.set(0, 0, 4.5);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // Renderer optimizado
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.3;
     container.appendChild(renderer.domElement);
 
+    // Luces
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
     scene.add(ambientLight);
 
@@ -41,13 +52,15 @@ export default function Hero3DViewer() {
     pointLight.position.set(0, 0, 3);
     scene.add(pointLight);
 
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-
     const modelGroup = new THREE.Group();
     scene.add(modelGroup);
 
-    let isMounted = true;
+    // Loader con decodificador Meshopt
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+
+    const materialsToDispose: THREE.Material[] = [];
+    const geometriesToDispose: THREE.BufferGeometry[] = [];
 
     loader.load(
       "/svg-3d-conversion-web.glb",
@@ -61,18 +74,28 @@ export default function Hero3DViewer() {
 
         object.position.sub(center);
 
+        // Escala adaptativa: menor en pantallas pequeñas para que no sature
+        const isMobile = window.innerWidth < 768;
+        const targetScale = isMobile ? 1.85 : 2.4;
+
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = maxDim > 0 ? 2.4 / maxDim : 1;
+        const scale = maxDim > 0 ? targetScale / maxDim : 1;
         object.scale.setScalar(scale);
 
         object.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
-            mesh.material = new THREE.MeshStandardMaterial({
+            if (mesh.geometry) {
+              geometriesToDispose.push(mesh.geometry);
+            }
+
+            const mat = new THREE.MeshStandardMaterial({
               color: 0xffffff,
-              metalness: 0.7,
-              roughness: 0.25,
+              metalness: 0.75,
+              roughness: 0.22,
             });
+            materialsToDispose.push(mat);
+            mesh.material = mat;
           }
         });
 
@@ -87,23 +110,28 @@ export default function Hero3DViewer() {
     let targetRotationX = 0;
     let targetRotationY = 0;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    // Escuchar interacción solo dentro o cerca del viewport/contenedor
+    const handlePointerMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
+      if (e.clientY < rect.top - 100 || e.clientY > rect.bottom + 100) return;
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      targetRotationY = x * 0.5;
-      targetRotationX = -y * 0.4;
+      targetRotationY = Math.max(-0.6, Math.min(0.6, x * 0.5));
+      targetRotationX = Math.max(-0.5, Math.min(0.5, -y * 0.4));
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handlePointerMove, { passive: true });
 
-    let animationFrameId: number;
-    let clock = new THREE.Clock();
+    // Loop de animación pausado si el elemento está fuera de pantalla
+    const clock = new THREE.Clock();
 
     const animate = () => {
+      if (!isMounted) return;
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
 
+      if (!isVisible) return; // Ahorro de GPU/batería cuando se scrollea fuera
+
+      const elapsedTime = clock.getElapsedTime();
       modelGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.08;
       modelGroup.rotation.y += (targetRotationY - modelGroup.rotation.y) * 0.05;
       modelGroup.rotation.x += (targetRotationX - modelGroup.rotation.x) * 0.05;
@@ -113,6 +141,16 @@ export default function Hero3DViewer() {
 
     animate();
 
+    // Intersection Observer para pausar render cuando no esté visible
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry?.isIntersecting ?? true;
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
+
+    // Resize Handler
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth;
@@ -124,11 +162,22 @@ export default function Hero3DViewer() {
 
     window.addEventListener("resize", handleResize);
 
+    // Limpieza estricta de memoria VRAM y listeners
     return () => {
       isMounted = false;
-      window.removeEventListener("mousemove", handleMouseMove);
+      observer.disconnect();
+      window.removeEventListener("mousemove", handlePointerMove);
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
+
+      geometriesToDispose.forEach((g) => g.dispose());
+      materialsToDispose.forEach((m) => m.dispose());
+
+      ambientLight.dispose();
+      dirLight1.dispose();
+      dirLight2.dispose();
+      pointLight.dispose();
+
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -136,5 +185,10 @@ export default function Hero3DViewer() {
     };
   }, []);
 
-  return <div ref={containerRef} className="w-full h-full min-h-[380px] sm:min-h-[480px]" />;
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full min-h-[260px] sm:min-h-[400px] lg:min-h-[500px]"
+    />
+  );
 }

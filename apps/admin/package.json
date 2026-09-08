@@ -11,8 +11,6 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
-    "@react-three/drei": "^10.7.8",
-    "@react-three/fiber": "^9.7.0",
     "@repo/ui": "workspace:^",
     "@shopli/db": "workspace:^",
     "bcryptjs": "^3.0.3",
