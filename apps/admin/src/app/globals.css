@@ -81,3 +81,25 @@ input[type="password"]::-ms-clear {
   opacity: 0;
   animation: heroBgReveal 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
+
+/* Efecto de borde con luz en rotación de los colores de Google */
+@keyframes googleBorderRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.google-border-glow {
+  background: conic-gradient(
+    from 0deg,
+    #4285F4,
+    #EA4335,
+    #FBBC05,
+    #34A853,
+    #4285F4
+  );
+  animation: googleBorderRotate 4s linear infinite;
+}
