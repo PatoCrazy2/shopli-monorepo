@@ -217,7 +217,8 @@ export default function Hero3DViewer() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center select-none"
+      className="w-full h-full flex items-center justify-center select-none animate-fade-in"
+      style={{ animationDelay: "1.9s", opacity: 0 }}
     />
   );
 }

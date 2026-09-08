@@ -33,7 +33,10 @@ export default function LandingNavbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 w-full h-16 bg-[#050507]/60 backdrop-blur-xl border-b border-white/[0.05] transition-all duration-300">
+      <header
+        className="fixed top-0 left-0 right-0 z-50 w-full h-16 bg-[#050507]/60 backdrop-blur-xl border-b border-white/[0.05] transition-all duration-300 animate-slide-down"
+        style={{ animationDelay: "1.9s" }}
+      >
         <div className="w-full max-w-7xl mx-auto h-full px-6 sm:px-12 flex items-center justify-between">
           {/* Brand: Muestra el nombre por defecto y cambia suavemente al logo al hacer hover */}
           <Link href="/" className="relative flex items-center h-8 group select-none">

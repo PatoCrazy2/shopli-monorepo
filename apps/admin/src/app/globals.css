@@ -6,7 +6,7 @@ input[type="password"]::-ms-clear {
   display: none;
 }
 
-/* Landing Page Animaciones Suaves */
+/* Landing Page Animaciones Suaves y Coreografiadas */
 @keyframes heroFadeIn {
   from {
     opacity: 0;
@@ -18,6 +18,66 @@ input[type="password"]::-ms-clear {
   }
 }
 
+@keyframes heroWordReveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroLetterReveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes heroSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroBgReveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .animate-fade-in {
-  animation: heroFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: heroFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-word {
+  opacity: 0;
+  animation: heroWordReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-letter {
+  opacity: 0;
+  animation: heroLetterReveal 0.15s ease-out forwards;
+}
+
+.animate-slide-down {
+  opacity: 0;
+  animation: heroSlideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bg-reveal {
+  opacity: 0;
+  animation: heroBgReveal 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
