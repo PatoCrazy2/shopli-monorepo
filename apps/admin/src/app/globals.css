@@ -5,3 +5,19 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none;
 }
+
+/* Landing Page Animaciones Suaves */
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: heroFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
