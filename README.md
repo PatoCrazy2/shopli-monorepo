@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src=".github/assets/shopli-hero.webp" alt="ShopLI POS & BI Platform Showcase" width="100%" style="border-radius: 8px;" />
+<a href="https://shopli.vercel.app/" target="_blank" rel="noopener noreferrer">
+  <img src=".github/assets/shopli-hero.webp" alt="ShopLI POS & BI Platform Showcase" width="100%" style="border-radius: 8px;" />
+</a>
 
 <br />
 <br />
