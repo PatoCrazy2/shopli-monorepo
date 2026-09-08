@@ -6,13 +6,15 @@ export default function HeroSection() {
   return (
     <main className="relative z-10 min-h-screen flex items-center justify-center max-w-7xl mx-auto px-6 sm:px-12 pt-24 pb-16">
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-8 items-center">
-        {/* En móvil pasa arriba (order-1), en escritorio a la derecha (lg:order-2) */}
-        <div className="order-1 lg:order-2 w-full h-[280px] sm:h-[420px] lg:h-[550px] flex items-center justify-center">
-          <Hero3DViewer />
+        {/* En móvil pasa arriba (order-1), caja proporcional limpia; en desktop a la derecha (lg:order-2) con altura completa */}
+        <div className="order-1 lg:order-2 w-full flex items-center justify-center">
+          <div className="w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[380px] lg:max-w-none h-[280px] xs:h-[320px] sm:h-[380px] lg:h-[540px] flex items-center justify-center">
+            <Hero3DViewer />
+          </div>
         </div>
 
-        {/* En móvil pasa abajo del 3D (order-2), en escritorio a la izquierda (lg:order-1) */}
-        <div className="order-2 lg:order-1 flex flex-col items-start max-w-xl">
+        {/* En móvil pasa abajo del 3D (order-2), centrado o alineado a la izquierda */}
+        <div className="order-2 lg:order-1 flex flex-col items-center lg:items-start text-center lg:text-left max-w-xl">
           {/* Titular con Degradado de Blanco a Gris Metálico (Lujo) */}
           <h1 className="text-3xl sm:text-5xl lg:text-[3.75rem] font-bold tracking-tight leading-[1.08] mb-6">
             <span className="bg-gradient-to-b from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent block">

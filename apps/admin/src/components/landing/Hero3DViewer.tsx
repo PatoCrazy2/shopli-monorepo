@@ -62,25 +62,56 @@ export default function Hero3DViewer() {
     const materialsToDispose: THREE.Material[] = [];
     const geometriesToDispose: THREE.BufferGeometry[] = [];
 
+    let objectBoundingRadius = 1;
+
+    // Función matemática para encuadrar la cámara al objeto perfectamente
+    const fitCameraToObject = () => {
+      if (!container) return;
+      const w = container.clientWidth || 500;
+      const h = container.clientHeight || 500;
+      const aspect = w / h;
+
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+
+      // Calcular distancia según FOV vertical y FOV horizontal
+      const fovRad = (camera.fov * Math.PI) / 180;
+      // Margen de padding para que el objeto ocupe un porcentaje ideal y tenga holgura al rotar
+      const isMobile = window.innerWidth < 1024;
+      const fitFactor = isMobile ? 1.25 : 1.15; // Da ~80% en desktop y ~75% en mobile
+
+      // Distancia necesaria verticalmente
+      let distance = (objectBoundingRadius * fitFactor) / Math.sin(fovRad / 2);
+
+      // Si el aspecto es estrecho (móvil portrait), asegurarse de que tampoco se corte horizontalmente
+      const hFovRad = 2 * Math.atan(Math.tan(fovRad / 2) * aspect);
+      const distanceH = (objectBoundingRadius * fitFactor) / Math.sin(hFovRad / 2);
+
+      camera.position.z = Math.max(distance, distanceH);
+      camera.lookAt(0, 0, 0);
+    };
+
     loader.load(
       "/svg-3d-conversion-web.glb",
       (gltf) => {
         if (!isMounted) return;
         const object = gltf.scene;
 
+        // Centrar geométricamente el objeto en su origen (0, 0, 0)
         const box = new THREE.Box3().setFromObject(object);
-        const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
-
         object.position.sub(center);
 
-        // Escala adaptativa: menor en pantallas pequeñas para que no sature
-        const isMobile = window.innerWidth < 768;
-        const targetScale = isMobile ? 1.85 : 2.4;
+        // Normalizar tamaño base a radio 1 para máxima precisión matemática
+        const sphere = new THREE.Sphere();
+        box.getBoundingSphere(sphere);
+        const radius = sphere.radius || 1;
+        const normalizeScale = 1 / radius;
+        object.scale.setScalar(normalizeScale);
 
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = maxDim > 0 ? targetScale / maxDim : 1;
-        object.scale.setScalar(scale);
+        // El radio normalizado es 1
+        objectBoundingRadius = 1;
 
         object.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
@@ -100,6 +131,9 @@ export default function Hero3DViewer() {
         });
 
         modelGroup.add(object);
+
+        // Encuadrar cámara inmediatamente con las dimensiones calculadas
+        fitCameraToObject();
       },
       undefined,
       (err) => {
@@ -110,7 +144,7 @@ export default function Hero3DViewer() {
     let targetRotationX = 0;
     let targetRotationY = 0;
 
-    // Escuchar interacción solo dentro o cerca del viewport/contenedor
+    // Escuchar interacción suave con el cursor o touch
     const handlePointerMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       if (e.clientY < rect.top - 100 || e.clientY > rect.bottom + 100) return;
@@ -150,14 +184,9 @@ export default function Hero3DViewer() {
     );
     observer.observe(container);
 
-    // Resize Handler
+    // Resize Handler profesional: reajusta cámara y frustum matemáticamente
     const handleResize = () => {
-      if (!container) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+      fitCameraToObject();
     };
 
     window.addEventListener("resize", handleResize);
@@ -188,7 +217,7 @@ export default function Hero3DViewer() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-[260px] sm:min-h-[400px] lg:min-h-[500px]"
+      className="w-full h-full flex items-center justify-center select-none"
     />
   );
 }
