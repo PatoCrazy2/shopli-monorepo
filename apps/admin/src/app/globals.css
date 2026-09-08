@@ -103,3 +103,17 @@ input[type="password"]::-ms-clear {
   );
   animation: googleBorderRotate 4s linear infinite;
 }
+
+/* Efecto de borde con luz en rotación metálica de lujo (Platino / Cromo) */
+.metallic-border-glow {
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.8),
+    rgba(163, 163, 163, 0.3),
+    rgba(255, 255, 255, 0.1),
+    rgba(212, 212, 216, 0.7),
+    rgba(113, 113, 122, 0.2),
+    rgba(255, 255, 255, 0.85)
+  );
+  animation: googleBorderRotate 4s linear infinite;
+}

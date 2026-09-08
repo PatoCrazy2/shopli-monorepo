@@ -85,14 +85,20 @@ export default function HeroSection() {
             className="flex flex-wrap items-center gap-4 animate-fade-in"
             style={{ animationDelay: "1.9s", opacity: 0 }}
           >
-            {/* Botón Principal: Comenzar prueba gratis */}
-            <Link
-              href="/register"
-              className="group inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.16] text-white font-medium text-sm border border-white/[0.16] backdrop-blur-xl transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_32px_rgba(255,255,255,0.08)] cursor-pointer"
-            >
-              <span>Comenzar prueba gratis</span>
-              <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-white" />
-            </Link>
+            {/* Botón Principal: Comenzar prueba gratis con borde de luz metálica en hover */}
+            <div className="relative group p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
+              {/* Luz desenfocada perimetral metálica (platino/cromo) que gira en hover */}
+              <div className="absolute -inset-[100%] metallic-border-glow opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[3px] pointer-events-none" />
+
+              {/* Botón interior */}
+              <Link
+                href="/register"
+                className="relative z-10 inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-medium text-sm border border-white/[0.14] group-hover:border-transparent backdrop-blur-xl transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer"
+              >
+                <span>Comenzar prueba gratis</span>
+                <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-white" />
+              </Link>
+            </div>
 
             {/* Botón Secundario: Crear cuenta con Google con borde de luz perimetral rotativa en hover */}
             <div className="relative group p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
