@@ -2,7 +2,18 @@
 
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { upsertProduct } from "../actions";
+import { ScanBarcode, Camera, Check } from "lucide-react";
+
+// Lazy-load del modal del escáner: solo se descarga el bundle de la cámara cuando el usuario hace clic
+const BarcodeScannerModal = dynamic(
+  () =>
+    import("../_components/BarcodeScannerModal").then(
+      (mod) => mod.BarcodeScannerModal
+    ),
+  { ssr: false }
+);
 
 interface ProductFormProps {
   initialData?: {
@@ -26,9 +37,16 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [variants, setVariants] = useState<Array<{ id?: string; variante_nombre: string; codigo_interno: string | null }>>(
-    initialData?.variants || []
-  );
+  const [parentSku, setParentSku] = useState(initialData?.codigo_interno || "");
+  const [scannedFeedback, setScannedFeedback] = useState<string | null>(null);
+  const [scannerTarget, setScannerTarget] = useState<
+    "parent" | { variantIndex: number } | null
+  >(null);
+
+  const [variants, setVariants] = useState<
+    Array<{ id?: string; variante_nombre: string; codigo_interno: string | null }>
+  >(initialData?.variants || []);
+
 
   const addVariant = () => {
     setVariants([...variants, { variante_nombre: "", codigo_interno: "" }]);
@@ -82,16 +100,36 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
-            SKU (Código Interno)
-          </label>
-          <input
-            name="codigo_interno"
-            type="text"
-            defaultValue={initialData?.codigo_interno || ""}
-            className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
-            placeholder="Ej: PROD-123"
-          />
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
+              SKU (Código Interno / Barras)
+            </label>
+            {scannedFeedback === "parent" && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 animate-in fade-in duration-200">
+                <Check className="w-3 h-3" />
+                ¡Escaneado!
+              </span>
+            )}
+          </div>
+          <div className="relative flex items-center">
+            <input
+              name="codigo_interno"
+              type="text"
+              value={parentSku}
+              onChange={(e) => setParentSku(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent pl-3 pr-28 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 font-mono"
+              placeholder="Ej: PROD-123"
+            />
+            <button
+              type="button"
+              onClick={() => setScannerTarget("parent")}
+              className="absolute right-1.5 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold transition-all shadow-xs active:scale-95"
+              title="Escanear código con la cámara"
+            >
+              <ScanBarcode className="w-3.5 h-3.5" />
+              <span>Escanear</span>
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2 sm:col-span-2">
@@ -191,39 +229,56 @@ export function ProductForm({ initialData }: ProductFormProps) {
 
         {variants.length > 0 && (
           <div className="space-y-3">
-            {variants.map((v, index) => (
-              <div key={index} className="flex gap-4 items-center animate-in fade-in duration-200">
-                <input type="hidden" value={v.id || ""} />
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Nombre (ej: Rojo, Café, Grande)"
-                    value={v.variante_nombre}
-                    onChange={(e) => updateVariant(index, "variante_nombre", e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all duration-200"
-                  />
+            {variants.map((v, index) => {
+              const isVariantScanned = scannedFeedback === `variant-${index}`;
+
+              return (
+                <div key={index} className="flex gap-4 items-center animate-in fade-in duration-200">
+                  <input type="hidden" value={v.id || ""} />
+                  <div className="flex-1">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nombre (ej: Rojo, Café, Grande)"
+                      value={v.variante_nombre}
+                      onChange={(e) => updateVariant(index, "variante_nombre", e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all duration-200"
+                    />
+                  </div>
+                  <div className="flex-1 relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="Código Interno / Código Barras"
+                      value={v.codigo_interno || ""}
+                      onChange={(e) => updateVariant(index, "codigo_interno", e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent pl-3 pr-12 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all duration-200 font-mono"
+                    />
+                    <div className="absolute right-1.5 flex items-center gap-1">
+                      {isVariantScanned && (
+                        <Check className="w-3.5 h-3.5 text-emerald-600 animate-in fade-in" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setScannerTarget({ variantIndex: index })}
+                        className="p-1.5 rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition-colors shadow-xs active:scale-95"
+                        title="Escanear código con la cámara"
+                      >
+                        <ScanBarcode className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(index)}
+                    className="p-2 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded-lg hover:border-red-100 dark:hover:border-red-900 border border-transparent transition-colors shrink-0"
+                  >
+                    <svg xmlns="http://www.w3.org/2050/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="Código Interno / Código Barras"
-                    value={v.codigo_interno || ""}
-                    onChange={(e) => updateVariant(index, "codigo_interno", e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-all duration-200"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeVariant(index)}
-                  className="p-2 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded-lg hover:border-red-100 dark:hover:border-red-900 border border-transparent transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2050/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
-                  </svg>
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <input type="hidden" name="variants" value={JSON.stringify(variants)} />
@@ -251,6 +306,33 @@ export function ProductForm({ initialData }: ProductFormProps) {
           Guardar Producto
         </button>
       </div>
+
+      {/* Modal de Escaneo con Cámara Lazy Loaded */}
+      <BarcodeScannerModal
+        isOpen={scannerTarget !== null}
+        onClose={() => setScannerTarget(null)}
+        onScan={(barcode) => {
+          if (scannerTarget === "parent") {
+            setParentSku(barcode);
+            setScannedFeedback("parent");
+            setTimeout(() => setScannedFeedback(null), 3000);
+          } else if (scannerTarget && typeof scannerTarget === "object") {
+            updateVariant(scannerTarget.variantIndex, "codigo_interno", barcode);
+            setScannedFeedback(`variant-${scannerTarget.variantIndex}`);
+            setTimeout(() => setScannedFeedback(null), 3000);
+          }
+        }}
+        title={
+          scannerTarget === "parent"
+            ? "Escanear SKU Principal"
+            : scannerTarget && typeof scannerTarget === "object"
+            ? `Escanear SKU de Variante: ${
+                variants[scannerTarget.variantIndex]?.variante_nombre ||
+                `#${scannerTarget.variantIndex + 1}`
+              }`
+            : "Escanear Código de Barras"
+        }
+      />
     </form>
   );
 }

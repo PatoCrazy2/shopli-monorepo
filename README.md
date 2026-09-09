@@ -139,6 +139,14 @@ To eliminate server load and avoid external microservice/render dependencies, Sh
 * **Thermal Roll Layout:** Generates a continuous, single-label landscape PDF (50mm x 25mm) customized for standard barcode and thermal roll printers.
 * **Metadata Overlay:** Each label embeds a generated vector QR code mapped to the product's unique SKU, alongside wrapped text including the product name, variant name, and price.
 
+### Hardware-Accelerated Camera Barcode & QR Scanner
+To streamline product intake and catalog management across desktop and mobile devices, the product form provides native camera-based barcode and QR code capture:
+
+* **Dual Engine Architecture:** Leverages GPU hardware-accelerated barcode detection with progressive enhancement and a modular `html5-qrcode` engine loaded strictly on-demand (lazy-loaded with zero impact on initial bundle size).
+* **Multi-Format Retail Support:** Scans standard commercial 1D and 2D formats including EAN-13, EAN-8, CODE-128, CODE-39, UPC-A, UPC-E, and QR codes.
+* **Variant-Level Mapping:** Supports independent barcode capture for base products as well as granular SKU assignment on matrix variants (sizes, colors, flavors).
+* **Integrated Touch & Haptic Feedback:** Synthesizes low-latency audio confirmation via the native Web Audio API (`1200Hz` sine tone) and device vibration without external audio asset downloads. Includes hardware flashlight/torch controls on supported rear cameras.
+
 ---
 
 ## Security Architecture
