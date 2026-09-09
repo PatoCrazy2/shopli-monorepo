@@ -4,14 +4,16 @@ import { useState } from "react";
 import Image from "next/image";
 import {
   Zap,
-  ScanBarcode,
   WifiOff,
-  Clock,
   Store,
   ShieldCheck,
   TrendingUp,
   Users,
   ArrowDown,
+  PackageSearch,
+  ClipboardCheck,
+  ShieldAlert,
+  Wallet,
 } from "lucide-react";
 
 type AppType = "pos" | "admin";
@@ -24,24 +26,34 @@ interface FeatureItem {
 
 const POS_FEATURES: FeatureItem[] = [
   {
-    icon: Zap,
-    title: "Venta táctil a 60 FPS",
-    description: "Catálogo ágil y cobro instantáneo en cualquier celular o tablet.",
+    icon: PackageSearch,
+    title: "Disponibilidad de stock al instante",
+    description: "Busca productos y verifica existencias de tu sucursal en tiempo real sin salir del mostrador.",
   },
   {
-    icon: ScanBarcode,
-    title: "Escáner con cámara",
-    description: "Lectura óptica de códigos de barras sin comprar equipo láser adicional.",
+    icon: ClipboardCheck,
+    title: "Auditoría continua a puertas abiertas",
+    description: "Realiza inventarios físicos sin cerrar tienda ni pausar ventas gracias a conciliación inteligente.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Prevención de robo hormiga diario",
+    description: "Corte de caja con conteo a ciegas de 3 productos aleatorios para blindar mermas.",
+  },
+  {
+    icon: Zap,
+    title: "Cobro ultrarrápido a 60 FPS",
+    description: "Catálogo táctil ágil y lectura de códigos con la cámara de tu celular sin equipo extra.",
+  },
+  {
+    icon: Wallet,
+    title: "Control de gastos de caja chica",
+    description: "Registra salidas menores de efectivo al momento y mantén tu arqueo cuadrado al centavo.",
   },
   {
     icon: WifiOff,
-    title: "Arquitectura offline-first",
-    description: "Opera y registra transacciones continuamente incluso sin conexión.",
-  },
-  {
-    icon: Clock,
-    title: "Turnos y arqueos ciegos",
-    description: "Apertura en dos toques y conciliación de efectivo sin descuadres.",
+    title: "Operación blindada sin internet",
+    description: "Sigue cobrando, abriendo turnos y registrando ventas aunque la red falle por completo.",
   },
 ];
 
@@ -194,7 +206,7 @@ export default function EcosystemIntroSection() {
                 onClick={scrollToPhoneShowcase}
                 className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white transition-colors cursor-pointer"
               >
-                <span>Ver demostración en 3D</span>
+                <span>Ver demostración</span>
                 <ArrowDown className="w-3.5 h-3.5 opacity-70" />
               </button>
             </div>
