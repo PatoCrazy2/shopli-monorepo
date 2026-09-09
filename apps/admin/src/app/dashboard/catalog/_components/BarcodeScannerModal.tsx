@@ -207,6 +207,8 @@ export function BarcodeScannerModal({
     };
   }, [stopScanner]);
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between animate-in fade-in duration-200 select-none">
       {/* Barra superior flotante con Botón de Cierre y Título */}

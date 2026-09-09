@@ -307,32 +307,34 @@ export function ProductForm({ initialData }: ProductFormProps) {
         </button>
       </div>
 
-      {/* Modal de Escaneo con Cámara Lazy Loaded */}
-      <BarcodeScannerModal
-        isOpen={scannerTarget !== null}
-        onClose={() => setScannerTarget(null)}
-        onScan={(barcode) => {
-          if (scannerTarget === "parent") {
-            setParentSku(barcode);
-            setScannedFeedback("parent");
-            setTimeout(() => setScannedFeedback(null), 3000);
-          } else if (scannerTarget && typeof scannerTarget === "object") {
-            updateVariant(scannerTarget.variantIndex, "codigo_interno", barcode);
-            setScannedFeedback(`variant-${scannerTarget.variantIndex}`);
-            setTimeout(() => setScannedFeedback(null), 3000);
+      {/* Modal de Escaneo con Cámara Lazy Loaded (solo se monta cuando se solicita) */}
+      {scannerTarget !== null && (
+        <BarcodeScannerModal
+          isOpen={true}
+          onClose={() => setScannerTarget(null)}
+          onScan={(barcode) => {
+            if (scannerTarget === "parent") {
+              setParentSku(barcode);
+              setScannedFeedback("parent");
+              setTimeout(() => setScannedFeedback(null), 3000);
+            } else if (scannerTarget && typeof scannerTarget === "object") {
+              updateVariant(scannerTarget.variantIndex, "codigo_interno", barcode);
+              setScannedFeedback(`variant-${scannerTarget.variantIndex}`);
+              setTimeout(() => setScannedFeedback(null), 3000);
+            }
+          }}
+          title={
+            scannerTarget === "parent"
+              ? "Escanear SKU Principal"
+              : scannerTarget && typeof scannerTarget === "object"
+              ? `Escanear SKU de Variante: ${
+                  variants[scannerTarget.variantIndex]?.variante_nombre ||
+                  `#${scannerTarget.variantIndex + 1}`
+                }`
+              : "Escanear Código de Barras"
           }
-        }}
-        title={
-          scannerTarget === "parent"
-            ? "Escanear SKU Principal"
-            : scannerTarget && typeof scannerTarget === "object"
-            ? `Escanear SKU de Variante: ${
-                variants[scannerTarget.variantIndex]?.variante_nombre ||
-                `#${scannerTarget.variantIndex + 1}`
-              }`
-            : "Escanear Código de Barras"
-        }
-      />
+        />
+      )}
     </form>
   );
 }
