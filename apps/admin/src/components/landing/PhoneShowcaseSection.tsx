@@ -209,7 +209,7 @@ export default function PhoneShowcaseSection() {
   return (
     <section
       ref={sectionRef}
-      id="capacidades"
+      id="showcase-phone"
       className="relative z-20 w-full h-[280vh] bg-[#050507]"
     >
       {/* Viewport Fijo: La pantalla se detiene por completo mientras el teléfono hace su recorrido */}

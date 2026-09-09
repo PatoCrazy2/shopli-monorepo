@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import LandingNavbar from "@/components/landing/LandingNavbar";
 import HeroSection from "@/components/landing/HeroSection";
+import EcosystemIntroSection from "@/components/landing/EcosystemIntroSection";
 import PhoneShowcaseSection from "@/components/landing/PhoneShowcaseSection";
 
 export default async function HomePage() {
@@ -36,6 +37,9 @@ export default async function HomePage() {
 
       {/* Hero Section Modular (con 3D adaptativo en mobile y desktop) */}
       <HeroSection />
+
+      {/* Sección Ecosistema Dual: Presentación de ShopLI POS & Admin */}
+      <EcosystemIntroSection />
 
       {/* Sección Showcase iPhone 16 con Demo de POS */}
       <PhoneShowcaseSection />
