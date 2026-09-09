@@ -445,18 +445,18 @@ export default function PhoneShowcaseSection() {
                   </div>
 
                   {/* Contenido Tipográfico Minimalista (Luma / Stripe) */}
-                  <div className="flex flex-col min-w-0 pr-1">
+                  <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 mb-0.5">
                       {ch.category}
                     </span>
                     <h3
-                      className={`text-base font-semibold tracking-tight transition-colors duration-300 leading-snug truncate ${
+                      className={`text-base font-semibold tracking-tight transition-colors duration-300 leading-snug ${
                         isActive ? "text-white" : "text-neutral-200"
                       }`}
                     >
                       {ch.title}
                     </h3>
-                    <p className="text-xs text-neutral-400/90 line-clamp-1 mt-0.5 leading-normal">
+                    <p className="text-xs text-neutral-400/90 mt-1 leading-relaxed">
                       {ch.description}
                     </p>
                   </div>
@@ -494,7 +494,7 @@ export default function PhoneShowcaseSection() {
                 >
                   <Icon className="w-3.5 h-3.5 stroke-[1.8]" />
                 </div>
-                <span className="text-[9px] font-medium leading-tight line-clamp-1">{ch.title}</span>
+                <span className="text-[9px] font-medium leading-tight line-clamp-2 h-6 flex items-center justify-center">{ch.title}</span>
               </button>
             );
           })}
