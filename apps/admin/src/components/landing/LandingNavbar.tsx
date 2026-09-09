@@ -39,7 +39,17 @@ export default function LandingNavbar() {
       >
         <div className="w-full max-w-7xl mx-auto h-full px-6 sm:px-12 flex items-center justify-between">
           {/* Brand: Muestra el nombre por defecto y cambia suavemente al logo al hacer hover */}
-          <Link href="/" className="relative flex items-center h-8 group select-none">
+          <Link
+            href="/"
+            onClick={(e) => {
+              // Si ya estamos en la página de inicio, hacer scroll suave al Hero
+              if (window.location.pathname === "/") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+            className="relative flex items-center h-8 group select-none cursor-pointer"
+          >
             <span className="text-base font-semibold tracking-tight text-white/90 transition-all duration-300 group-hover:opacity-0 group-hover:-translate-y-1">
               ShopLI
             </span>
