@@ -134,10 +134,11 @@ export function ImportCatalogModal() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-100 px-6 text-sm font-bold text-zinc-900 transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+        className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-100 px-3.5 sm:px-5 text-sm font-bold text-zinc-900 transition-all hover:bg-zinc-200 active:scale-95 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 shrink-0"
+        title="Importar productos masivamente desde CSV"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Importar
+        <svg xmlns="http://www.w3.org/2000/svg" className="sm:mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span className="hidden sm:inline">Importar</span>
       </button>
 
       {isOpen && (

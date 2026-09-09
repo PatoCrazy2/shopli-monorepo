@@ -14,12 +14,12 @@ export function PrintCatalogButton({ products }: PrintCatalogButtonProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black px-6 text-sm font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 shadow-sm active:scale-95 transition-all"
+        className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black px-3.5 sm:px-5 text-sm font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 shadow-sm active:scale-95 transition-all shrink-0"
         title="Imprimir planillas de códigos QR para productos de tu catálogo"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="mr-2 h-4 w-4"
+          className="sm:mr-2 h-4 w-4"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -32,7 +32,7 @@ export function PrintCatalogButton({ products }: PrintCatalogButtonProps) {
           <line x1="8" y1="2" x2="8" y2="6"></line>
           <line x1="3" y1="10" x2="21" y2="10"></line>
         </svg>
-        Imprimir Etiquetas
+        <span className="hidden sm:inline">Imprimir Etiquetas</span>
       </button>
 
       <PrintLabelsModal
