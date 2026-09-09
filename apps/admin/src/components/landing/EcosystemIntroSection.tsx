@@ -118,30 +118,29 @@ export default function EcosystemIntroSection() {
         </p>
 
         {/* SELECTOR DE ICONOS PURO (Sin cajas externas ni bordes pesados) */}
-        <div className="flex items-center justify-center gap-8 sm:gap-12 mb-10 select-none">
-          {/* ICONO 1: ShopLI POS */}
+        <div className="flex items-center justify-center gap-10 sm:gap-14 mb-10 select-none">
+          {/* ICONO 1: ShopLI POS (shopli.svg ya es el icono con fondo negro redondeado) */}
           <button
             onClick={() => setActiveApp("pos")}
-            className={`group flex flex-col items-center gap-2.5 cursor-pointer transition-all duration-300 ${
-              activeApp === "pos" ? "opacity-100 scale-100" : "opacity-35 hover:opacity-75 scale-95"
+            className={`group flex flex-col items-center gap-3 cursor-pointer transition-all duration-300 ${
+              activeApp === "pos" ? "opacity-100 scale-100" : "opacity-40 hover:opacity-75 scale-95"
             }`}
           >
             <div
-              className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] bg-[#000000] border transition-all duration-300 flex items-center justify-center overflow-hidden ${
+              className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] overflow-hidden transition-all duration-300 flex items-center justify-center ${
                 activeApp === "pos"
-                  ? "border-white/20 shadow-[0_16px_36px_rgba(0,0,0,0.9),0_0_25px_rgba(255,255,255,0.06),inset_0_1px_1px_rgba(255,255,255,0.3)]"
-                  : "border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
+                  ? "shadow-[0_16px_36px_rgba(0,0,0,0.9),0_0_25px_rgba(255,255,255,0.08)] ring-1 ring-white/20"
+                  : "shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
               }`}
             >
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                <Image
-                  src="/shopli.svg"
-                  alt="ShopLI POS"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] via-transparent to-transparent pointer-events-none" />
+              <Image
+                src="/shopli.svg"
+                alt="ShopLI POS Icon"
+                fill
+                unoptimized
+                priority
+                className="object-contain"
+              />
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs sm:text-sm font-medium tracking-tight text-neutral-200">
@@ -153,29 +152,28 @@ export default function EcosystemIntroSection() {
             </div>
           </button>
 
-          {/* ICONO 2: ShopLI Admin */}
+          {/* ICONO 2: ShopLI Admin (squircle blanco cerámico + isotipo negro shopli_snbg.svg) */}
           <button
             onClick={() => setActiveApp("admin")}
-            className={`group flex flex-col items-center gap-2.5 cursor-pointer transition-all duration-300 ${
-              activeApp === "admin" ? "opacity-100 scale-100" : "opacity-35 hover:opacity-75 scale-95"
+            className={`group flex flex-col items-center gap-3 cursor-pointer transition-all duration-300 ${
+              activeApp === "admin" ? "opacity-100 scale-100" : "opacity-40 hover:opacity-75 scale-95"
             }`}
           >
             <div
-              className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] bg-white border transition-all duration-300 flex items-center justify-center overflow-hidden ${
+              className={`relative w-20 h-20 sm:w-24 sm:h-24 rounded-[22px] sm:rounded-[26px] bg-white transition-all duration-300 flex items-center justify-center overflow-hidden ${
                 activeApp === "admin"
-                  ? "border-neutral-300 shadow-[0_16px_36px_rgba(0,0,0,0.9),0_0_30px_rgba(255,255,255,0.15),inset_0_1px_1px_rgba(255,255,255,0.9)]"
-                  : "border-neutral-400 shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
+                  ? "shadow-[0_16px_36px_rgba(0,0,0,0.9),0_0_30px_rgba(255,255,255,0.18)] ring-1 ring-white/40"
+                  : "shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
               }`}
             >
-              <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                <Image
-                  src="/shopli_snbg.svg"
-                  alt="ShopLI Admin"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-neutral-200/40 pointer-events-none" />
+              <Image
+                src="/shopli_snbg.svg"
+                alt="ShopLI Admin Icon"
+                fill
+                unoptimized
+                priority
+                className="object-contain"
+              />
             </div>
             <div className="flex flex-col items-center">
               <span className="text-xs sm:text-sm font-medium tracking-tight text-neutral-200">
@@ -188,18 +186,18 @@ export default function EcosystemIntroSection() {
           </button>
         </div>
 
-        {/* FUNCIONALIDADES: GRID MINIMALISTA LIMPIO (Resend Style: iconos grises, sin cajas) */}
+        {/* FUNCIONALIDADES: GRID MINIMALISTA LIMPIO (Alineación pixel-perfect con leading-5) */}
         <div className="w-full max-w-3xl pt-6 border-t border-white/[0.06]">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6 text-left">
             {(activeApp === "pos" ? POS_FEATURES : ADMIN_FEATURES).map((item, i) => {
               const Icon = item.icon;
               return (
-                <div key={i} className="flex items-start gap-3.5">
-                  <div className="shrink-0 mt-0.5 text-neutral-400">
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-5 h-5 shrink-0 flex items-center justify-center text-neutral-400">
                     <Icon className="w-4 h-4 stroke-[1.75]" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-neutral-200 leading-snug mb-1">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-neutral-200 leading-5 mb-1">
                       {item.title}
                     </h3>
                     <p className="text-xs text-neutral-400/80 leading-relaxed">
