@@ -6,59 +6,59 @@ import { KeyRound, ScanBarcode, ShoppingBag, Receipt } from "lucide-react";
 
 interface PosChapter {
   id: string;
-  tag: string;
+  category: string;
   title: string;
-  subtitle: string;
-  metric: string;
+  description: string;
   startSec: number;
   endSec: number;
   icon: React.ComponentType<{ className?: string }>;
+  iconGradient: string;
   positionClass: string;
 }
 
 const CHAPTERS: PosChapter[] = [
   {
     id: "shift",
-    tag: "SYS.01 // CAJA",
-    title: "Apertura de Caja",
-    subtitle: "Arqueo inicial con conciliación en tiempo real sin descuadres.",
-    metric: "FONDO CONTROLADO",
+    category: "Caja & Control",
+    title: "Apertura de Turno",
+    description: "Arqueos ciegos y control de efectivo en tiempo real.",
     startSec: 0,
     endSec: 6,
     icon: KeyRound,
+    iconGradient: "from-amber-400/20 via-orange-500/20 to-amber-500/10 text-amber-300 border-amber-400/20",
     positionClass: "lg:top-2 lg:-left-76 xl:-left-84",
   },
   {
     id: "catalog",
-    tag: "SYS.02 // TÁCTIL",
-    title: "Venta por Pantalla & Carrito",
-    subtitle: "Cuadrícula ágil de productos y cálculo instantáneo offline-first.",
-    metric: "LATENCIA: < 10ms",
+    category: "Catálogo Táctil",
+    title: "Venta Ultrarrápida",
+    description: "Cuadrícula ágil de productos con cobro offline-first.",
     startSec: 6,
     endSec: 23,
     icon: ShoppingBag,
+    iconGradient: "from-sky-400/20 via-blue-500/20 to-indigo-500/10 text-sky-300 border-sky-400/20",
     positionClass: "lg:bottom-2 lg:-left-76 xl:-left-84",
   },
   {
     id: "scan",
-    tag: "SYS.03 // SCANNER",
-    title: "Venta por Escáner",
-    subtitle: "Lectura óptica de códigos de barra continua sin pausas ni esperas.",
-    metric: "DETECCIÓN: LÁSER 60FPS",
+    category: "Escáner Óptico",
+    title: "Lectura Continua",
+    description: "Detección instantánea por código de barras sin demoras.",
     startSec: 23,
     endSec: 36,
     icon: ScanBarcode,
+    iconGradient: "from-emerald-400/20 via-teal-500/20 to-emerald-500/10 text-emerald-300 border-emerald-400/20",
     positionClass: "lg:top-2 lg:-right-76 xl:-right-84",
   },
   {
     id: "ticket",
-    tag: "SYS.04 // RECIBOS",
-    title: "Tickets & Conciliación",
-    subtitle: "Impresión térmica inmediata y cierre de corte blindado.",
-    metric: "COMPROBANTE INSTANTÁNEO",
+    category: "Comprobantes",
+    title: "Tickets & Auditoría",
+    description: "Impresión térmica inmediata y cortes de caja blindados.",
     startSec: 36,
     endSec: 46.5,
     icon: Receipt,
+    iconGradient: "from-purple-400/20 via-fuchsia-500/20 to-purple-500/10 text-purple-300 border-purple-400/20",
     positionClass: "lg:bottom-2 lg:-right-76 xl:-right-84",
   },
 ];
@@ -76,12 +76,11 @@ export default function PhoneShowcaseSection() {
   const [isSettled, setIsSettled] = useState(false);
   const [isScreenOn, setIsScreenOn] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState<string>("shift");
-  const [unlockedChapters, setUnlockedChapters] = useState<Record<string, boolean>>({
-    shift: true, // El primer capítulo siempre arranca activo
-  });
+  const [hasCompletedCycle, setHasCompletedCycle] = useState(false);
 
   const isScreenOnRef = useRef(false);
   const isSettledRef = useRef(false);
+  const hasCompletedCycleRef = useRef(false);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -181,24 +180,19 @@ export default function PhoneShowcaseSection() {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
 
+      // Al alcanzar el final del video (~46s), se completa el ciclo inicial
+      if (time >= 46.0 && !hasCompletedCycleRef.current) {
+        hasCompletedCycleRef.current = true;
+        setHasCompletedCycle(true);
+        // Pausar al completar el ciclo para ahorrar 100% de decoding de video en GPU
+        videoRef.current.pause();
+      }
+
       // Detección del capítulo activo
       const active = CHAPTERS.find((ch) => time >= ch.startSec && time < ch.endSec);
       if (active && active.id !== activeChapterId) {
         setActiveChapterId(active.id);
       }
-
-      // Desbloqueo secuencial de badges al avanzar el video
-      setUnlockedChapters((prev) => {
-        let updated = false;
-        const next = { ...prev };
-        CHAPTERS.forEach((ch) => {
-          if (time >= ch.startSec && !next[ch.id]) {
-            next[ch.id] = true;
-            updated = true;
-          }
-        });
-        return updated ? next : prev;
-      });
     }
   };
 
@@ -209,20 +203,6 @@ export default function PhoneShowcaseSection() {
       if (videoRef.current.paused) {
         videoRef.current.play().catch(() => {});
       }
-      // Al hacer clic directo en un capítulo, se desbloquean él y los anteriores
-      setUnlockedChapters((prev) => {
-        const next = { ...prev };
-        let found = false;
-        CHAPTERS.forEach((ch) => {
-          if (!found) {
-            next[ch.id] = true;
-          }
-          if (ch.id === targetId) {
-            found = true;
-          }
-        });
-        return next;
-      });
     }
   };
 
@@ -389,9 +369,12 @@ export default function PhoneShowcaseSection() {
                       ref={videoRef}
                       playsInline
                       muted
-                      loop
                       preload="auto"
                       onTimeUpdate={handleTimeUpdate}
+                      onEnded={() => {
+                        hasCompletedCycleRef.current = true;
+                        setHasCompletedCycle(true);
+                      }}
                       poster="/pos-demo-poster.webp"
                       className={`w-full h-full object-cover select-none pointer-events-none transition-opacity duration-700 ${
                         isScreenOn ? "opacity-100" : "opacity-0"
@@ -426,69 +409,56 @@ export default function PhoneShowcaseSection() {
               </div>
             </div>
 
-            {/* ----------------- SPATIAL HUD BADGES (DESKTOP: Posiciones Satélite) ----------------- */}
-            {/* TODO: Próxima fase: Rediseño visual profundo de los badges satelitales */}
-            {CHAPTERS.map((ch) => {
+            {/* ----------------- SPATIAL BADGES (DESKTOP: Estilo Apple App Icon / Luma / Stripe) ----------------- */}
+            {CHAPTERS.map((ch, idx) => {
               const Icon = ch.icon;
-              const isUnlocked = isSettled && unlockedChapters[ch.id];
               const isActive = activeChapterId === ch.id;
+              // Durante el video solo se muestra el activo. Al terminar el ciclo, todos se muestran fijos.
+              const isVisible = isSettled && (hasCompletedCycle || isActive);
 
               return (
                 <button
                   key={ch.id}
                   onClick={() => handleSeekTo(ch.startSec, ch.id)}
-                  className={`hidden lg:flex absolute flex-col text-left w-72 p-4 rounded-2xl border transition-all duration-500 cursor-pointer select-none overflow-hidden ${
+                  style={{
+                    transitionDelay: hasCompletedCycle ? `${idx * 60}ms` : "0ms",
+                  }}
+                  className={`hidden lg:flex absolute items-center gap-3.5 text-left w-[300px] p-3.5 rounded-2xl border transition-all duration-500 cursor-pointer select-none ${
                     ch.positionClass
                   } ${
-                    isUnlocked
-                      ? "opacity-100 translate-y-0 pointer-events-auto scale-100"
-                      : "opacity-0 translate-y-6 pointer-events-none scale-95"
+                    isVisible
+                      ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+                      : "opacity-0 translate-y-4 scale-90 pointer-events-none"
                   } ${
                     isActive
-                      ? "bg-[#0b0b10]/95 border-white/30 shadow-[0_15px_40px_rgba(0,0,0,0.9),0_0_25px_rgba(255,255,255,0.08),inset_0_1px_1px_rgba(255,255,255,0.2)]"
-                      : "bg-[#08080c]/65 border-white/[0.08] hover:border-white/20 hover:bg-[#0b0b10]/80 opacity-60 hover:opacity-100"
+                      ? "bg-[#101017]/90 border-white/20 shadow-[0_20px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(255,255,255,0.06),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-white/20"
+                      : "bg-[#0b0b10]/75 border-white/[0.07] hover:border-white/15 hover:bg-[#0f0f16]/85 opacity-70 hover:opacity-100"
                   }`}
                 >
-                  {/* Encabezado del Badge: Micro-Tag Técnico + Estado Pulsante */}
-                  <div className="flex items-center justify-between w-full mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                          isActive
-                            ? "bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.4)]"
-                            : "bg-white/[0.05] text-neutral-400"
-                        }`}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-[11px] font-mono font-semibold tracking-wider text-neutral-400">
-                        {ch.tag}
-                      </span>
-                    </div>
-
-                    {isActive && (
-                      <span className="flex items-center gap-1.5 text-[9px] font-mono font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shadow-[0_0_10px_rgba(52,211,153,0.15)]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        EN VIVO
-                      </span>
-                    )}
+                  {/* Apple App Icon Squircle */}
+                  <div
+                    className={`shrink-0 w-11 h-11 rounded-[14px] flex items-center justify-center border bg-gradient-to-b shadow-[0_4px_12px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-transform duration-300 ${
+                      ch.iconGradient
+                    } ${isActive ? "scale-105" : ""}`}
+                  >
+                    <Icon className="w-5 h-5 stroke-[1.8]" />
                   </div>
 
-                  {/* Título y Subtítulo de Hardware UI */}
-                  <h3
-                    className={`text-sm font-semibold tracking-tight transition-colors duration-300 ${
-                      isActive ? "text-white" : "text-neutral-300"
-                    }`}
-                  >
-                    {ch.title}
-                  </h3>
-                  <p className="text-[11px] text-neutral-400 line-clamp-2 mt-1 leading-relaxed">
-                    {ch.subtitle}
-                  </p>
-
-                  {/* Métrica de Hardware */}
-                  <div className="flex items-center justify-between mt-3 text-[10px] font-mono text-neutral-500">
-                    <span>{ch.metric}</span>
+                  {/* Contenido Tipográfico Minimalista (Luma / Stripe) */}
+                  <div className="flex flex-col min-w-0 pr-1">
+                    <span className="text-[10px] font-medium tracking-wider uppercase text-neutral-400 mb-0.5">
+                      {ch.category}
+                    </span>
+                    <h3
+                      className={`text-sm font-semibold tracking-tight transition-colors duration-300 leading-snug truncate ${
+                        isActive ? "text-white" : "text-neutral-200"
+                      }`}
+                    >
+                      {ch.title}
+                    </h3>
+                    <p className="text-[11px] text-neutral-400/90 line-clamp-1 mt-0.5 leading-normal">
+                      {ch.description}
+                    </p>
                   </div>
                 </button>
               );
@@ -498,28 +468,33 @@ export default function PhoneShowcaseSection() {
 
         {/* ----------------- SELECTOR DE CAPÍTULOS PARA MÓVIL / TABLET (< lg) ----------------- */}
         <div
-          className={`lg:hidden relative z-20 flex items-center justify-center gap-1.5 mt-4 px-2 w-full max-w-md transition-all duration-700 ${
+          className={`lg:hidden relative z-20 flex items-center justify-center gap-2 mt-4 px-2 w-full max-w-md transition-all duration-500 ${
             isSettled ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
           }`}
         >
           {CHAPTERS.map((ch) => {
             const Icon = ch.icon;
-            const isUnlocked = isSettled && unlockedChapters[ch.id];
             const isActive = activeChapterId === ch.id;
+            const isVisible = hasCompletedCycle || isActive;
+
             return (
               <button
                 key={ch.id}
                 onClick={() => handleSeekTo(ch.startSec, ch.id)}
-                className={`flex-1 flex flex-col items-center p-2 rounded-xl border transition-all duration-300 text-center ${
-                  isUnlocked ? "opacity-100" : "opacity-40"
+                className={`flex-1 flex flex-col items-center p-2.5 rounded-2xl border transition-all duration-400 text-center ${
+                  isVisible ? "opacity-100 scale-100" : "opacity-35 scale-95"
                 } ${
                   isActive
-                    ? "bg-[#0e0e14] border-white/30 text-white shadow-[0_0_15px_rgba(255,255,255,0.08)]"
-                    : "bg-[#08080c]/80 border-white/[0.08] text-neutral-400 hover:text-white"
+                    ? "bg-[#12121a] border-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.06)] ring-1 ring-white/15"
+                    : "bg-[#08080c]/80 border-white/[0.07] text-neutral-400 hover:text-white"
                 }`}
               >
-                <Icon className={`w-4 h-4 mb-1 ${isActive ? "text-white" : "text-neutral-400"}`} />
-                <span className="text-[9px] font-mono leading-tight line-clamp-1">{ch.title}</span>
+                <div
+                  className={`w-7 h-7 rounded-[10px] flex items-center justify-center border mb-1.5 bg-gradient-to-b ${ch.iconGradient}`}
+                >
+                  <Icon className="w-3.5 h-3.5 stroke-[1.8]" />
+                </div>
+                <span className="text-[9px] font-medium leading-tight line-clamp-1">{ch.title}</span>
               </button>
             );
           })}
