@@ -15,6 +15,7 @@
     "@shopli/db": "workspace:^",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
+    "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.575.0",
     "meshoptimizer": "^1.2.0",

@@ -146,32 +146,43 @@ export async function resetPin(id: string, newPin: string) {
   }
 }
 
-export async function toggleUser(id: string, currentState: boolean, _formData: FormData) {
+export async function toggleUser(id: string, currentState: boolean, _formData?: FormData) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "DUENO") {
-    throw new Error("No autorizado");
+  if (!session?.user || session.user.role !== "DUENO" || !session.user.empresa_id) {
+    return { error: "No autorizado" };
   }
   
   if (session.user.id === id) {
-    throw new Error("No puedes desactivar tu propia cuenta");
+    return { error: "No puedes desactivar tu propia cuenta" };
   }
 
   const targetUser = await db.user.findUnique({
     where: { id },
-    select: { empresa_id: true }
+    select: { empresa_id: true, active: true, name: true, email: true }
   });
   if (!targetUser || targetUser.empresa_id !== session.user.empresa_id) {
-    throw new Error("No autorizado");
+    return { error: "Usuario no encontrado o no autorizado" };
+  }
+
+  const nextState = !currentState;
+
+  // Si se va a reactivar (nextState === true), validar que no exceda el límite del plan
+  if (nextState) {
+    const checkLimit = await canAddUser(session.user.empresa_id);
+    if (!checkLimit.allowed) {
+      return { error: checkLimit.reason };
+    }
   }
 
   try {
     await db.$executeRaw`
       UPDATE "User"
-      SET "active" = ${!currentState}, "updatedAt" = NOW()
+      SET "active" = ${nextState}, "updatedAt" = NOW()
       WHERE "id" = ${id}
     `;
     revalidatePath("/dashboard/users");
+    return { success: true };
   } catch (error) {
-    throw new Error("Error al cambiar el estado del usuario");
+    return { error: "Error al actualizar el estado del usuario" };
   }
 }
