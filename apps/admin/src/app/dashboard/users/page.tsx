@@ -57,7 +57,10 @@ export default async function UsersPage() {
           <tbody className="divide-y divide-zinc-100">
             {users.map((user: any) => {
               const active = user.active ?? true;
-              const toggleAction = toggleUser.bind(null, user.id, active);
+              const toggleAction = async () => {
+                "use server";
+                await toggleUser(user.id, active);
+              };
               return (
                 <tr key={user.id} className="hover:bg-zinc-50/50 transition-colors">
                   <td className="px-6 py-4 font-medium">{user.name || "Sin nombre"}</td>
