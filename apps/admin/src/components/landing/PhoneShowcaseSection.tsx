@@ -26,7 +26,7 @@ const CHAPTERS: PosChapter[] = [
     endSec: 6,
     icon: KeyRound,
     iconGradient: "from-amber-400/20 via-orange-500/20 to-amber-500/10 text-amber-300 border-amber-400/20",
-    positionClass: "lg:top-2 lg:-left-76 xl:-left-84",
+    positionClass: "lg:top-4 lg:-left-92 xl:-left-104",
   },
   {
     id: "catalog",
@@ -37,7 +37,7 @@ const CHAPTERS: PosChapter[] = [
     endSec: 23,
     icon: ShoppingBag,
     iconGradient: "from-sky-400/20 via-blue-500/20 to-indigo-500/10 text-sky-300 border-sky-400/20",
-    positionClass: "lg:bottom-2 lg:-left-76 xl:-left-84",
+    positionClass: "lg:bottom-4 lg:-left-92 xl:-left-104",
   },
   {
     id: "scan",
@@ -48,7 +48,7 @@ const CHAPTERS: PosChapter[] = [
     endSec: 36,
     icon: ScanBarcode,
     iconGradient: "from-emerald-400/20 via-teal-500/20 to-emerald-500/10 text-emerald-300 border-emerald-400/20",
-    positionClass: "lg:top-2 lg:-right-76 xl:-right-84",
+    positionClass: "lg:top-4 lg:-right-92 xl:-right-104",
   },
   {
     id: "ticket",
@@ -59,7 +59,7 @@ const CHAPTERS: PosChapter[] = [
     endSec: 46.5,
     icon: Receipt,
     iconGradient: "from-purple-400/20 via-fuchsia-500/20 to-purple-500/10 text-purple-300 border-purple-400/20",
-    positionClass: "lg:bottom-2 lg:-right-76 xl:-right-84",
+    positionClass: "lg:bottom-4 lg:-right-92 xl:-right-104",
   },
 ];
 
@@ -266,9 +266,9 @@ export default function PhoneShowcaseSection() {
             {/* Sombra proyectada en plano base acelerada 100% por GPU (sin filter: drop-shadow) */}
             <div
               ref={phoneShadowRef}
-              className="absolute pointer-events-none w-[220px] sm:w-[260px] h-[35px] -bottom-8 rounded-[100%] bg-black/95 blur-2xl will-change-transform"
+              className="absolute pointer-events-none w-[260px] sm:w-[320px] h-[42px] -bottom-9 rounded-[100%] bg-black/95 blur-2xl will-change-transform"
               style={{
-                boxShadow: "0 25px 60px 20px rgba(0, 0, 0, 0.95)",
+                boxShadow: "0 28px 70px 24px rgba(0, 0, 0, 0.95)",
               }}
             />
 
@@ -281,7 +281,7 @@ export default function PhoneShowcaseSection() {
               {/* Capa 2: Contenedor 3D Puro */}
               <div
                 ref={chassisRef}
-                className="relative h-[48vh] sm:h-[52vh] max-h-[460px] aspect-[2620/5416] will-change-transform"
+                className="relative h-[50vh] sm:h-[58vh] lg:h-[62vh] max-h-[580px] aspect-[2620/5416] will-change-transform"
                 style={{
                   transformStyle: "preserve-3d",
                   transform: "translateX(42vw) translateY(16px) rotateX(8deg) rotateY(180deg) rotateZ(-10deg) scale(0.85)",
@@ -423,7 +423,7 @@ export default function PhoneShowcaseSection() {
                   style={{
                     transitionDelay: hasCompletedCycle ? `${idx * 60}ms` : "0ms",
                   }}
-                  className={`hidden lg:flex absolute items-center gap-3.5 text-left w-[300px] p-3.5 rounded-2xl border transition-all duration-500 cursor-pointer select-none ${
+                  className={`hidden lg:flex absolute items-center gap-4 text-left w-[330px] xl:w-[360px] p-4 rounded-2xl border transition-all duration-500 cursor-pointer select-none ${
                     ch.positionClass
                   } ${
                     isVisible
@@ -431,32 +431,32 @@ export default function PhoneShowcaseSection() {
                       : "opacity-0 translate-y-4 scale-90 pointer-events-none"
                   } ${
                     isActive
-                      ? "bg-[#101017]/90 border-white/20 shadow-[0_20px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(255,255,255,0.06),inset_0_1px_1px_rgba(255,255,255,0.15)] ring-1 ring-white/20"
+                      ? "bg-[#101017]/95 border-white/20 shadow-[0_20px_45px_rgba(0,0,0,0.85),0_0_25px_rgba(255,255,255,0.08),inset_0_1px_1px_rgba(255,255,255,0.2)] ring-1 ring-white/25"
                       : "bg-[#0b0b10]/75 border-white/[0.07] hover:border-white/15 hover:bg-[#0f0f16]/85 opacity-70 hover:opacity-100"
                   }`}
                 >
                   {/* Apple App Icon Squircle */}
                   <div
-                    className={`shrink-0 w-11 h-11 rounded-[14px] flex items-center justify-center border bg-gradient-to-b shadow-[0_4px_12px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-transform duration-300 ${
+                    className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border bg-gradient-to-b shadow-[0_4px_14px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-transform duration-300 ${
                       ch.iconGradient
                     } ${isActive ? "scale-105" : ""}`}
                   >
-                    <Icon className="w-5 h-5 stroke-[1.8]" />
+                    <Icon className="w-6 h-6 stroke-[1.8]" />
                   </div>
 
                   {/* Contenido Tipográfico Minimalista (Luma / Stripe) */}
                   <div className="flex flex-col min-w-0 pr-1">
-                    <span className="text-[10px] font-medium tracking-wider uppercase text-neutral-400 mb-0.5">
+                    <span className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 mb-0.5">
                       {ch.category}
                     </span>
                     <h3
-                      className={`text-sm font-semibold tracking-tight transition-colors duration-300 leading-snug truncate ${
+                      className={`text-base font-semibold tracking-tight transition-colors duration-300 leading-snug truncate ${
                         isActive ? "text-white" : "text-neutral-200"
                       }`}
                     >
                       {ch.title}
                     </h3>
-                    <p className="text-[11px] text-neutral-400/90 line-clamp-1 mt-0.5 leading-normal">
+                    <p className="text-xs text-neutral-400/90 line-clamp-1 mt-0.5 leading-normal">
                       {ch.description}
                     </p>
                   </div>
