@@ -5,15 +5,17 @@ import Image from "next/image";
 import {
   Zap,
   WifiOff,
-  Store,
   ShieldCheck,
   TrendingUp,
-  Users,
   ArrowDown,
   PackageSearch,
   ClipboardCheck,
   ShieldAlert,
   Wallet,
+  Tags,
+  Layers,
+  CircleDollarSign,
+  Globe,
 } from "lucide-react";
 
 type AppType = "pos" | "admin";
@@ -59,24 +61,34 @@ const POS_FEATURES: FeatureItem[] = [
 
 const ADMIN_FEATURES: FeatureItem[] = [
   {
-    icon: Store,
-    title: "Control multi-sucursal",
-    description: "Supervisión consolidada de todas tus tiendas desde el navegador.",
+    icon: Tags,
+    title: "Catálogo masivo y generación de SKUs",
+    description: "Carga manual o por CSV, asignación de códigos por cámara e impresión de etiquetas listas para el POS.",
+  },
+  {
+    icon: Layers,
+    title: "Inventarios y traspasos en tiempo real",
+    description: "Trazabilidad de stock entre sucursales, cuadres de almacén y registro de movimientos sin fricción.",
   },
   {
     icon: ShieldCheck,
-    title: "Auditorías y seguridad",
-    description: "Historial estricto de cancelaciones, cortes de caja y cambios de inventario.",
+    title: "Auditorías y gestión de usuarios",
+    description: "Revisión de cortes de caja, control de mermas y permisos estrictos para dueños, encargados y cajeros.",
   },
   {
     icon: TrendingUp,
-    title: "Analítica de utilidades",
-    description: "Márgenes reales, ingresos netos y métricas financieras al momento.",
+    title: "Métricas de ganancia neta y bruta",
+    description: "Reportes automáticos de ventas, rendimiento por producto, costos operativos y productividad de equipo.",
   },
   {
-    icon: Users,
-    title: "Aislamiento de roles",
-    description: "Permisos delimitados para dueños, encargados de sucursal y cajeros.",
+    icon: CircleDollarSign,
+    title: "Gestión de gastos fijos y variables",
+    description: "Monitorea desembolsos mayores y menores para blindar el flujo de efectivo y tu rentabilidad real.",
+  },
+  {
+    icon: Globe,
+    title: "Resumen ejecutivo en cualquier lugar",
+    description: "Consulta desde tu celular o laptop las ventas del día, métricas semanales y utilidades al segundo.",
   },
 ];
 
