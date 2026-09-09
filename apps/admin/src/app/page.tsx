@@ -14,9 +14,9 @@ export default async function HomePage() {
 
   return (
     <div className="relative min-h-screen w-full bg-[#050507] text-white font-sans overflow-x-clip selection:bg-white/20 selection:text-white">
-      {/* Background del Hero nítido y ambiental con revelación en Fase 2 (1.6s) */}
+      {/* Background del Hero nítido y ambiental estrictamente en el primer viewport (h-screen) */}
       <div
-        className="absolute inset-0 pointer-events-none select-none z-0 animate-bg-reveal"
+        className="absolute top-0 left-0 w-full h-screen pointer-events-none select-none z-0 animate-bg-reveal overflow-hidden"
         style={{ animationDelay: "1.6s" }}
       >
         <Image
