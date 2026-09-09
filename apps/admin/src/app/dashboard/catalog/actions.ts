@@ -281,20 +281,33 @@ export async function upsertProduct(formData: FormData) {
 export async function toggleProduct(id: string, currentState: boolean) {
   try {
     const session = await auth();
-    if (!session?.user?.empresa_id) throw new Error("No autorizado");
+    if (!session?.user?.empresa_id) {
+      return { error: "No autorizado" };
+    }
     const empresaId = session.user.empresa_id;
 
     const product = await db.producto.findUnique({
       where: { id },
-      select: { empresa_id: true }
+      select: { empresa_id: true, parent_id: true }
     });
     if (!product || product.empresa_id !== empresaId) {
-      throw new Error("No autorizado");
+      return { error: "Producto no encontrado o no autorizado" };
+    }
+
+    const nextState = !currentState;
+
+    // Si se reactiva un producto padre (nextState === true y parent_id === null),
+    // validar que no supere los límites del plan de suscripción
+    if (nextState && !product.parent_id) {
+      const checkLimit = await canAddProduct(empresaId);
+      if (!checkLimit.allowed) {
+        return { error: checkLimit.reason };
+      }
     }
 
     await db.$executeRaw`
       UPDATE "Producto"
-      SET "isActive" = ${!currentState}, "updatedAt" = NOW()
+      SET "isActive" = ${nextState}, "updatedAt" = NOW()
       WHERE "id" = ${id} OR "parent_id" = ${id}
     `;
     revalidatePath("/dashboard/catalog");
