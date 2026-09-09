@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 import { Camera, Flashlight, FlashlightOff, X, AlertCircle, RefreshCw } from "lucide-react";
 
 interface BarcodeScannerModalProps {
@@ -90,55 +90,65 @@ export function BarcodeScannerModal({
     try {
       await stopScanner();
 
-      const html5QrCode = new Html5Qrcode(containerId, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.QR_CODE,
-        ],
-        verbose: false,
-      });
-
+      const html5QrCode = new Html5Qrcode(containerId);
       scannerRef.current = html5QrCode;
 
-      const config = {
+      const qrConfig = {
         fps: 15,
-        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          return {
-            width: Math.floor(minEdge * 0.8),
-            height: Math.floor(minEdge * 0.5),
-          };
+        videoConstraints: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         },
-        aspectRatio: 1.0,
       };
 
-      // Solicitar explícitamente el stream para forzar el prompt nativo del navegador si aún no se ha concedido
-      if (navigator?.mediaDevices?.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
+      // 1. Obtener lista de cámaras disponibles para seleccionar la trasera o disponible
+      let selectedCameraIdOrConfig: any = { facingMode: "environment" };
+
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          const backCamera = devices.find((device) => {
+            const label = device.label.toLowerCase();
+            return (
+              label.includes("back") ||
+              label.includes("rear") ||
+              label.includes("environment") ||
+              label.includes("trasera") ||
+              label.includes("posterior")
+            );
           });
-          // Liberar el stream de prueba para que html5QrCode tome control exclusivo
-          stream.getTracks().forEach((t) => t.stop());
-        } catch (mediaErr: any) {
-          console.warn("getUserMedia pre-check error:", mediaErr);
-          throw mediaErr;
+
+          if (backCamera) {
+            selectedCameraIdOrConfig = backCamera.id;
+          } else {
+            // En laptops/PCs usa la única cámara existente, en smartphones la última suele ser la trasera
+            selectedCameraIdOrConfig =
+              devices.length > 1 ? devices[devices.length - 1].id : devices[0].id;
+          }
         }
+      } catch (camErr) {
+        console.warn("No se pudo enumerar cámaras previas, usando configuración por defecto:", camErr);
       }
 
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => handleSuccess(decodedText),
-        () => {
-          // Ignorar frames sin código detectado
-        }
-      );
+      try {
+        await html5QrCode.start(
+          selectedCameraIdOrConfig,
+          qrConfig,
+          (decodedText) => handleSuccess(decodedText),
+          () => {
+            // Ignorar frames sin código detectado
+          }
+        );
+      } catch (startErr) {
+        console.warn("Fallo con cámara específica, reintentando con facingMode environment:", startErr);
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          qrConfig,
+          (decodedText) => handleSuccess(decodedText),
+          () => {}
+        );
+      }
 
       // Comprobar si la cámara tiene linterna / torch
       try {
@@ -171,7 +181,7 @@ export function BarcodeScannerModal({
         setError("No se detectó ninguna cámara disponible en este dispositivo.");
       } else {
         setError(
-          "No se pudo acceder a la cámara. Asegúrate de estar usando HTTPS o localhost y que otra aplicación no esté usando la cámara."
+          "No se pudo acceder a la cámara. Asegúrate de que otra aplicación no esté usando la cámara o prueba reintentar."
         );
       }
     }
