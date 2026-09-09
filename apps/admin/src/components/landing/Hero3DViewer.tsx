@@ -36,19 +36,24 @@ export default function Hero3DViewer() {
     renderer.toneMappingExposure = 1.3;
     container.appendChild(renderer.domElement);
 
-    // Luces
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+    // Luces de Estudio Cinematográfico (inician en 0 para encenderse de forma suave y elegante)
+    const targetAmbient = 1.5;
+    const targetDir1 = 3.5;
+    const targetDir2 = 1.5;
+    const targetPoint = 2.0;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 3.5);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0);
     dirLight1.position.set(5, 8, 5);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0xa0a0a0, 1.5);
+    const dirLight2 = new THREE.DirectionalLight(0xa0a0a0, 0);
     dirLight2.position.set(-5, -4, -3);
     scene.add(dirLight2);
 
-    const pointLight = new THREE.PointLight(0xffffff, 2, 10);
+    const pointLight = new THREE.PointLight(0xffffff, 0, 10);
     pointLight.position.set(0, 0, 3);
     scene.add(pointLight);
 
@@ -166,6 +171,22 @@ export default function Hero3DViewer() {
       if (!isVisible) return; // Ahorro de GPU/batería cuando se scrollea fuera
 
       const elapsedTime = clock.getElapsedTime();
+
+      // Encendido gradual y cinematográfico de luces de estudio a partir de los 1.8s (dura ~2.5s)
+      if (elapsedTime > 1.8) {
+        const lightProgress = Math.min(1, (elapsedTime - 1.8) / 2.5);
+        // Curva suave easeInOutCubic
+        const smoothProgress =
+          lightProgress < 0.5
+            ? 4 * lightProgress * lightProgress * lightProgress
+            : 1 - Math.pow(-2 * lightProgress + 2, 3) / 2;
+
+        ambientLight.intensity = targetAmbient * smoothProgress;
+        dirLight1.intensity = targetDir1 * smoothProgress;
+        dirLight2.intensity = targetDir2 * smoothProgress;
+        pointLight.intensity = targetPoint * smoothProgress;
+      }
+
       modelGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.08;
       modelGroup.rotation.y += (targetRotationY - modelGroup.rotation.y) * 0.05;
       modelGroup.rotation.x += (targetRotationX - modelGroup.rotation.x) * 0.05;
@@ -217,8 +238,7 @@ export default function Hero3DViewer() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center select-none animate-fade-in"
-      style={{ animationDelay: "1.9s", opacity: 0 }}
+      className="w-full h-full flex items-center justify-center select-none"
     />
   );
 }

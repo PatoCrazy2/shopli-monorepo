@@ -19,7 +19,7 @@ export default async function HomePage() {
         style={{ animationDelay: "1.6s" }}
       >
         <Image
-          src="/shopli-hero-readme.webp"
+          src="/shopli-new-hero.webp"
           alt="ShopLI Hero Background"
           fill
           priority

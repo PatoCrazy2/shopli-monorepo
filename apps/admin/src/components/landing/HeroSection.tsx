@@ -7,15 +7,21 @@ import { signIn } from "next-auth/react";
 import Hero3DViewer from "./Hero3DViewer";
 
 export default function HeroSection() {
-  // Frase 1 y Frase 2 del título para animar palabra por palabra
-  const line1Words = ["El", "sistema", "operativo"];
-  const line2Words = ["para", "el", "comercio", "moderno."];
+  // Definición de renglones exactos para el titular
+  const line1 = ["El", "sistema"];
+  const line2 = ["Operativo"];
+  const line3 = ["para", "el", "comercio"];
+  const line4 = ["moderno."];
 
-  // Texto del subtítulo para animar letra por letra
-  const subtitleText =
-    "Punto de venta offline-first con conciliación en tiempo real, auditorías ciegas de inventario y gestión multi-sucursal aislada.";
+  // Definición de renglones exactos para el texto secundario (3 renglones)
+  const subtitleLines = [
+    "Punto de venta offline-first con conciliación en tiempo real,",
+    "auditorías ciegas de inventario y gestión",
+    "multi-sucursal aislada.",
+  ];
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGoogleHovered, setIsGoogleHovered] = useState(false);
 
   const handleGoogleClick = () => {
     setIsGoogleLoading(true);
@@ -23,21 +29,23 @@ export default function HeroSection() {
   };
 
   return (
-    <main className="relative z-10 min-h-screen flex items-center justify-center max-w-7xl mx-auto px-6 sm:px-12 pt-24 pb-16">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-8 items-center">
-        {/* En móvil pasa arriba (order-1), caja proporcional limpia; en desktop a la derecha (lg:order-2) con altura completa */}
-        <div className="order-1 lg:order-2 w-full flex items-center justify-center">
-          <div className="w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[380px] lg:max-w-none h-[280px] xs:h-[320px] sm:h-[380px] lg:h-[540px] flex items-center justify-center">
+    <main className="relative z-10 min-h-screen lg:h-screen lg:min-h-0 flex items-center justify-center max-w-7xl mx-auto px-6 sm:px-12 pt-20 lg:pt-16 pb-8 lg:pb-12 overflow-x-hidden">
+      <div className="w-full relative flex flex-col lg:block items-center">
+        
+        {/* OBJETO 3D: A gran escala (35-40% visual), desplazado a la derecha y ligeramente hacia abajo, invadiendo el espacio del copy */}
+        <div className="order-1 lg:order-none w-full lg:absolute lg:right-[-4%] xl:right-[-2%] lg:top-[56%] lg:-translate-y-1/2 lg:w-[48vw] lg:max-w-[720px] xl:max-w-[820px] flex items-center justify-center lg:justify-end pointer-events-none z-10">
+          <div className="w-full max-w-[280px] xs:max-w-[320px] sm:max-w-[380px] lg:max-w-none h-[280px] xs:h-[320px] sm:h-[380px] lg:h-[620px] xl:h-[700px] flex items-center justify-center [&_canvas]:pointer-events-auto">
             <Hero3DViewer />
           </div>
         </div>
 
-        {/* En móvil pasa abajo del 3D (order-2), centrado o alineado a la izquierda */}
-        <div className="order-2 lg:order-1 flex flex-col items-center lg:items-start text-center lg:text-left max-w-xl">
-          {/* Titular H1: Animado palabra por palabra con ritmo pausado y cinematográfico (0.2s por palabra) */}
-          <h1 className="text-3xl sm:text-5xl lg:text-[3.75rem] font-bold tracking-tight leading-[1.08] mb-6">
-            <span className="block mb-2">
-              {line1Words.map((word, index) => (
+        {/* BLOQUE DE COPY (60-65% de la composición horizontal): Titular dominante + Descripción + CTAs unificados a la izquierda */}
+        <div className="order-2 lg:order-none relative z-20 flex flex-col items-center lg:items-start text-center lg:text-left w-full lg:max-w-[62%] xl:max-w-[65%]">
+          {/* Titular H1: Dividido en 4 renglones exactos con letra más grande */}
+          <h1 className="text-3xl sm:text-5xl lg:text-[3.6rem] xl:text-[4.25rem] font-bold tracking-tight leading-[1.04] mb-6">
+            {/* Renglón 1: El sistema */}
+            <span className="block mb-1">
+              {line1.map((word, index) => (
                 <span
                   key={index}
                   className="inline-block mr-[0.3em] bg-gradient-to-b from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent animate-word"
@@ -47,14 +55,40 @@ export default function HeroSection() {
                 </span>
               ))}
             </span>
-            <span className="block">
-              {line2Words.map((word, index) => (
+
+            {/* Renglón 2: Operativo */}
+            <span className="block mb-1">
+              {line2.map((word, index) => (
+                <span
+                  key={index}
+                  className="inline-block mr-[0.3em] bg-gradient-to-b from-white via-neutral-100 to-neutral-400 bg-clip-text text-transparent animate-word"
+                  style={{ animationDelay: `${(2 + index) * 0.22}s` }}
+                >
+                  {word}
+                </span>
+              ))}
+            </span>
+
+            {/* Renglón 3: para el comercio */}
+            <span className="block mb-1">
+              {line3.map((word, index) => (
                 <span
                   key={index}
                   className="inline-block mr-[0.3em] bg-gradient-to-b from-neutral-200 via-neutral-400 to-neutral-600 bg-clip-text text-transparent animate-word"
-                  style={{
-                    animationDelay: `${(line1Words.length + index) * 0.22 + 0.1}s`,
-                  }}
+                  style={{ animationDelay: `${(3 + index) * 0.22 + 0.05}s` }}
+                >
+                  {word}
+                </span>
+              ))}
+            </span>
+
+            {/* Renglón 4: moderno. */}
+            <span className="block">
+              {line4.map((word, index) => (
+                <span
+                  key={index}
+                  className="inline-block mr-[0.3em] bg-gradient-to-b from-neutral-200 via-neutral-400 to-neutral-600 bg-clip-text text-transparent animate-word"
+                  style={{ animationDelay: `${(6 + index) * 0.22 + 0.05}s` }}
                 >
                   {word}
                 </span>
@@ -62,55 +96,72 @@ export default function HeroSection() {
             </span>
           </h1>
 
-          {/* Subtítulo: Animado letra por letra rápido y fluido (inicia a los 1.9s, dura ~1s) */}
+          {/* Subtítulo descriptivo: Dividido en 3 renglones exactos */}
           <p
-            className="text-sm sm:text-lg text-neutral-400 font-normal leading-relaxed mb-8 max-w-lg"
-            aria-label={subtitleText}
+            className="text-sm sm:text-base xl:text-lg text-neutral-400 font-normal leading-relaxed mb-8 max-w-lg xl:max-w-xl"
+            aria-label={subtitleLines.join(" ")}
           >
-            {subtitleText.split("").map((char, index) => (
-              <span
-                key={index}
-                className="animate-letter inline"
-                style={{
-                  animationDelay: `${(1.9 + index * 0.007).toFixed(3)}s`,
-                }}
-              >
-                {char}
-              </span>
-            ))}
+            {subtitleLines.map((line, lineIndex) => {
+              // Calcular índice base para no cortar la secuencia de tiempo
+              const prevCharsCount = subtitleLines
+                .slice(0, lineIndex)
+                .reduce((acc, l) => acc + l.length + 1, 0);
+
+              return (
+                <span key={lineIndex} className="block">
+                  {line.split("").map((char, charIndex) => (
+                    <span
+                      key={charIndex}
+                      className="animate-letter inline"
+                      style={{
+                        animationDelay: `${(1.9 + (prevCharsCount + charIndex) * 0.007).toFixed(3)}s`,
+                      }}
+                    >
+                      {char}
+                    </span>
+                  ))}
+                </span>
+              );
+            })}
           </p>
 
-          {/* Botones Glassmorphism de Lujo: Entran a los 1.9s cuando inicia el subtítulo */}
+          {/* Botones de Acción (CTA unificado fuerte y secundario con microinteracción sincronizada) */}
           <div
-            className="flex flex-wrap items-center gap-4 animate-fade-in"
+            className="flex flex-wrap items-center justify-center lg:justify-start gap-4 animate-fade-in"
             style={{ animationDelay: "1.9s", opacity: 0 }}
           >
-            {/* Botón Principal: Comenzar prueba gratis con borde de luz metálica en hover */}
+            {/* Botón Principal: Comenzar prueba gratis */}
             <div className="relative group p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
-              {/* Luz desenfocada perimetral metálica (platino/cromo) que gira en hover */}
-              <div className="absolute -inset-[100%] metallic-border-glow opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[3px] pointer-events-none" />
+              <div
+                className={`absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none transition-opacity duration-300 ${
+                  isGoogleHovered ? "opacity-0" : "opacity-100"
+                }`}
+              />
 
-              {/* Botón interior */}
               <Link
                 href="/register"
-                className="relative z-10 inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-medium text-sm border border-white/[0.14] group-hover:border-transparent backdrop-blur-xl transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer"
+                className={`relative z-10 inline-flex items-center gap-2.5 px-7 py-4 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-sm transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border ${
+                  isGoogleHovered ? "border-white/[0.14]" : "border-transparent"
+                }`}
               >
                 <span>Comenzar prueba gratis</span>
                 <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-white" />
               </Link>
             </div>
 
-            {/* Botón Secundario: Crear cuenta con Google con borde de luz perimetral rotativa en hover */}
-            <div className="relative group p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
-              {/* Luz desenfocada perimetral que gira en hover con los colores de Google */}
+            {/* Botón Secundario: Crear cuenta con Google */}
+            <div
+              onMouseEnter={() => setIsGoogleHovered(true)}
+              onMouseLeave={() => setIsGoogleHovered(false)}
+              className="relative group p-[1px] rounded-2xl overflow-hidden transition-all duration-300"
+            >
               <div className="absolute -inset-[100%] google-border-glow opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-[3px] pointer-events-none" />
 
-              {/* Botón interior con fondo oscuro de lujo y backdrop-blur */}
               <button
                 type="button"
                 onClick={handleGoogleClick}
                 disabled={isGoogleLoading}
-                className="relative z-10 inline-flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-[#08080a]/90 hover:bg-[#0c0c0f]/90 text-neutral-200 hover:text-white font-medium text-sm border border-white/[0.08] group-hover:border-transparent backdrop-blur-xl transition-all duration-300 shadow-sm cursor-pointer disabled:opacity-50"
+                className="relative z-10 inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-[#08080a]/90 hover:bg-[#0c0c0f]/90 text-neutral-200 hover:text-white font-medium text-sm border border-white/[0.08] group-hover:border-transparent backdrop-blur-xl transition-all duration-300 shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {isGoogleLoading ? (
                   <svg
@@ -161,6 +212,7 @@ export default function HeroSection() {
             </div>
           </div>
         </div>
+
       </div>
     </main>
   );
