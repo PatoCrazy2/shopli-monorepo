@@ -1,15 +1,18 @@
 import { db } from "@shopli/db";
 import Link from "next/link";
-import { toggleProduct } from "./actions";
 import { ImportCatalogModal } from "./_components/ImportCatalogModal";
 import { PrintCatalogButton } from "./_components/PrintCatalogButton";
+import { CatalogFilterTabs } from "./_components/CatalogFilterTabs";
+import { CatalogSearchBar } from "./_components/CatalogSearchBar";
+import { ToggleProductButton } from "./_components/ToggleProductButton";
 import { auth } from "@/lib/auth";
+import { Plus, SearchX, PackageX, PackagePlus, Edit2 } from "lucide-react";
 
 // RSC
 export default async function CatalogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; tab?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.empresa_id) {
@@ -20,179 +23,229 @@ export default async function CatalogPage({
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
   const query = params.q || "";
+  const currentTab = params.tab || "active";
   const take = 20;
   const skip = (page - 1) * take;
 
-  const whereClause = {
+  const baseProductFilter = {
     empresa_id: empresaId,
-    isActive: true,
+    OR: [
+      { parent_id: { not: null } },
+      { parent_id: null, variants: { none: {} } },
+    ],
+  };
+
+  const whereClause: any = {
+    empresa_id: empresaId,
     ...(query ? { nombre: { contains: query, mode: "insensitive" as const } } : {}),
     OR: [
       { parent_id: { not: null } },
-      { parent_id: null, variants: { none: {} } }
-    ]
+      { parent_id: null, variants: { none: {} } },
+    ],
   };
 
-  const products = await db.producto.findMany({
-    where: whereClause,
-    skip,
-    take,
-    orderBy: { nombre: "asc" },
-  });
+  if (currentTab === "active") {
+    whereClause.isActive = true;
+  } else if (currentTab === "inactive") {
+    whereClause.isActive = false;
+  }
 
-  const totalProducts = await db.producto.count({ where: whereClause });
+  // Consultas concurrentes para datos, total paginado, conteos para tabs y serialización de etiquetas
+  const [products, totalProducts, activeCount, inactiveCount, totalCount, allProductsForPrint] =
+    await Promise.all([
+      db.producto.findMany({
+        where: whereClause,
+        skip,
+        take,
+        orderBy: { nombre: "asc" },
+      }),
+      db.producto.count({ where: whereClause }),
+      db.producto.count({ where: { ...baseProductFilter, isActive: true } }),
+      db.producto.count({ where: { ...baseProductFilter, isActive: false } }),
+      db.producto.count({ where: baseProductFilter }),
+      db.producto.findMany({
+        where: {
+          empresa_id: empresaId,
+          isActive: true,
+          parent_id: null,
+        },
+        include: {
+          variants: {
+            where: { isActive: true },
+            orderBy: { variante_nombre: "asc" },
+          },
+        },
+        orderBy: { nombre: "asc" },
+      }),
+    ]);
+
   const totalPages = Math.ceil(totalProducts / take);
 
-  // Consulta para el modal de impresión de etiquetas (todos los productos y variantes activos)
-  const allProductsForPrint = await db.producto.findMany({
-    where: {
-      empresa_id: empresaId,
-      isActive: true,
-      parent_id: null,
-    },
-    include: {
-      variants: {
-        where: { isActive: true },
-        orderBy: { variante_nombre: "asc" }
-      }
-    },
-    orderBy: { nombre: "asc" }
-  });
-
-  const serializedProducts = allProductsForPrint.map(p => ({
+  const serializedProducts = allProductsForPrint.map((p) => ({
     id: p.id,
     nombre: p.nombre,
     codigo_interno: p.codigo_interno,
     precio_publico: Number(p.precio_publico),
-    variants: p.variants.map(v => ({
+    variants: p.variants.map((v) => ({
       id: v.id,
       variante_nombre: v.variante_nombre || "",
-      codigo_interno: v.codigo_interno
-    }))
+      codigo_interno: v.codigo_interno,
+    })),
   }));
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-        <div className="space-y-1 min-w-fit">
-          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Catálogo</h1>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Header Estilo Apple con Acciones Responsivas */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
+              Catálogo
+            </h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+              {activeCount} activos
+            </span>
+          </div>
           <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
             Gestiona los productos e inventario global del sistema.
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 flex-1 justify-end w-full">
-          {/* Barra de Búsqueda */}
-          <form method="GET" className="relative flex-1 w-full max-w-lg group">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-black transition-colors" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2.5" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="Buscar productos por nombre..."
-              className="w-full h-11 pl-11 pr-4 rounded-xl border border-zinc-200 bg-zinc-50/50 text-sm font-bold placeholder:text-zinc-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-black dark:border-zinc-800 dark:bg-zinc-900 dark:focus:ring-white transition-all shadow-inner"
-            />
-          </form>
+        {/* Acciones Responsivas */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+          <PrintCatalogButton products={serializedProducts} />
+          <ImportCatalogModal />
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <PrintCatalogButton products={serializedProducts} />
-            <ImportCatalogModal />
-            
-            <Link
-              href="/dashboard/catalog/new"
-              className="inline-flex h-11 flex-1 md:flex-initial items-center justify-center rounded-xl bg-black px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="mr-2 h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14"></path>
-                <path d="M12 5v14"></path>
-              </svg>
-              Nuevo Producto
-            </Link>
-          </div>
+          <Link
+            href="/dashboard/catalog/new"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-black px-4 sm:px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200 gap-2 shrink-0"
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="hidden xs:inline">Nuevo Producto</span>
+            <span className="xs:hidden">Nuevo</span>
+          </Link>
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-black overflow-hidden relative">
+      {/* Barra de Filtros y Búsqueda */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CatalogFilterTabs
+          counts={{
+            active: activeCount,
+            inactive: inactiveCount,
+            total: totalCount,
+          }}
+        />
+        <CatalogSearchBar />
+      </div>
+
+      {/* Tabla de Productos */}
+      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden relative">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-zinc-900 dark:text-gray-300 border-b border-gray-200 dark:border-zinc-800">
+          <table className="w-full text-sm text-left text-zinc-500 dark:text-zinc-400 min-w-[700px]">
+            <thead className="text-xs text-zinc-600 uppercase bg-zinc-50/80 dark:bg-zinc-900/50 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 tracking-wider">
               <tr>
-                <th scope="col" className="px-6 py-4 font-medium">
-                  SKU
+                <th scope="col" className="px-6 py-4 font-semibold">
+                  SKU / Código
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium">
+                <th scope="col" className="px-6 py-4 font-semibold">
                   Nombre
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">
+                <th scope="col" className="px-6 py-4 font-semibold text-right">
                   Precio
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">
+                <th scope="col" className="px-6 py-4 font-semibold text-right">
                   Costo
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-center">
+                <th scope="col" className="px-6 py-4 font-semibold text-center">
                   Estado
                 </th>
-                <th scope="col" className="px-6 py-4 font-medium text-center">
+                <th scope="col" className="px-6 py-4 font-semibold text-center">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-zinc-800">
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                    No hay productos en el catálogo.
+                  <td colSpan={6} className="px-6 py-16 text-center text-zinc-500">
+                    <div className="max-w-sm mx-auto flex flex-col items-center justify-center space-y-3">
+                      {query ? (
+                        <>
+                          <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+                            <SearchX className="w-6 h-6" />
+                          </div>
+                          <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            Sin resultados
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            No se encontró ningún producto que coincida con &quot;{query}&quot;.
+                          </p>
+                        </>
+                      ) : currentTab === "inactive" ? (
+                        <>
+                          <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+                            <PackageX className="w-6 h-6" />
+                          </div>
+                          <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            No hay productos inactivos
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            Todos los productos de tu catálogo están activos y listos para venta.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+                            <PackagePlus className="w-6 h-6" />
+                          </div>
+                          <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            Catálogo vacío
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            Comienza agregando tu primer producto o importa tu catálogo mediante CSV.
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 products.map((product) => {
-                  // Cast needed: isActive exists in DB but Prisma client type cache is stale
                   const isActive = (product as any).isActive as boolean;
 
                   return (
                     <tr
                       key={product.id}
-                      className="bg-white hover:bg-gray-50/50 dark:bg-black dark:hover:bg-zinc-900/50 transition-colors"
+                      className={`hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40 transition-colors ${
+                        !isActive ? "bg-zinc-50/30 opacity-75" : ""
+                      }`}
                     >
-                      <td className="px-6 py-4 font-mono text-xs text-gray-500">
-                        {product.codigo_interno || "N/A"}
+                      <td className="px-6 py-4 font-mono text-xs text-zinc-500 font-medium">
+                        {product.codigo_interno || "—"}
                       </td>
-                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                      <td className="px-6 py-4 font-bold text-zinc-900 dark:text-white">
                         {product.nombre}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right font-medium text-zinc-900 dark:text-zinc-100">
                         ${Number(product.precio_publico).toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 text-right text-gray-400">
+                      <td className="px-6 py-4 text-right text-zinc-400 font-mono text-xs">
                         ${Number(product.costo).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${isActive
-                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                            }`}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            isActive
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900"
+                              : "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800"
+                          }`}
                         >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isActive ? "bg-emerald-500" : "bg-zinc-400"
+                            }`}
+                          />
                           {isActive ? "Activo" : "Inactivo"}
                         </span>
                       </td>
@@ -200,27 +253,17 @@ export default async function CatalogPage({
                         <div className="flex items-center justify-center gap-2">
                           <Link
                             href={`/dashboard/catalog/${product.id}`}
-                            className="inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700"
+                            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold bg-zinc-100 text-zinc-700 hover:bg-zinc-200 transition-colors dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 shadow-sm"
                           >
-                            Editar
+                            <Edit2 className="w-3 h-3" />
+                            <span>Editar</span>
                           </Link>
-                          {/* Server action in a form */}
-                          <form
-                            action={async () => {
-                              "use server";
-                              await toggleProduct(product.id, isActive);
-                            }}
-                          >
-                            <button
-                              type="submit"
-                              className={`inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-bold uppercase tracking-wider transition-colors ${isActive
-                                ? "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-900/50"
-                                : "bg-green-50 text-green-600 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 border border-green-100 dark:border-green-900/50"
-                                }`}
-                            >
-                              {isActive ? "Desactivar" : "Activar"}
-                            </button>
-                          </form>
+
+                          <ToggleProductButton
+                            productId={product.id}
+                            productName={product.nombre}
+                            isActive={isActive}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -232,24 +275,28 @@ export default async function CatalogPage({
         </div>
       </div>
 
-      {/* Paginación simple */}
+      {/* Paginación */}
       {totalPages > 1 && (
-        <div className="flex justify-between items-center sm:justify-end gap-2">
+        <div className="flex justify-between items-center sm:justify-end gap-2 pt-2">
           {page > 1 && (
             <Link
-              href={`/dashboard/catalog?page=${page - 1}${query ? `&q=${query}` : ""}`}
-              className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-800 dark:hover:text-white"
+              href={`/dashboard/catalog?page=${page - 1}${query ? `&q=${query}` : ""}${
+                currentTab !== "active" ? `&tab=${currentTab}` : ""
+              }`}
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold shadow-sm transition-colors hover:bg-zinc-100 text-zinc-700 dark:border-zinc-800 dark:bg-black dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
               Anterior
             </Link>
           )}
-          <span className="text-sm text-gray-500 dark:text-gray-400 px-4">
+          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 px-4">
             Página {page} de {totalPages}
           </span>
           {page < totalPages && (
             <Link
-              href={`/dashboard/catalog?page=${page + 1}${query ? `&q=${query}` : ""}`}
-              className="inline-flex h-9 items-center justify-center rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-zinc-800 dark:bg-black dark:hover:bg-zinc-800 dark:hover:text-white"
+              href={`/dashboard/catalog?page=${page + 1}${query ? `&q=${query}` : ""}${
+                currentTab !== "active" ? `&tab=${currentTab}` : ""
+              }`}
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-bold shadow-sm transition-colors hover:bg-zinc-100 text-zinc-700 dark:border-zinc-800 dark:bg-black dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
               Siguiente
             </Link>
@@ -259,3 +306,4 @@ export default async function CatalogPage({
     </div>
   );
 }
+
