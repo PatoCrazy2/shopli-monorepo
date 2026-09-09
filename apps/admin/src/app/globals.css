@@ -58,8 +58,26 @@ input[type="password"]::-ms-clear {
   }
 }
 
+@keyframes hero3DReveal {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  60% {
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
 .animate-fade-in {
   animation: heroFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-3d-reveal {
+  animation: hero3DReveal 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-word {
