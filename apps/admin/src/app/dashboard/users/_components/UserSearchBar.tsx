@@ -50,7 +50,7 @@ export function UserSearchBar() {
   };
 
   return (
-    <div className="relative w-full max-w-sm">
+    <div className="relative w-full sm:max-w-sm">
       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
         <Search className={`w-4 h-4 ${isPending ? "animate-pulse text-zinc-600" : ""}`} />
       </div>

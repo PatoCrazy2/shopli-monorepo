@@ -73,10 +73,9 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
             <aside
                 className={`
                     fixed md:static inset-y-0 left-0 z-50 bg-white dark:bg-black border-r border-gray-100 dark:border-zinc-900
-                    flex flex-col transform transition-all duration-300 ease-out shadow-lg md:shadow-none relative
+                    flex flex-col transform transition-all duration-300 ease-out shadow-lg md:shadow-none md:relative
                     ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:h-screen
-                    ${isCollapsed ? "md:w-20" : "md:w-64"}
-                    w-64
+                    w-72 ${isCollapsed ? "md:w-20" : "md:w-64"}
                 `}
             >
                 <button
@@ -93,16 +92,24 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                     )}
                 </button>
 
-                <div className={`p-6 pb-2 hidden md:flex items-center ${isCollapsed ? "justify-center px-2" : "gap-3"} transition-all`}>
-                    <img src="/shopli_snbg.svg" alt="ShopLI Logo" className="w-7 h-7 shrink-0" />
-                    {!isCollapsed && (
-                        <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white transition-opacity duration-200 truncate">
+                <div className={`p-6 pb-2 flex items-center justify-between md:justify-start ${isCollapsed ? "md:justify-center md:px-2" : "gap-3"} transition-all`}>
+                    <div className="flex items-center gap-3">
+                        <img src="/shopli_snbg.svg" alt="ShopLI Logo" className="w-7 h-7 shrink-0" />
+                        <h1 className={`text-2xl font-bold tracking-tight text-black dark:text-white transition-opacity duration-200 truncate ${isCollapsed ? "md:hidden" : "block"}`}>
                             ShopLI
                         </h1>
-                    )}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(false)}
+                        className="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                        aria-label="Cerrar menú"
+                    >
+                        <CloseIcon />
+                    </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-3 py-6 mt-12 md:mt-2 space-y-1">
+                <div className="flex-1 overflow-y-auto px-3 py-4 md:py-6 space-y-1">
                     <nav className="flex flex-col space-y-1">
                         {NAV_LINKS.map((link) => {
                             if ((link as any).ownerOnly && user.role !== "DUENO") {
@@ -118,7 +125,7 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                                     onClick={() => setIsOpen(false)}
                                     title={isCollapsed ? link.name : undefined}
                                     className={`
-                                        flex items-center ${isCollapsed ? "md:justify-center px-2.5" : "gap-3 px-3.5"} py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
+                                        flex items-center gap-3 px-3.5 ${isCollapsed ? "md:justify-center md:px-2.5" : ""} py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
                                         ${isActive
                                             ? "bg-black text-white shadow-sm dark:bg-white dark:text-black font-semibold"
                                             : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 hover:text-black dark:hover:bg-zinc-900 dark:hover:text-white"
@@ -128,11 +135,9 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                                     <div className="shrink-0">
                                         <Icon />
                                     </div>
-                                    {!isCollapsed && (
-                                        <span className="truncate transition-opacity duration-200">
-                                            {link.name}
-                                        </span>
-                                    )}
+                                    <span className={`truncate transition-opacity duration-200 ${isCollapsed ? "md:hidden" : "block"}`}>
+                                        {link.name}
+                                    </span>
                                 </Link>
                             );
                         })}
@@ -140,42 +145,42 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                 </div>
 
                 <div className="p-3 border-t border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-black/50 transition-all">
-                    {!isCollapsed ? (
-                        <>
-                            <div className="flex flex-col gap-1.5 mb-3 px-1">
-                                <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                    {user.name || "Usuario"}
+                    <div className={isCollapsed ? "block md:hidden" : "block"}>
+                        <div className="flex flex-col gap-1.5 mb-3 px-1">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {user.name || "Usuario"}
+                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-zinc-800 py-0.5 px-2 rounded-full w-max">
+                                    {user.role}
                                 </span>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-zinc-800 py-0.5 px-2 rounded-full w-max">
-                                        {user.role}
+                                {user.planBadge && (
+                                    <span className={`text-xs font-black uppercase tracking-wider ${
+                                        user.planBadge.toLowerCase().includes("arranque")
+                                            ? "bg-gradient-to-r from-slate-700 via-gray-500 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm font-extrabold"
+                                            : user.planBadge.toLowerCase().includes("crecimiento")
+                                            ? "bg-gradient-to-r from-zinc-900 via-slate-700 to-zinc-950 dark:from-white dark:via-zinc-200 dark:to-gray-400 bg-clip-text text-transparent font-extrabold"
+                                            : user.planBadge.toLowerCase().includes("multi") || user.planBadge.toLowerCase().includes("sucursal")
+                                            ? "bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-900 dark:from-amber-200 dark:via-yellow-300 dark:to-amber-400 bg-clip-text text-transparent font-extrabold"
+                                            : "text-zinc-500 font-bold"
+                                    }`}>
+                                        {user.planBadge}
                                     </span>
-                                    {user.planBadge && (
-                                        <span className={`text-xs font-black uppercase tracking-wider ${
-                                            user.planBadge.toLowerCase().includes("arranque")
-                                                ? "bg-gradient-to-r from-slate-700 via-gray-500 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm font-extrabold"
-                                                : user.planBadge.toLowerCase().includes("crecimiento")
-                                                ? "bg-gradient-to-r from-zinc-900 via-slate-700 to-zinc-950 dark:from-white dark:via-zinc-200 dark:to-gray-400 bg-clip-text text-transparent font-extrabold"
-                                                : user.planBadge.toLowerCase().includes("multi") || user.planBadge.toLowerCase().includes("sucursal")
-                                                ? "bg-gradient-to-r from-amber-700 via-yellow-600 to-amber-900 dark:from-amber-200 dark:via-yellow-300 dark:to-amber-400 bg-clip-text text-transparent font-extrabold"
-                                                : "text-zinc-500 font-bold"
-                                        }`}>
-                                            {user.planBadge}
-                                        </span>
-                                    )}
-                                </div>
+                                )}
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => signOut()}
-                                className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors duration-200 cursor-pointer"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                <span>Cerrar Sesión</span>
-                            </button>
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center gap-2 py-1">
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => signOut()}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors duration-200 cursor-pointer"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+
+                    {isCollapsed && (
+                        <div className="hidden md:flex flex-col items-center gap-2 py-1">
                             <div
                                 className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-300"
                                 title={`${user.name || "Usuario"} (${user.role})`}
