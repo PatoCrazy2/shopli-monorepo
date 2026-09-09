@@ -38,6 +38,18 @@ export default async function HomePage() {
       {/* Hero Section Modular (con 3D adaptativo en mobile y desktop) */}
       <HeroSection />
 
+      {/* Divisor Metálico Premium de Transición (Cromo / Platino estilo Apple/Linear) */}
+      <div className="relative z-20 w-full max-w-6xl mx-auto px-6 sm:px-12 pointer-events-none select-none">
+        <div className="relative w-full h-[1px] flex items-center justify-center">
+          {/* Línea base sutil con difuminado en extremos */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
+          {/* Centro cromado metálico de alta definición */}
+          <div className="w-1/3 sm:w-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent shadow-[0_0_12px_rgba(255,255,255,0.4)]" />
+          {/* Resplandor ambiental suave superior e inferior */}
+          <div className="absolute w-48 h-8 -top-4 bg-white/[0.02] blur-xl rounded-full" />
+        </div>
+      </div>
+
       {/* Sección Ecosistema Dual: Presentación de ShopLI POS & Admin */}
       <EcosystemIntroSection />
 
