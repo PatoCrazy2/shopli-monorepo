@@ -92,8 +92,8 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                     )}
                 </button>
 
-                <div className={`p-6 pb-2 flex items-center justify-between md:justify-start ${isCollapsed ? "md:justify-center md:px-2" : "gap-3"} transition-all`}>
-                    <div className="flex items-center gap-3">
+                <div className={`p-6 pb-2 flex items-center justify-between md:justify-start ${isCollapsed ? "md:justify-center md:px-0" : "gap-3"} transition-all`}>
+                    <div className={`flex items-center ${isCollapsed ? "gap-3 md:gap-0 md:justify-center w-full" : "gap-3"}`}>
                         <img src="/shopli_snbg.svg" alt="ShopLI Logo" className="w-7 h-7 shrink-0" />
                         <h1 className={`text-2xl font-bold tracking-tight text-black dark:text-white transition-opacity duration-200 truncate ${isCollapsed ? "md:hidden" : "block"}`}>
                             ShopLI
