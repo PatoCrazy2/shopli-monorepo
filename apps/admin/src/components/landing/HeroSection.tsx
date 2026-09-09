@@ -29,7 +29,10 @@ export default function HeroSection() {
   };
 
   return (
-    <main className="relative z-10 min-h-screen lg:h-screen lg:min-h-0 flex items-center justify-center max-w-7xl mx-auto px-6 sm:px-12 pt-20 lg:pt-16 pb-8 lg:pb-12 overflow-x-hidden">
+    <main
+      id="hero"
+      className="relative z-10 min-h-screen lg:h-screen lg:min-h-0 flex items-center justify-center max-w-7xl mx-auto px-6 sm:px-12 pt-20 lg:pt-16 pb-8 lg:pb-12 overflow-x-hidden"
+    >
       <div className="w-full relative flex flex-col lg:block items-center">
         
         {/* OBJETO 3D: A gran escala (35-40% visual), desplazado a la derecha y ligeramente hacia abajo, invadiendo el espacio del copy */}
