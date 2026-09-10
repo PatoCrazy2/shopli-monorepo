@@ -67,18 +67,46 @@ export default function LandingNavbar() {
 
           {/* Nav items Desktop */}
           <nav className="hidden md:flex items-center gap-8 text-xs font-medium text-neutral-400">
-            <a href="#capacidades" className="hover:text-white transition-colors">
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("capacidades");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
               Capacidades
-            </a>
-            <a href="#offline" className="hover:text-white transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("offline");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
               Offline-First
-            </a>
-            <a href="#auditorias" className="hover:text-white transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("auditorias");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
               Auditorías
-            </a>
-            <a href="#precios" className="hover:text-white transition-colors">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("precios");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
               Precios
-            </a>
+            </button>
           </nav>
 
           {/* Action buttons Desktop & Mobile Trigger */}
@@ -139,34 +167,50 @@ export default function LandingNavbar() {
 
           {/* Links de navegación */}
           <nav className="flex flex-col gap-4 mt-6">
-            <a
-              href="#capacidades"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5"
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                const el = document.getElementById("capacidades");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
               Capacidades
-            </a>
-            <a
-              href="#offline"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                const el = document.getElementById("offline");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
               Offline-First
-            </a>
-            <a
-              href="#auditorias"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                const el = document.getElementById("auditorias");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
               Auditorías
-            </a>
-            <a
-              href="#precios"
-              onClick={() => setIsOpen(false)}
-              className="text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                const el = document.getElementById("precios");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
               Precios
-            </a>
+            </button>
           </nav>
         </div>
 
