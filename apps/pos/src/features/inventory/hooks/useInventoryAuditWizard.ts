@@ -104,10 +104,9 @@ export function useInventoryAuditWizard() {
         if (currentIndex < auditProducts.length - 1) {
             setCurrentIndex(currentIndex + 1);
         } else {
-            // Finalizó la auditoría
+            // Finalizó la auditoría: Guardamos en Dexie y disparamos el cierre de turno
             setIsComplete(true);
             saveAudit(newResults);
-            // El cierre de turno real y logout se delegan al botón de completar en la UI
         }
     };
 
