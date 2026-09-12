@@ -9,7 +9,7 @@ export function useInventory() {
     
     const productsDb = useLiveQuery(async () => {
         if (!user) return [];
-        const allProducts = await db.products.toArray();
+        const allProducts = (await db.products.toArray()).filter(p => p.isActive !== false);
         const parentIdsWithVariants = new Set(
             allProducts.filter(p => p.parent_id).map(p => p.parent_id)
         );

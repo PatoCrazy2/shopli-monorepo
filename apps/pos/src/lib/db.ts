@@ -11,6 +11,7 @@ export interface LocalUser {
   email: string;
   role: 'DUEÑO' | 'ENCARGADO' | 'CAJERO';
   pin: string | null;
+  active?: boolean;
 }
 
 export interface LocalBranch {

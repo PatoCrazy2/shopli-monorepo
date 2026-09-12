@@ -52,7 +52,7 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
 
     const products = useLiveQuery(async () => {
         if (!user) return [];
-        const allProducts = await db.products.toArray();
+        const allProducts = (await db.products.toArray()).filter(p => p.isActive !== false);
         const allInventory = await db.inventory.where('sucursal_id').equals(user.branchId).toArray();
 
         // Mapeamos el inventario/stock a cada producto

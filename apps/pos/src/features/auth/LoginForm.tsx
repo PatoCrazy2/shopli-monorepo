@@ -30,7 +30,7 @@ export function LoginForm({
 
         if (configured) {
             const users = await db.users.where('role').anyOf(['CAJERO', 'ENCARGADO']).toArray();
-            setAvailableUsers(users);
+            setAvailableUsers(users.filter(u => u.active !== false));
         }
 
         // Revisar si la terminal tiene bloqueo global activo
