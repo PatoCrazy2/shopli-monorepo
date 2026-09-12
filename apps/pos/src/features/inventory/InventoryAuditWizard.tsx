@@ -23,7 +23,6 @@ export default function InventoryAuditWizard() {
         auditProducts,
         currentIndex,
         currentProduct,
-        isComplete,
         countedAmount,
         setCountedAmount,
         showWarning,
@@ -35,15 +34,6 @@ export default function InventoryAuditWizard() {
         handleNext,
         physicalAmountPassed
     } = useInventoryAuditWizard();
-
-    if (auditProducts.length === 0) return null; // Loading state
-
-    // En cuanto isComplete es true, ejecutamos el cierre y sincronización directamente sin pantallas intermedias
-    useEffect(() => {
-        if (isComplete) {
-            handleCompleteClosing();
-        }
-    }, [isComplete]);
 
     const handleCompleteClosing = async () => {
         try {
@@ -73,6 +63,16 @@ export default function InventoryAuditWizard() {
             await db.meta.delete('isClosingShiftSync');
         }
     };
+
+    const handleButtonClick = async () => {
+        const isLastItem = currentIndex === auditProducts.length - 1;
+        const willComplete = handleNext();
+        if (isLastItem && willComplete) {
+            await handleCompleteClosing();
+        }
+    };
+
+    if (auditProducts.length === 0) return null; // Loading state
 
     if (!currentProduct) return null;
 
@@ -159,7 +159,7 @@ export default function InventoryAuditWizard() {
                     )}
 
                     <button
-                        onClick={handleNext}
+                        onClick={handleButtonClick}
                         disabled={!countedAmount}
                         className={`w-full h-16 rounded-lg font-bold text-xl text-white flex items-center justify-center gap-2 
                             ${!countedAmount

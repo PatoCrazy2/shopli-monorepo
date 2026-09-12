@@ -42,11 +42,11 @@ export function useInventoryAuditWizard() {
 
     const currentProduct = auditProducts.length > 0 ? auditProducts[currentIndex] : null;
 
-    const handleNext = () => {
-        if (!currentProduct) return;
+    const handleNext = (): boolean => {
+        if (!currentProduct) return false;
 
         const parsedCount = parseInt(countedAmount, 10);
-        if (isNaN(parsedCount)) return;
+        if (isNaN(parsedCount)) return false;
 
         const discrepancy = parsedCount - currentProduct.stock;
 
@@ -57,22 +57,26 @@ export function useInventoryAuditWizard() {
 
         if (discrepancy === 0) {
             recordResultAndProceed(discrepancy, parsedCount);
+            return true;
         } else {
             // Hay discrepancia
             if (attempts === 0) {
                 setShowWarning(true);
                 setAttempts(1);
                 setCountedAmount(""); // Obligar a reingresar
+                return false;
             } else if (attempts === 1 && !requiresReason) {
                 // Segundo intento falido -> Abrir campos de motivo
                 setRequiresReason(true);
+                return false;
             } else {
                 // Ya se llenó el motivo
                 if (requiresReason && (!selectedReason || !comments)) {
                     alert("Debe seleccionar un motivo y dejar un comentario.");
-                    return;
+                    return false;
                 }
                 recordResultAndProceed(discrepancy, parsedCount);
+                return true;
             }
         }
     };
