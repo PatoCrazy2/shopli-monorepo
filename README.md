@@ -80,11 +80,13 @@ Transactions completed at the edge are buffered locally in an IndexedDB write-ah
 * **Native Sync API:** The PWA Service Worker leverages the browser's native Background Sync API (`self.addEventListener('sync')`). When connectivity drops and returns, the browser executes the sync callback in the background, ensuring outbox payloads are delivered even if the user closes the PWA tab.
 * **Idempotency Guard:** The server deduplicates incoming payloads using database unique constraints on transaction IDs. Re-transmitted payloads are processed cleanly without duplicating sales or expense logs.
 
-### Delta-Based Incremental Sync (Pull Strategy)
-To optimize data transfers and minimize bandwidth consumption in mobile or high-latency environments:
-* **Timestamp Delta Tracking:** Catalog pulls do not fetch full tables. Instead, the POS requests record mutations using a `lastSyncedAt` timestamp.
-* **Server-Side Filtering:** The API filters database queries using Prisma `updatedAt > lastSyncedAt` conditions, returning only creation, updates, or deletion deltas.
-* **Incremental Local Updates:** The PWA applies these incoming deltas on IndexedDB tables, maintaining database synchronization without downloading redudant data.
+### Delta-Based Incremental Sync & Tombstones Purging (Pull Strategy)
+To optimize data transfers, prevent stale inventory display, and eliminate offline security risks:
+* **Timestamp Delta Tracking:** Catalog pulls avoid full-table scans. The POS requests record mutations using a `lastSyncedAt` cursor.
+* **Server-Side Active Partitioning:** In initial and delta pulls, only active records (`isActive: true` for products, `active: true` for cashiers/managers) are streamed into the edge catalog.
+* **Tombstone Propagation:** When a product or user is deactivated in the Admin dashboard, the Next.js BFF identifies mutations where `isActive: false` or `active: false` updated after `lastSyncedAt`, sending explicit tombstone lists: `deactivatedProductIds` and `deactivatedUserIds`.
+* **Atomic Local Purging:** In a single Dexie transaction, the POS executes `bulkDelete` over deactivated IDs, purges orphan cart items, and immediately revokes active terminal sessions if the authenticated cashier was deactivated in the cloud.
+* **Zero-Bandwidth ETag Guard:** Synchronization responses calculate an MD5 hash over the latest entity mutation timestamp, returning `HTTP 304 Not Modified` when no catalog or status changes occurred.
 
 ### Service Worker Periodic Refresh
 * **Daily catalog updates:** The Service Worker registers a native `periodicsync` task (`pull-catalog-daily`) with the browser's periodic sync scheduler. The browser wakes up the Service Worker in the background once a day to refresh the localized price lists and product catalogs automatically.
