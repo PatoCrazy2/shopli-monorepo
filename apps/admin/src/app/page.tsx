@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import LandingNavbar from "@/components/landing/LandingNavbar";
+import LandingScrollRestoration from "@/components/landing/LandingScrollRestoration";
 import HeroSection from "@/components/landing/HeroSection";
 import EcosystemIntroSection from "@/components/landing/EcosystemIntroSection";
 import PhoneShowcaseSection from "@/components/landing/PhoneShowcaseSection";
@@ -33,6 +34,7 @@ export default async function HomePage() {
       </div>
 
       {/* Navbar Modular */}
+      <LandingScrollRestoration />
       <LandingNavbar />
 
       {/* Hero Section Modular (con 3D adaptativo en mobile y desktop) */}

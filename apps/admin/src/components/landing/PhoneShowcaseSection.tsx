@@ -30,9 +30,9 @@ const CHAPTERS: PosChapter[] = [
   },
   {
     id: "catalog",
-    category: "Cobro Móvil",
-    title: "Tu teléfono es tu terminal",
-    description: "Catálogo táctil ultrafluido y cobro ágil sin invertir en equipo dedicado.",
+    category: "Cobro Movil",
+    title: "Tu telefono es tu terminal",
+    description: "Catalogo tactil ultrafluido y cobro agil sin invertir en equipo dedicado.",
     startSec: 6,
     endSec: 23,
     icon: ShoppingBag,
@@ -41,9 +41,9 @@ const CHAPTERS: PosChapter[] = [
   },
   {
     id: "scan",
-    category: "Escáner con Cámara",
-    title: "Escanea con tu cámara",
-    description: "Usa códigos de barras comerciales o genera los tuyos desde ShopLI.",
+    category: "Escaner con Camara",
+    title: "Escanea con tu camara",
+    description: "Usa codigos de barras comerciales o genera los tuyos desde ShopLI.",
     startSec: 23,
     endSec: 36,
     icon: ScanBarcode,
@@ -53,8 +53,8 @@ const CHAPTERS: PosChapter[] = [
   {
     id: "ticket",
     category: "Historial & Tickets",
-    title: "Ventas e historial al día",
-    description: "Consulta cada transacción en segundos y emite comprobantes sin enredos.",
+    title: "Ventas e historial al dia",
+    description: "Consulta cada transaccion en segundos y emite comprobantes sin enredos.",
     startSec: 36,
     endSec: 46.5,
     icon: Receipt,
@@ -85,7 +85,29 @@ export default function PhoneShowcaseSection() {
   useEffect(() => {
     let animationFrameId: number;
 
+    const checkIsDesktop = () => window.innerWidth >= 1024;
+
     const updateTransforms = () => {
+      const isDesktop = checkIsDesktop();
+
+      // En mobile/tablet (< lg), no hay transformaciones 3D rotatorias ni scroll pinning
+      if (!isDesktop) {
+        if (chassisRef.current) {
+          chassisRef.current.style.transform = "none";
+        }
+        if (wrapperRef.current) {
+          wrapperRef.current.style.opacity = "1";
+        }
+        if (rearFaceRef.current) {
+          rearFaceRef.current.style.visibility = "hidden";
+        }
+        if (frontFaceRef.current) {
+          frontFaceRef.current.style.visibility = "visible";
+          frontFaceRef.current.style.zIndex = "20";
+        }
+        return;
+      }
+
       if (!sectionRef.current) return;
       const rect = sectionRef.current.getBoundingClientRect();
       const totalScrollable = rect.height - window.innerHeight;
@@ -94,7 +116,7 @@ export default function PhoneShowcaseSection() {
       const current = -rect.top;
       const progress = Math.min(Math.max(current / totalScrollable, 0), 1);
 
-      // Curva de interpolación suave (cubic ease-out)
+      // Curva de interpolacion suave (cubic ease-out)
       const turnPhase = Math.min(progress / 0.44, 1);
       const easedTurn = 1 - Math.pow(1 - turnPhase, 3);
 
@@ -106,7 +128,7 @@ export default function PhoneShowcaseSection() {
       const scale = 0.85 + easedTurn * 0.15;
       const opacity = 0.25 + easedTurn * 0.75;
 
-      // Mutación directa al DOM del chasis 3D sin provocar re-renders de React
+      // Mutacion directa al DOM del chasis 3D sin provocar re-renders de React
       if (chassisRef.current) {
         chassisRef.current.style.transform = `translateX(${translateX}vw) translateY(${translateY}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
       }
@@ -121,7 +143,7 @@ export default function PhoneShowcaseSection() {
         phoneShadowRef.current.style.opacity = `${opacity * 0.85}`;
       }
 
-      // Conmutación de visibilidad de caras para optimizar VRAM de GPU
+      // Conmutacion de visibilidad de caras para optimizar VRAM de GPU
       if (rearFaceRef.current) {
         rearFaceRef.current.style.visibility = rotateY > 85 ? "visible" : "hidden";
         rearFaceRef.current.style.zIndex = rotateY > 85 ? "20" : "1";
@@ -145,9 +167,7 @@ export default function PhoneShowcaseSection() {
           setIsScreenOn(true);
         }
         if (videoRef.current && videoRef.current.paused) {
-          videoRef.current.play().catch(() => {
-            // Manejo de restricciones de autoplay
-          });
+          videoRef.current.play().catch(() => {});
         }
       } else if (progress < 0.32) {
         if (isScreenOnRef.current) {
@@ -165,12 +185,38 @@ export default function PhoneShowcaseSection() {
       animationFrameId = requestAnimationFrame(updateTransforms);
     };
 
+    // IntersectionObserver para reproduccion controlada y ahorro de GPU en mobile
+    let observer: IntersectionObserver | null = null;
+    if (sectionRef.current) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (!checkIsDesktop()) {
+            if (entry.isIntersecting) {
+              setIsScreenOn(true);
+              setIsSettled(true);
+              if (videoRef.current && videoRef.current.paused) {
+                videoRef.current.play().catch(() => {});
+              }
+            } else {
+              if (videoRef.current && !videoRef.current.paused) {
+                videoRef.current.pause();
+              }
+            }
+          }
+        },
+        { threshold: 0.25 }
+      );
+      observer.observe(sectionRef.current);
+    }
+
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
     updateTransforms();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      if (observer) observer.disconnect();
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
@@ -184,11 +230,10 @@ export default function PhoneShowcaseSection() {
       if (time >= 46.0 && !hasCompletedCycleRef.current) {
         hasCompletedCycleRef.current = true;
         setHasCompletedCycle(true);
-        // Pausar al completar el ciclo para ahorrar 100% de decoding de video en GPU
         videoRef.current.pause();
       }
 
-      // Detección del capítulo activo
+      // Deteccion del capitulo activo
       const active = CHAPTERS.find((ch) => time >= ch.startSec && time < ch.endSec);
       if (active && active.id !== activeChapterId) {
         setActiveChapterId(active.id);
@@ -206,56 +251,55 @@ export default function PhoneShowcaseSection() {
     }
   };
 
+  const currentChapter = CHAPTERS.find((ch) => ch.id === activeChapterId) || CHAPTERS[0];
+
   return (
     <section
       ref={sectionRef}
       id="showcase-phone"
-      className="relative z-20 w-full h-[280vh] bg-[#050507]"
+      className="relative z-20 w-full h-auto py-12 sm:py-16 lg:py-0 lg:h-[280vh] bg-[#050507]"
     >
-      {/* Viewport Fijo: La pantalla se detiene por completo mientras el teléfono hace su recorrido */}
-      <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      {/* Viewport: En desktop se fija a pantalla completa; en mobile fluye normalmente */}
+      <div className="relative lg:sticky lg:top-0 lg:h-screen w-full flex flex-col items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
         {/* Luz ambiental de fondo de lujo */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center">
           <div
             ref={ambientGlowRef}
-            className="w-[500px] h-[500px] sm:w-[750px] sm:h-[750px] bg-gradient-to-tr from-white/[0.04] via-neutral-300/[0.03] to-transparent rounded-full blur-[140px] transition-all duration-700"
+            className="w-[380px] h-[380px] sm:w-[540px] sm:h-[540px] lg:w-[750px] lg:h-[750px] bg-gradient-to-tr from-white/[0.04] via-neutral-300/[0.03] to-transparent rounded-full blur-[110px] lg:blur-[140px] transition-all duration-700"
             style={{
               opacity: isScreenOn ? 0.9 : 0.4,
               transform: `scale(${isScreenOn ? 1.08 : 0.95})`,
             }}
           />
           <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[600px] bg-white/[0.025] rounded-full blur-[90px] transition-opacity duration-700"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[320px] h-[480px] sm:h-[600px] bg-white/[0.025] rounded-full blur-[70px] lg:blur-[90px] transition-opacity duration-700"
             style={{ opacity: isScreenOn ? 0.8 : 0.3 }}
           />
         </div>
 
-        {/* Encabezado cinemático: Fijo y estable */}
-        <div className="relative z-10 text-center max-w-2xl mx-auto mb-3 sm:mb-5 select-none pointer-events-none">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-xs text-neutral-300 mb-2 tracking-wide">
+        {/* Encabezado cinematico */}
+        <div className="relative z-10 text-center max-w-2xl mx-auto mb-5 sm:mb-6 lg:mb-5 select-none pointer-events-none">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md text-xs text-neutral-300 mb-2.5 tracking-wide">
             <span
               className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${
                 isScreenOn ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-neutral-500"
               }`}
             />
-            <span>{isScreenOn ? "Punto de Venta Activo" : "Hardware de Alta Precisión"}</span>
+            <span>{isScreenOn ? "Punto de Venta Activo" : "Hardware de Alta Precision"}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-2">
-            Velocidad táctil.{" "}
+            Velocidad tactil.{" "}
             <span className="bg-gradient-to-r from-white via-neutral-300 to-neutral-500 bg-clip-text text-transparent">
-              Cero fricción.
+              Cero friccion.
             </span>
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto leading-relaxed hidden xs:block">
-            {isScreenOn
-              ? "Flujo de venta instantáneo, arqueos ciegos y tickets en milisegundos."
-              : "Desplaza para encajar el dispositivo y activar la experiencia del POS."}
+          <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto leading-relaxed">
+            Flujo de venta instantaneo, arqueos ciegos y emision de tickets en milisegundos.
           </p>
         </div>
 
-        {/* Escenario Central: Teléfono + Spatial HUD Satelital */}
+        {/* Escenario Central: Telefono + Badges Satelitales (Desktop) */}
         <div className="relative z-10 flex items-center justify-center w-full max-w-6xl">
-          {/* Escenario de Perspectiva 3D */}
           <div
             className="relative flex items-center justify-center"
             style={{
@@ -263,62 +307,57 @@ export default function PhoneShowcaseSection() {
               perspectiveOrigin: "50% 50%",
             }}
           >
-            {/* Sombra proyectada en plano base acelerada 100% por GPU (sin filter: drop-shadow) */}
+            {/* Sombra proyectada en plano base acelerada por GPU */}
             <div
               ref={phoneShadowRef}
-              className="absolute pointer-events-none w-[260px] sm:w-[320px] h-[42px] -bottom-9 rounded-[100%] bg-black/95 blur-2xl will-change-transform"
+              className="absolute pointer-events-none w-[240px] sm:w-[300px] h-[36px] sm:h-[42px] -bottom-7 sm:-bottom-9 rounded-[100%] bg-black/95 blur-2xl will-change-transform"
               style={{
                 boxShadow: "0 28px 70px 24px rgba(0, 0, 0, 0.95)",
               }}
             />
 
-            {/* Capa 1: Envolvente de Opacidad */}
+            {/* Envolvente de Opacidad */}
             <div
               ref={wrapperRef}
-              className="relative flex items-center justify-center will-change-transform"
-              style={{ opacity: 0.25 }}
+              className="relative flex items-center justify-center will-change-transform opacity-100 lg:opacity-25"
             >
-              {/* Capa 2: Contenedor 3D Puro */}
+              {/* Contenedor 3D del iPhone 16 */}
               <div
                 ref={chassisRef}
-                className="relative h-[50vh] sm:h-[58vh] lg:h-[62vh] max-h-[580px] aspect-[2620/5416] will-change-transform"
+                className="relative h-[52vh] sm:h-[58vh] lg:h-[62vh] max-h-[500px] sm:max-h-[560px] lg:max-h-[580px] aspect-[2620/5416] will-change-transform"
                 style={{
                   transformStyle: "preserve-3d",
-                  transform: "translateX(42vw) translateY(16px) rotateX(8deg) rotateY(180deg) rotateZ(-10deg) scale(0.85)",
                 }}
               >
-                {/* ----------------- NÚCLEO Y CANTOS DE TITANIO (Grosor 3D de 12px) ----------------- */}
-                {/* Canto Izquierdo */}
+                {/* Cantos de Titanio (Visibles con profundidad en Desktop) */}
                 <div
-                  className="absolute top-[20px] bottom-[20px] -left-[5px] w-[10px] bg-gradient-to-r from-neutral-800 via-neutral-600 to-neutral-800 rounded-sm pointer-events-none"
+                  className="hidden lg:block absolute top-[20px] bottom-[20px] -left-[5px] w-[10px] bg-gradient-to-r from-neutral-800 via-neutral-600 to-neutral-800 rounded-sm pointer-events-none"
                   style={{
                     transformStyle: "preserve-3d",
                     transform: "rotateY(-90deg) translateZ(5px)",
                     boxShadow: "inset 0 0 4px rgba(255,255,255,0.2)",
                   }}
                 />
-                {/* Canto Derecho */}
                 <div
-                  className="absolute top-[20px] bottom-[20px] -right-[5px] w-[10px] bg-gradient-to-r from-neutral-800 via-neutral-600 to-neutral-800 rounded-sm pointer-events-none"
+                  className="hidden lg:block absolute top-[20px] bottom-[20px] -right-[5px] w-[10px] bg-gradient-to-r from-neutral-800 via-neutral-600 to-neutral-800 rounded-sm pointer-events-none"
                   style={{
                     transformStyle: "preserve-3d",
                     transform: "rotateY(90deg) translateZ(5px)",
                     boxShadow: "inset 0 0 4px rgba(255,255,255,0.2)",
                   }}
                 />
-                {/* Núcleo central oscuro */}
                 <div
-                  className="absolute inset-[3px] rounded-[42px] bg-[#111114] border border-neutral-700/60 pointer-events-none"
+                  className="hidden lg:block absolute inset-[3px] rounded-[42px] bg-[#111114] border border-neutral-700/60 pointer-events-none"
                   style={{
                     transform: "translateZ(0px)",
                     boxShadow: "0 0 0 4px #1c1c20, inset 0 0 20px rgba(0,0,0,0.9)",
                   }}
                 />
 
-                {/* ----------------- CARA TRASERA (iphone-back.webp con cámaras) ----------------- */}
+                {/* CARA TRASERA (iphone-back.webp: Solo activa en Desktop durante el giro inicial) */}
                 <div
                   ref={rearFaceRef}
-                  className="absolute inset-0 pointer-events-none select-none"
+                  className="hidden lg:block absolute inset-0 pointer-events-none select-none"
                   style={{
                     transformStyle: "preserve-3d",
                     transform: "rotateY(180deg) translateZ(6px)",
@@ -336,11 +375,10 @@ export default function PhoneShowcaseSection() {
                       className="object-contain pointer-events-none select-none"
                     />
                   </div>
-                  {/* Reflejo metálico trasero sobre el titanio */}
                   <div className="absolute inset-0 rounded-[44px] bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent pointer-events-none" />
                 </div>
 
-                {/* ----------------- CARA FRONTAL (mockup.webp + pantalla + video) ----------------- */}
+                {/* CARA FRONTAL (mockup.webp + pantalla + video) */}
                 <div
                   ref={frontFaceRef}
                   className="absolute inset-0"
@@ -349,8 +387,8 @@ export default function PhoneShowcaseSection() {
                     transform: "rotateY(0deg) translateZ(6px)",
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
-                    visibility: "hidden",
-                    zIndex: 1,
+                    visibility: "visible",
+                    zIndex: 20,
                   }}
                 >
                   {/* Contenedor de Pantalla Calibrado */}
@@ -393,7 +431,7 @@ export default function PhoneShowcaseSection() {
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.03] to-white/[0.07]" />
                     </div>
 
-                    {/* Reflejo de cristal cerámico continuo */}
+                    {/* Reflejo de cristal ceramico continuo */}
                     <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.05] to-transparent z-30" />
                   </div>
 
@@ -409,16 +447,16 @@ export default function PhoneShowcaseSection() {
               </div>
             </div>
 
-            {/* ----------------- SPATIAL BADGES (DESKTOP: Estilo Apple App Icon / Luma / Stripe) ----------------- */}
+            {/* ----------------- SPATIAL BADGES (DESKTOP SOLO: lg:flex) ----------------- */}
             {CHAPTERS.map((ch, idx) => {
               const Icon = ch.icon;
               const isActive = activeChapterId === ch.id;
-              // Durante el video solo se muestra el activo. Al terminar el ciclo, todos se muestran fijos.
               const isVisible = isSettled && (hasCompletedCycle || isActive);
 
               return (
                 <button
                   key={ch.id}
+                  type="button"
                   onClick={() => handleSeekTo(ch.startSec, ch.id)}
                   style={{
                     transitionDelay: hasCompletedCycle ? `${idx * 60}ms` : "0ms",
@@ -435,7 +473,6 @@ export default function PhoneShowcaseSection() {
                       : "bg-[#0b0b10]/75 border-white/[0.07] hover:border-white/15 hover:bg-[#0f0f16]/85 opacity-70 hover:opacity-100"
                   }`}
                 >
-                  {/* Apple App Icon Squircle */}
                   <div
                     className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border bg-gradient-to-b shadow-[0_4px_14px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-transform duration-300 ${
                       ch.iconGradient
@@ -444,7 +481,6 @@ export default function PhoneShowcaseSection() {
                     <Icon className="w-6 h-6 stroke-[1.8]" />
                   </div>
 
-                  {/* Contenido Tipográfico Minimalista (Luma / Stripe) */}
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-[11px] font-medium tracking-wider uppercase text-neutral-400 mb-0.5">
                       {ch.category}
@@ -466,38 +502,47 @@ export default function PhoneShowcaseSection() {
           </div>
         </div>
 
-        {/* ----------------- SELECTOR DE CAPÍTULOS PARA MÓVIL / TABLET (< lg) ----------------- */}
-        <div
-          className={`lg:hidden relative z-20 flex items-center justify-center gap-2 mt-4 px-2 w-full max-w-md transition-all duration-500 ${
-            isSettled ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
-          }`}
-        >
-          {CHAPTERS.map((ch) => {
-            const Icon = ch.icon;
-            const isActive = activeChapterId === ch.id;
-            const isVisible = hasCompletedCycle || isActive;
+        {/* ----------------- OPCION 1: DOCK DE ICONOS PURO PARA MOBILE / TABLET (< lg) ----------------- */}
+        <div className="lg:hidden relative z-20 flex flex-col items-center mt-6 w-full max-w-xs sm:max-w-sm px-4">
+          {/* Barra de Squircles Ceramicos (Solo Iconos) */}
+          <div className="flex items-center justify-center gap-3 p-1.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl shadow-[0_12px_30px_rgba(0,0,0,0.7)]">
+            {CHAPTERS.map((ch) => {
+              const Icon = ch.icon;
+              const isActive = activeChapterId === ch.id;
 
-            return (
-              <button
-                key={ch.id}
-                onClick={() => handleSeekTo(ch.startSec, ch.id)}
-                className={`flex-1 flex flex-col items-center p-2.5 rounded-2xl border transition-all duration-400 text-center ${
-                  isVisible ? "opacity-100 scale-100" : "opacity-35 scale-95"
-                } ${
-                  isActive
-                    ? "bg-[#12121a] border-white/20 text-white shadow-[0_0_15px_rgba(255,255,255,0.06)] ring-1 ring-white/15"
-                    : "bg-[#08080c]/80 border-white/[0.07] text-neutral-400 hover:text-white"
-                }`}
-              >
-                <div
-                  className={`w-7 h-7 rounded-[10px] flex items-center justify-center border mb-1.5 bg-gradient-to-b ${ch.iconGradient}`}
+              return (
+                <button
+                  key={ch.id}
+                  type="button"
+                  onClick={() => handleSeekTo(ch.startSec, ch.id)}
+                  aria-label={ch.title}
+                  className={`relative w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                    isActive
+                      ? "bg-[#161622] border border-white/30 text-white shadow-[0_0_20px_rgba(255,255,255,0.12),inset_0_1px_1px_rgba(255,255,255,0.3)] scale-105"
+                      : "bg-[#0b0b10]/60 border border-white/[0.05] text-neutral-400 hover:text-white hover:bg-white/[0.06] opacity-60 hover:opacity-100 scale-100"
+                  }`}
                 >
-                  <Icon className="w-3.5 h-3.5 stroke-[1.8]" />
-                </div>
-                <span className="text-[9px] font-medium leading-tight line-clamp-2 h-6 flex items-center justify-center">{ch.title}</span>
-              </button>
-            );
-          })}
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center border bg-gradient-to-b ${ch.iconGradient} ${
+                      isActive ? "shadow-sm" : ""
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 stroke-[1.9]" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Micro-label dinamico de una sola linea sobrio (sin cajas amontonadas) */}
+          <div className="mt-3.5 text-center min-h-[20px] flex items-center justify-center">
+            <p className="text-xs font-medium text-neutral-300 tracking-tight transition-all duration-300 animate-fade-in">
+              <span className="text-neutral-500 uppercase text-[10px] tracking-wider font-semibold mr-1.5">
+                {currentChapter.category} —
+              </span>
+              {currentChapter.title}
+            </p>
+          </div>
         </div>
       </div>
     </section>
