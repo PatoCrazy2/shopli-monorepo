@@ -1,12 +1,48 @@
-﻿import { useLiveQuery } from 'dexie-react-hooks';
-import { Loader2, ArrowRight } from 'lucide-react';
+﻿import { useState, useEffect, useRef } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { Loader2, Check } from 'lucide-react';
 import { db } from '../../../lib/db';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export function ClosingShiftSyncScreen() {
+    const { logout } = useAuth();
+    const [countdown, setCountdown] = useState(4);
+    const hasNavigated = useRef(false);
+
     const closingSyncRecord = useLiveQuery(async () => {
         const record = await db.meta.get('isClosingShiftSync');
         return record?.value as 'syncing' | 'success' | null;
     }, []) ?? null;
+
+    const navigateToLogin = async () => {
+        if (hasNavigated.current) return;
+        hasNavigated.current = true;
+        await db.meta.delete('isClosingShiftSync');
+        logout();
+        if (typeof window !== 'undefined') {
+            window.location.replace('/login');
+        }
+    };
+
+    useEffect(() => {
+        if (closingSyncRecord === 'success') {
+            hasNavigated.current = false;
+            setCountdown(4);
+
+            const interval = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        navigateToLogin();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            return () => clearInterval(interval);
+        }
+    }, [closingSyncRecord]);
 
     if (!closingSyncRecord) return null;
 
@@ -28,7 +64,7 @@ export function ClosingShiftSyncScreen() {
                         </div>
                     ) : (
                         <div className="w-20 h-20 rounded-full bg-black text-white shadow-md flex items-center justify-center">
-                            <ArrowRight className="w-9 h-9 text-white stroke-[2.5]" />
+                            <Check className="w-10 h-10 text-white stroke-[3]" />
                         </div>
                     )}
                 </div>
@@ -49,13 +85,22 @@ export function ClosingShiftSyncScreen() {
                             ¡Turno sincronizado correctamente!
                         </h2>
                         <p className="text-zinc-500 text-base leading-relaxed max-w-sm">
-                            Redirigiendo a inicio de sesión...
+                            Todos los datos han sido respaldados en la nube.
                         </p>
+
+                        {/* Botón táctil híbrido: acción inmediata o espera con cuenta regresiva */}
+                        <button
+                            onClick={navigateToLogin}
+                            className="mt-6 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-black text-white font-semibold text-sm hover:bg-zinc-800 active:scale-[0.98] transition-all shadow-sm"
+                        >
+                            <span>Ir al inicio ahora</span>
+                            <span className="text-zinc-400 font-normal">({countdown}s)</span>
+                        </button>
                     </>
                 )}
 
                 {/* Indicador inferior sutil */}
-                <div className="mt-12">
+                <div className="mt-10">
                     <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-zinc-200/60 text-zinc-600 uppercase tracking-wider">
                         {closingSyncRecord === 'syncing' ? 'Conexión Segura' : 'Completado'}
                     </span>

@@ -1,14 +1,12 @@
 import { AlertTriangle } from "lucide-react";
 import { useInventoryAuditWizard } from "./hooks/useInventoryAuditWizard";
-import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { pushToCloud } from "../../lib/sync";
 import { db } from "../../lib/db";
 
 export default function InventoryAuditWizard() {
-    const navigate = useNavigate();
-    const { logout, closeShift } = useAuth();
+    const { closeShift } = useAuth();
 
     // Bloqueo de navegación nativa (Atrás/Adelante del navegador)
     useEffect(() => {
@@ -47,13 +45,8 @@ export default function InventoryAuditWizard() {
             const pushResult = await pushToCloud();
 
             if (pushResult.success) {
-                // 4. Estado 2: Éxito con flecha hacia login
+                // 4. Estado 2: Éxito con checkmark y cuenta regresiva híbrida (ClosingShiftSyncScreen orquesta la navegación)
                 await db.meta.put({ key: 'isClosingShiftSync', value: 'success' });
-                await new Promise(resolve => setTimeout(resolve, 800));
-
-                await db.meta.delete('isClosingShiftSync');
-                logout();
-                navigate('/login', { replace: true });
             } else {
                 // Si falló el push (offline o error), desmontar pantalla para dar paso a HardStopSyncScreen
                 await db.meta.delete('isClosingShiftSync');
