@@ -67,6 +67,10 @@ jobs:
       - name: Lint Codebase
         run: pnpm lint
 
+      # Ejecutar tests unitarios y de integración de Admin (Stripe, Billing, Planes, Seguridad y Gates de POS)
+      - name: Run Admin Tests Suite (Stripe, Billing & Security)
+        run: pnpm --filter admin test
+
       # Arrancar servidor Next.js en segundo plano (con NODE_ENV=test para habilitar el bypass seguro de tests en CI)
       - name: Start Next.js Admin Server (Background)
         run: |
