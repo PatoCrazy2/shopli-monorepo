@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:auth": "vitest run src/__tests__/auth-offline.test.ts",
+    "generate:icons": "node scripts/generate-icons.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "fake-indexeddb": "^6.2.5",
     "globals": "^16.5.0",
     "prisma": "^5.22.0",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
