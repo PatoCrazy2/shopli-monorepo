@@ -1,4 +1,4 @@
-import { Download, X, Share, PlusSquare, ArrowUpRight } from 'lucide-react';
+import { Download, X, Share, PlusSquare, ArrowUpRight, Monitor, MoreVertical } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export function PWAInstallPrompt() {
@@ -7,6 +7,8 @@ export function PWAInstallPrompt() {
     showInvitation,
     showIOSGuide,
     setShowIOSGuide,
+    showDesktopGuide,
+    setShowDesktopGuide,
     promptInstall,
     dismissInvitation,
   } = usePWAInstall();
@@ -132,6 +134,69 @@ export function PWAInstallPrompt() {
             <button
               type="button"
               onClick={() => setShowIOSGuide(false)}
+              className="w-full py-3 bg-black text-white text-xs font-bold rounded-xl hover:bg-zinc-800 transition-all active:scale-[0.98] shadow-sm"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal instruccional para Desktop (Chrome / Edge) */}
+      {showDesktopGuide && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl border border-zinc-200 p-6 max-w-sm sm:max-w-md w-full shadow-2xl relative">
+            <button
+              type="button"
+              onClick={() => setShowDesktopGuide(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 p-1 rounded-full hover:bg-zinc-100 transition-colors"
+              aria-label="Cerrar guía"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-zinc-100 flex items-center justify-center text-zinc-900 font-bold">
+                <Monitor className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-zinc-900 tracking-tight">Instalar en tu computadora</h3>
+                <p className="text-xs text-zinc-500">Agrega ShopLI POS como aplicación de escritorio</p>
+              </div>
+            </div>
+
+            <div className="space-y-3.5 my-5 text-xs text-zinc-700">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+                <span className="w-5 h-5 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
+                  1
+                </span>
+                <p className="leading-relaxed">
+                  En la <strong className="text-zinc-900 font-semibold">barra de direcciones</strong> de tu navegador (Chrome o Edge), haz clic en el icono de instalación <strong className="text-zinc-900 font-semibold">(➕ o 🖥️)</strong> situado a la derecha de la URL.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+                <span className="w-5 h-5 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
+                  2
+                </span>
+                <p className="leading-relaxed">
+                  O abre el menú del navegador <strong className="text-zinc-900 inline-flex items-center gap-0.5 font-semibold"><MoreVertical className="w-3.5 h-3.5" /> (tres puntos)</strong> y selecciona <strong className="text-zinc-900 font-semibold">"Instalar ShopLI POS"</strong> o <strong className="text-zinc-900 font-semibold">"Guardar y compartir" &gt; "Instalar"</strong>.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-50 border border-zinc-100">
+                <span className="w-5 h-5 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
+                  3
+                </span>
+                <p className="leading-relaxed">
+                  Confirma pulsando <strong className="text-zinc-900 font-semibold">"Instalar"</strong> en el cuadro de diálogo.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowDesktopGuide(false)}
               className="w-full py-3 bg-black text-white text-xs font-bold rounded-xl hover:bg-zinc-800 transition-all active:scale-[0.98] shadow-sm"
             >
               Entendido
