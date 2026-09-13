@@ -6,7 +6,7 @@ import { db } from '../../../lib/db';
 import { useExpenses } from './useExpenses';
 
 export function useCloseRegister() {
-    const { activeShift } = useAuth();
+    const { user, activeShift } = useAuth();
     const navigate = useNavigate();
 
     const [physicalCount, setPhysicalCount] = useState<string>('');
@@ -48,6 +48,7 @@ export function useCloseRegister() {
     };
 
     return {
+        user,
         activeShift,
         physicalCount,
         setPhysicalCount,

@@ -138,4 +138,97 @@ describe('pullFromCloud integration', () => {
     expect(lastSyncedAt).toBeDefined();
     expect(lastSyncedAt?.value).toBeTruthy();
   });
+
+  it('debe purgar atómicamente de Dexie y del carrito un producto que se desactiva en la nube (incremental sync)', async () => {
+    // 1. Creamos un producto activo en PostgreSQL para testEmpresa
+    const prodId = crypto.randomUUID();
+    await prisma.producto.create({
+      data: {
+        id: prodId,
+        nombre: 'Producto a Desactivar',
+        codigo_interno: `TO-DEACT-${Date.now()}`,
+        precio_publico: 150,
+        costo: 80,
+        isActive: true,
+        empresa_id: 'test-empresa-id',
+      },
+    });
+
+    // Sincronizamos para que baje a Dexie
+    await pullFromCloud();
+    const prodInDexie = await db.products.get(prodId);
+    expect(prodInDexie).toBeDefined();
+    expect(prodInDexie?.id).toBe(prodId);
+
+    // Lo agregamos al carrito local
+    await db.cart.add({
+      id: crypto.randomUUID(),
+      producto_id: prodId,
+      name: 'Producto a Desactivar',
+      price: 150,
+      precio_mayoreo: null,
+      min_cantidad_mayoreo: null,
+      quantity: 1,
+      descuento_manual: 0,
+      nota_descuento: '',
+      parent_id: null,
+      variante_nombre: null,
+    });
+    expect(await db.cart.where('producto_id').equals(prodId).count()).toBe(1);
+
+    // 2. Desactivamos el producto en PostgreSQL
+    await new Promise((r) => setTimeout(r, 10)); // Breve pausa para asegurar updatedAt > lastSyncedAt
+    await prisma.producto.update({
+      where: { id: prodId },
+      data: { isActive: false },
+    });
+
+    // 3. Ejecutamos pull incremental
+    const pullResult = await pullFromCloud();
+    expect(pullResult.source).toBe('cloud');
+
+    // 4. Verificamos que se purgó tanto de db.products como de db.cart
+    const prodAfterPurge = await db.products.get(prodId);
+    expect(prodAfterPurge).toBeUndefined();
+
+    const cartAfterPurge = await db.cart.where('producto_id').equals(prodId).first();
+    expect(cartAfterPurge).toBeUndefined();
+  });
+
+  it('debe purgar atómicamente de Dexie un cajero que se desactiva en la nube (incremental sync)', async () => {
+    // 1. Creamos un cajero activo en PostgreSQL
+    const userId = crypto.randomUUID();
+    await prisma.user.create({
+      data: {
+        id: userId,
+        name: 'Cajero a Desactivar',
+        email: `cajero-deact-${Date.now()}@test.com`,
+        role: Role.CAJERO,
+        pin_hash: 'dummyhash',
+        active: true,
+        empresa_id: 'test-empresa-id',
+      },
+    });
+
+    // Sincronizamos para que baje a Dexie
+    await pullFromCloud();
+    const userInDexie = await db.users.get(userId);
+    expect(userInDexie).toBeDefined();
+    expect(userInDexie?.id).toBe(userId);
+
+    // 2. Desactivamos el usuario en PostgreSQL
+    await new Promise((r) => setTimeout(r, 10));
+    await prisma.user.update({
+      where: { id: userId },
+      data: { active: false },
+    });
+
+    // 3. Ejecutamos pull incremental
+    const pullResult = await pullFromCloud();
+    expect(pullResult.source).toBe('cloud');
+
+    // 4. Verificamos que se purgó de db.users
+    const userAfterPurge = await db.users.get(userId);
+    expect(userAfterPurge).toBeUndefined();
+  });
 });

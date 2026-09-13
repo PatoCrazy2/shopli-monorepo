@@ -11,6 +11,8 @@ export type PullSyncResponse = {
   inventory?: any[];
   users?: any[];
   branches?: any[];
+  deactivatedProductIds?: string[];
+  deactivatedUserIds?: string[];
   syncedAt?: string;
 };
 
@@ -78,7 +80,7 @@ export async function pullFromCloud(): Promise<SyncResult> {
       return { source: 'cache' };
     }
     
-    await db.transaction("rw", [db.products, db.users, db.meta, db.inventory, db.branches], async () => {
+    await db.transaction("rw", [db.products, db.users, db.meta, db.inventory, db.branches, db.cart], async () => {
       // 1. Si no hay lastSyncedAt, es carga completa: Limpiamos y metemos todo de golpe.
       if (!lastSyncedAt) {
         await db.products.clear();
@@ -95,6 +97,7 @@ export async function pullFromCloud(): Promise<SyncResult> {
               email: u.email || '',
               role: u.role,
               pin: u.pin_hash || null,
+              active: true,
             }))
           );
         }
@@ -153,6 +156,7 @@ export async function pullFromCloud(): Promise<SyncResult> {
               email: u.email || '',
               role: u.role,
               pin: u.pin_hash || null,
+              active: true,
             }))
           );
         }
@@ -201,7 +205,35 @@ export async function pullFromCloud(): Promise<SyncResult> {
            );
         }
 
-        // Si tuvieramos data.deletedProductIds, haríamos db.products.bulkDelete(data.deletedProductIds) etc.
+        // Purgar productos desactivados localmente (Tombstones)
+        if (data.deactivatedProductIds && data.deactivatedProductIds.length > 0) {
+          await db.products.bulkDelete(data.deactivatedProductIds);
+          // Purgar también cualquier residuo en el carrito
+          await db.cart.where('producto_id').anyOf(data.deactivatedProductIds).delete();
+        }
+
+        // Purgar usuarios desactivados localmente (Tombstones)
+        if (data.deactivatedUserIds && data.deactivatedUserIds.length > 0) {
+          await db.users.bulkDelete(data.deactivatedUserIds);
+
+          // Si el usuario actualmente autenticado en la terminal fue desactivado, revocar sesión
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const currentAuth = window.localStorage.getItem('auth_user');
+            if (currentAuth) {
+              try {
+                const parsedUser = JSON.parse(currentAuth);
+                if (parsedUser?.id && data.deactivatedUserIds.includes(parsedUser.id)) {
+                  console.warn('⚠️ El usuario activo en esta terminal ha sido desactivado en la nube. Revocando sesión.');
+                  window.localStorage.removeItem('auth_user');
+                  window.localStorage.removeItem('pos_shift');
+                  window.location.reload();
+                }
+              } catch (err) {
+                console.error('Error al verificar revocación de usuario:', err);
+              }
+            }
+          }
+        }
       }
 
       // 2. Actualizamos lastSyncedAt y lastOnlineVerification

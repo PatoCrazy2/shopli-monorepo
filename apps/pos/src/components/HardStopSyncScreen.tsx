@@ -15,12 +15,16 @@ export function HardStopSyncScreen() {
     const pendingSalesCount = useLiveQuery(() => db.sales.where('sync_status').equals('PENDING').count(), []) ?? 0;
     const pendingTurnosCount = useLiveQuery(() => db.turnos.where('sync_status').equals('PENDING').count(), []) ?? 0;
     const pendingAuditsCount = useLiveQuery(() => db.audits.where('sync_status').equals('PENDING').count(), []) ?? 0;
+    const isClosingShiftSync = useLiveQuery(async () => {
+        const record = await db.meta.get('isClosingShiftSync');
+        return Boolean(record?.value);
+    }, []) ?? false;
 
     const totalPending = pendingSalesCount + pendingTurnosCount + pendingAuditsCount;
 
-    // Condición estricta: Mostrar SOLO cuando no hay un turno activo, pero aún hay datos pendientes locales.
-    // Esto previene que se abra un turno nuevo o se cierre la app perdiendo datos.
-    const shouldBlock = !hasActiveShift && totalPending > 0;
+    // Condición estricta: Mostrar SOLO cuando no hay un turno activo, pero aún hay datos pendientes locales,
+    // y NO estamos activamente en el flujo de sincronización de cierre de turno.
+    const shouldBlock = !hasActiveShift && totalPending > 0 && !isClosingShiftSync;
 
     const handleManualSync = async () => {
         setIsSyncing(true);

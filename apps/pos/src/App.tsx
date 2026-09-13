@@ -86,6 +86,7 @@ function AppRoutes() {
 import { HardStopSyncScreen } from './components/HardStopSyncScreen';
 import { SubscriptionSuspendedScreen } from './components/SubscriptionSuspendedScreen';
 import { DeviceRevokedScreen } from './components/DeviceRevokedScreen';
+import { ClosingShiftSyncScreen } from './features/sales/components/ClosingShiftSyncScreen';
 import { useNetworkSync } from './hooks/useNetworkSync';
 
 function App() {
@@ -94,6 +95,7 @@ function App() {
     <AuthProvider>
       <SubscriptionSuspendedScreen />
       <DeviceRevokedScreen />
+      <ClosingShiftSyncScreen />
       <HardStopSyncScreen />
       <AppRoutes />
     </AuthProvider>

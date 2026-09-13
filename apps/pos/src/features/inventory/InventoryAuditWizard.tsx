@@ -1,13 +1,12 @@
-import { PackageSearch, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useInventoryAuditWizard } from "./hooks/useInventoryAuditWizard";
-import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { pushToCloud } from "../../lib/sync";
+import { db } from "../../lib/db";
 
 export default function InventoryAuditWizard() {
-    const navigate = useNavigate();
-    const { logout, closeShift } = useAuth();
+    const { closeShift } = useAuth();
 
     // Bloqueo de navegación nativa (Atrás/Adelante del navegador)
     useEffect(() => {
@@ -22,7 +21,6 @@ export default function InventoryAuditWizard() {
         auditProducts,
         currentIndex,
         currentProduct,
-        isComplete,
         countedAmount,
         setCountedAmount,
         showWarning,
@@ -35,32 +33,39 @@ export default function InventoryAuditWizard() {
         physicalAmountPassed
     } = useInventoryAuditWizard();
 
-    if (auditProducts.length === 0) return null; // Loading state
+    const handleCompleteClosing = async () => {
+        try {
+            // 1. Activar pantalla completa de sincronización a nivel raíz y silenciar HardStopSyncScreen
+            await db.meta.put({ key: 'isClosingShiftSync', value: 'syncing' });
 
-    if (isComplete) {
-        return (
-            <div className="flex w-full h-full bg-black text-white items-center justify-center p-6 text-center">
-                <div className="max-w-md">
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-6">
-                        <PackageSearch className="w-12 h-12 text-black" />
-                    </div>
-                    <h1 className="text-4xl font-bold mb-4">Auditoría Completada</h1>
-                    <p className="text-gray-400 text-lg mb-8">El conteo ciego ha sido registrado. El turno se ha cerrado exitosamente.</p>
-                    <button
-                        onClick={async () => {
-                            await closeShift(physicalAmountPassed);
-                            await pushToCloud();
-                            logout();
-                            navigate('/login', { replace: true });
-                        }}
-                        className="bg-white text-black font-bold text-xl py-4 px-12 rounded-lg hover:bg-gray-200 h-16 min-w-[200px]"
-                    >
-                        Volver al Inicio
-                    </button>
-                </div>
-            </div>
-        );
-    }
+            // 2. Cerrar turno en Dexie
+            await closeShift(physicalAmountPassed);
+
+            // 3. Subir ventas, turno y auditoría a la nube
+            const pushResult = await pushToCloud();
+
+            if (pushResult.success) {
+                // 4. Estado 2: Éxito con checkmark y cuenta regresiva híbrida (ClosingShiftSyncScreen orquesta la navegación)
+                await db.meta.put({ key: 'isClosingShiftSync', value: 'success' });
+            } else {
+                // Si falló el push (offline o error), desmontar pantalla para dar paso a HardStopSyncScreen
+                await db.meta.delete('isClosingShiftSync');
+            }
+        } catch (err) {
+            console.error("Error al finalizar cierre de turno:", err);
+            await db.meta.delete('isClosingShiftSync');
+        }
+    };
+
+    const handleButtonClick = async () => {
+        const isLastItem = currentIndex === auditProducts.length - 1;
+        const willComplete = handleNext();
+        if (isLastItem && willComplete) {
+            await handleCompleteClosing();
+        }
+    };
+
+    if (auditProducts.length === 0) return null; // Loading state
 
     if (!currentProduct) return null;
 
@@ -147,7 +152,7 @@ export default function InventoryAuditWizard() {
                     )}
 
                     <button
-                        onClick={handleNext}
+                        onClick={handleButtonClick}
                         disabled={!countedAmount}
                         className={`w-full h-16 rounded-lg font-bold text-xl text-white flex items-center justify-center gap-2 
                             ${!countedAmount

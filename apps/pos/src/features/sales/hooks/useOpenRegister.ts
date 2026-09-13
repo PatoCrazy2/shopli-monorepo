@@ -97,6 +97,7 @@ export function useOpenRegister() {
     return {
         user,
         initialAmount,
+        setInitialAmount,
         error,
         branches,
         selectedBranchId,

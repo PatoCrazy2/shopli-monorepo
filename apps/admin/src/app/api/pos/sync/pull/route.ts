@@ -62,6 +62,8 @@ export type PullSyncResponse = {
   users: SyncUser[];
   branches: SyncBranch[];
   gastos: SyncGasto[];
+  deactivatedProductIds: string[];
+  deactivatedUserIds: string[];
   syncedAt: string;
   nextCursor?: string;
 };
@@ -189,20 +191,31 @@ export async function GET(req: NextRequest) {
     }
 
     // Filtros para la consulta por Empresa (Multi-Tenant)
+    // Solo productos y usuarios activos para el catálogo descargable
     const productsWhere = {
       empresa_id: empresaId,
+      isActive: true,
       ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {})
     };
     
-    // Solo sincronizar perfiles relevantes para operar el POS de forma segura (CAJERO, ENCARGADO)
+    // Solo sincronizar perfiles relevantes y activos para operar el POS de forma segura (CAJERO, ENCARGADO)
     const usersWhere = {
       empresa_id: empresaId,
+      active: true,
       role: { in: [Role.CAJERO, Role.ENCARGADO] },
       ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {})
     };
 
     // 1. Ejecutar las solicitudes en paralelo con tipado explícito
-    const [productsResult, inventoryResult, usersResult, branchesResult, gastosResult] = await Promise.all([
+    const [
+      productsResult,
+      inventoryResult,
+      usersResult,
+      branchesResult,
+      gastosResult,
+      deactivatedProductsResult,
+      deactivatedUsersResult
+    ] = await Promise.all([
       db.producto.findMany({
         where: productsWhere,
         take: LIMIT + 1,
@@ -237,7 +250,30 @@ export async function GET(req: NextRequest) {
           sucursal: { empresa_id: empresaId },
           ...(updatedAfterDate ? { updatedAt: { gt: updatedAfterDate } } : {}),
         },
-      })
+      }),
+      // Si es carga incremental, traemos los IDs de productos desactivados para que el POS los purgue
+      updatedAfterDate
+        ? db.producto.findMany({
+            where: {
+              empresa_id: empresaId,
+              isActive: false,
+              updatedAt: { gt: updatedAfterDate },
+            },
+            select: { id: true, updatedAt: true },
+          })
+        : Promise.resolve([]),
+      // Si es carga incremental, traemos los IDs de usuarios desactivados para revocar y purgar
+      updatedAfterDate
+        ? db.user.findMany({
+            where: {
+              empresa_id: empresaId,
+              active: false,
+              role: { in: [Role.CAJERO, Role.ENCARGADO] },
+              updatedAt: { gt: updatedAfterDate },
+            },
+            select: { id: true, updatedAt: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     // 2. Manejo de paginación para productos
@@ -266,6 +302,12 @@ export async function GET(req: NextRequest) {
     });
     gastosResult.forEach(g => {
       if (g.updatedAt > maxDate) maxDate = g.updatedAt;
+    });
+    deactivatedProductsResult.forEach(p => {
+      if (p.updatedAt > maxDate) maxDate = p.updatedAt;
+    });
+    deactivatedUsersResult.forEach(u => {
+      if (u.updatedAt > maxDate) maxDate = u.updatedAt;
     });
 
     // Si no hubo cambios y no existía un updatedAfter, emitiremos el tiempo del servidor actual.
@@ -324,12 +366,17 @@ export async function GET(req: NextRequest) {
       updatedAt: g.updatedAt.toISOString(),
     }));
 
+    const deactivatedProductIds = deactivatedProductsResult.map(p => p.id);
+    const deactivatedUserIds = deactivatedUsersResult.map(u => u.id);
+
     const responseBody: PullSyncResponse = {
       products,
       inventory,
       users,
       branches,
       gastos,
+      deactivatedProductIds,
+      deactivatedUserIds,
       syncedAt,
       ...(nextCursor && { nextCursor }),
     };
