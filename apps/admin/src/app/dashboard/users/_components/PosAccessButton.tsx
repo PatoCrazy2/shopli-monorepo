@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Store, ExternalLink, Copy, Check, X, QrCode } from "lucide-react";
 import QRCodeLib from "qrcode";
 
-const POS_URL = "https://shopli-pos.vercel.app";
+const POS_URL =
+  process.env.NEXT_PUBLIC_POS_URL || "https://shopli-pos.vercel.app";
 const WHATSAPP_MESSAGE = `¡Hola! Aquí tienes el acceso al Punto de Venta (POS) de nuestra tienda: ${POS_URL}\n\nRecuerda ingresar con tu correo registrado y tu PIN asignado.`;
 
 export function PosAccessButton() {
