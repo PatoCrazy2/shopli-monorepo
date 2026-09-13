@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, MapPin, ArrowRight, ArrowLeft, Check, AlertCircle } from "lucide-react";
 import { completeOnboarding } from "./actions";
+import { OnboardingSuccessScreen } from "./OnboardingSuccessScreen";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function OnboardingPage() {
   const [branchName, setBranchName] = useState("Matriz");
   const [branchAddress, setBranchAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleNextStep = (e: React.FormEvent) => {
@@ -44,12 +46,15 @@ export default function OnboardingPage() {
         if (result?.error) {
           setError(result.error);
         } else {
-          // Recarga completa para que el middleware/layout emita la cookie de sesión con el nuevo empresa_id
-          window.location.href = "/dashboard/inicio";
+          setIsSuccess(true);
         }
       });
     }
   };
+
+  if (isSuccess) {
+    return <OnboardingSuccessScreen businessName={businessName} />;
+  }
 
   return (
     <main className="min-h-screen grid items-center justify-center bg-gray-50/70 selection:bg-black selection:text-white font-sans p-4 sm:p-6">

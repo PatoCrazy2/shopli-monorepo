@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getUsers, getUserCounts, UserStatusFilter } from "./queries";
 import { ResetPinButton } from "./_components/ResetPinButton";
 import { UserFilterTabs } from "./_components/UserFilterTabs";
+import { PosAccessButton } from "./_components/PosAccessButton";
 import { UserSearchBar } from "./_components/UserSearchBar";
 import { ToggleUserButton } from "./_components/ToggleUserButton";
 import { UserPlus, UserX, SearchX, ShieldCheck } from "lucide-react";
@@ -60,9 +61,12 @@ export default async function UsersPage({
         )}
       </div>
 
-      {/* Barra de Filtros y Búsqueda */}
+      {/* Barra de Filtros, Acceso POS y Búsqueda */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <UserFilterTabs counts={counts} />
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <UserFilterTabs counts={counts} />
+          <PosAccessButton />
+        </div>
         <UserSearchBar />
       </div>
 

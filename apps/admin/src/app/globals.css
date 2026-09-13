@@ -150,3 +150,37 @@ input[type="password"]::-ms-clear {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
+/* Animación de Éxito / Checkmark */
+@keyframes checkPop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes checkStroke {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-check-pop {
+  animation: checkPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-check-stroke {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkStroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) 0.2s forwards;
+}
