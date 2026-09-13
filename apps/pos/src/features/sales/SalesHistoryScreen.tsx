@@ -21,9 +21,13 @@ export default function SalesHistoryScreen() {
         <div className="flex flex-col w-full h-full bg-zinc-50 p-4 sm:p-6 overflow-hidden">
             {/* Header Area Compacto */}
             <div className="shrink-0 flex items-center justify-between gap-3 mb-4">
-                <div>
-                    <h1 className="text-lg sm:text-2xl font-black text-zinc-900 tracking-tight">Historial de Ventas</h1>
-                    <p className="text-xs text-zinc-500 font-medium hidden sm:block">Consulta los tickets de venta por fecha</p>
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-base sm:text-2xl font-black text-zinc-900 tracking-tight truncate">
+                        Historial de Ventas
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-medium hidden sm:block truncate">
+                        Consulta los tickets de venta por fecha
+                    </p>
                 </div>
 
                 <DateFilterSelect activeOffset={dateOffset} onChange={setDateOffset} />
