@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-interface BeforeInstallPromptEvent extends Event {
+export interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
     outcome: 'accepted' | 'dismissed';
@@ -9,14 +9,27 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+declare global {
+  interface Window {
+    __deferredInstallPrompt?: BeforeInstallPromptEvent | null;
+  }
+}
+
 const DISMISSED_KEY = 'shopli_pwa_prompt_dismissed';
 
 export function usePWAInstall() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(() => {
+    if (typeof window !== 'undefined' && window.__deferredInstallPrompt) {
+      return window.__deferredInstallPrompt;
+    }
+    return null;
+  });
+
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [isDismissed, setIsDismissed] = useState(true); // Default true until verified in localStorage
+  const [isDismissed, setIsDismissed] = useState(true);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showDesktopGuide, setShowDesktopGuide] = useState(false);
 
   useEffect(() => {
     // 1. Detectar si ya corre en standalone PWA
@@ -38,27 +51,45 @@ export function usePWAInstall() {
     const dismissed = localStorage.getItem(DISMISSED_KEY) === 'true';
     setIsDismissed(dismissed);
 
-    // 4. Listener para capturar beforeinstallprompt (Android / Chromium)
+    // 4. Si ya existía el prompt capturado temprano en window, recuperarlo
+    if (window.__deferredInstallPrompt && !deferredPrompt) {
+      setDeferredPrompt(window.__deferredInstallPrompt);
+    }
+
+    // 5. Listener para evento nativo beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const eventWithPrompt = e as BeforeInstallPromptEvent;
+      window.__deferredInstallPrompt = eventWithPrompt;
+      setDeferredPrompt(eventWithPrompt);
     };
 
-    // 5. Listener para cuando la PWA se instala con éxito
+    // 6. Listener para custom event de captura temprana en index.html
+    const handlePromptAvailable = () => {
+      if (window.__deferredInstallPrompt) {
+        setDeferredPrompt(window.__deferredInstallPrompt);
+      }
+    };
+
+    // 7. Listener para cuando la PWA se instala con éxito
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
+      window.__deferredInstallPrompt = null;
       setIsStandalone(true);
       setShowIOSGuide(false);
+      setShowDesktopGuide(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('pwa-prompt-available', handlePromptAvailable);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('pwa-prompt-available', handlePromptAvailable);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const dismissInvitation = useCallback(() => {
     localStorage.setItem(DISMISSED_KEY, 'true');
@@ -71,15 +102,25 @@ export function usePWAInstall() {
       return;
     }
 
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setDeferredPrompt(null);
-        dismissInvitation();
+    // Intentar obtener el prompt del estado local o del objeto global
+    const activePrompt = deferredPrompt || window.__deferredInstallPrompt;
+
+    if (activePrompt) {
+      try {
+        await activePrompt.prompt();
+        const choice = await activePrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          setDeferredPrompt(null);
+          window.__deferredInstallPrompt = null;
+          dismissInvitation();
+        }
+      } catch (err) {
+        console.error('Error al invocar prompt de instalación:', err);
+        setShowDesktopGuide(true);
       }
     } else {
-      setShowIOSGuide(true);
+      // En Desktop o Android sin prompt nativo directo disponible, guiar adecuadamente
+      setShowDesktopGuide(true);
     }
   }, [isIOS, deferredPrompt, dismissInvitation]);
 
@@ -93,6 +134,8 @@ export function usePWAInstall() {
     showInvitation,
     showIOSGuide,
     setShowIOSGuide,
+    showDesktopGuide,
+    setShowDesktopGuide,
     promptInstall,
     dismissInvitation,
   };
