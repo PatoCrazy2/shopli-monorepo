@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { Loader2, Settings, User as UserIcon, ArrowLeft, ShieldAlert, Clock } from 'lucide-react';
 import { db, type LocalUser } from '../../lib/db';
 import { PWASettingsModal } from '../../components/PWASettingsModal';
+import { PWAInstallPrompt } from '../../components/PWAInstallPrompt';
 import type { LoginResult } from '../../contexts/AuthContext';
 
 export function LoginForm({
@@ -166,7 +167,8 @@ export function LoginForm({
     const isInputBlocked = lockoutRemaining > 0 || deviceLockoutRemaining > 0 || isPermanentLock;
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans">
+        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans relative">
+            {!isConfigured && <PWAInstallPrompt />}
             <div className="w-full max-w-md">
                 {/* Header */}
                 <div className="text-center mb-8">
