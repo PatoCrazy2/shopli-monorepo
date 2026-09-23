@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db, SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
 import { Sidebar } from "@/components/Sidebar";
+import { MobileHeader } from "@/components/navigation/MobileHeader";
+import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { getEffectiveSubscription } from "@/lib/subscription-plans";
 
@@ -63,19 +65,24 @@ export default async function DashboardLayout({
         }
     }
 
-    // 4. Renderiza <Sidebar> + {children} en un flex layout full-height
+    const userData = {
+        name: session.user.name,
+        role: session.user.role,
+        planBadge,
+    };
+
+    // 4. Renderiza MobileHeader + Sidebar (Desktop) + Main Content + MobileBottomNav
     return (
         <div className="flex h-screen w-full bg-white dark:bg-zinc-950 overflow-hidden text-gray-900 dark:text-gray-100 font-sans selection:bg-black selection:text-white">
-            <Sidebar 
-                user={{ 
-                    name: session.user.name, 
-                    role: session.user.role,
-                    planBadge,
-                }} 
-            />
-            
-            <main className="flex-1 w-full overflow-y-auto transition-all duration-300 ease-out bg-gray-50/50 dark:bg-black">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 mt-16 md:mt-0 animate-in fade-in duration-300">
+            {/* Header móvil minimalista (sin hamburguesa) */}
+            <MobileHeader user={userData} />
+
+            {/* Sidebar exclusivo para Desktop */}
+            <Sidebar user={userData} />
+
+            {/* Contenido principal */}
+            <main id="dashboard-scroll-container" className="flex-1 w-full overflow-y-auto transition-all duration-300 ease-out bg-gray-50/50 dark:bg-black">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-18 pb-28 md:py-8 md:pt-8 animate-in fade-in duration-300">
                     <SubscriptionBanner
                         effectiveSub={effectiveSubscription}
                         userRole={session.user.role}
@@ -83,7 +90,9 @@ export default async function DashboardLayout({
                     {children}
                 </div>
             </main>
+
+            {/* Floating Bottom Dock móvil + Action Drawer */}
+            <MobileBottomNav user={userData} />
         </div>
     );
 }
-

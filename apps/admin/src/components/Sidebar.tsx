@@ -13,8 +13,6 @@ const ReceiptIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" he
 const WalletIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>);
 const LayersIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>);
 const BarChartIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>);
-const MenuIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>);
-const CloseIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
 const MapPinIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>);
 const ClipboardIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path></svg>);
 const CreditCardIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>);
@@ -35,7 +33,6 @@ const NAV_LINKS = [
 
 export function Sidebar({ user }: { user: { name?: string | null; role?: string; planBadge?: string | null } }) {
     const pathname = usePathname();
-    const [isOpen, setIsOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
@@ -52,100 +49,73 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
     };
 
     return (
-        <>
-            <div className="md:hidden fixed top-0 left-0 w-full bg-white dark:bg-black border-b border-gray-200 dark:border-zinc-800 z-50 p-4 flex justify-between items-center shadow-sm">
-                <span className="font-bold text-lg tracking-tight">ShopLI</span>
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="p-1 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                    {isOpen ? <CloseIcon /> : <MenuIcon />}
-                </button>
+        <aside
+            className={`
+                hidden md:flex flex-col h-screen relative z-30 shrink-0 bg-white dark:bg-black border-r border-gray-100 dark:border-zinc-900
+                transition-all duration-300 ease-out select-none
+                ${isCollapsed ? "w-20" : "w-64"}
+            `}
+        >
+            <button
+                type="button"
+                onClick={toggleCollapse}
+                className="flex items-center justify-center absolute -right-3.5 top-7 z-50 w-7 h-7 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md text-zinc-500 hover:text-black dark:hover:text-white transition-all hover:scale-110 active:scale-95 cursor-pointer pointer-events-auto"
+                title={isCollapsed ? "Expandir menú" : "Contraer menú"}
+                aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
+            >
+                {isCollapsed ? (
+                    <ChevronRight className="w-4 h-4" />
+                ) : (
+                    <ChevronLeft className="w-4 h-4" />
+                )}
+            </button>
+
+            <div className={`p-6 pb-2 flex items-center justify-start ${isCollapsed ? "justify-center px-0" : "gap-3"} transition-all`}>
+                <div className={`flex items-center ${isCollapsed ? "justify-center w-full" : "gap-3"}`}>
+                    <img src="/shopli_snbg.svg" alt="ShopLI Logo" className="w-7 h-7 shrink-0" />
+                    <h1 className={`text-2xl font-bold tracking-tight text-black dark:text-white transition-opacity duration-200 truncate ${isCollapsed ? "hidden" : "block"}`}>
+                        ShopLI
+                    </h1>
+                </div>
             </div>
 
-            {isOpen && (
-                <div
-                    className="md:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
-                    onClick={() => setIsOpen(false)}
-                />
-            )}
+            <div className="flex-1 overflow-y-auto px-3 py-6 space-y-1">
+                <nav className="flex flex-col space-y-1">
+                    {NAV_LINKS.map((link) => {
+                        if ((link as any).ownerOnly && user.role !== "DUENO") {
+                            return null;
+                        }
+                        const Icon = link.icon;
+                        const isActive = pathname.startsWith(link.href);
 
-            <aside
-                className={`
-                    fixed md:static inset-y-0 left-0 z-50 bg-white dark:bg-black border-r border-gray-100 dark:border-zinc-900
-                    flex flex-col transform transition-all duration-300 ease-out shadow-lg md:shadow-none md:relative
-                    ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:h-screen
-                    w-72 ${isCollapsed ? "md:w-20" : "md:w-64"}
-                `}
-            >
-                <button
-                    type="button"
-                    onClick={toggleCollapse}
-                    className="hidden md:flex items-center justify-center absolute -right-3.5 top-7 z-30 w-7 h-7 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md text-zinc-500 hover:text-black dark:hover:text-white transition-all hover:scale-110 active:scale-95 cursor-pointer"
-                    title={isCollapsed ? "Expandir menú (flecha)" : "Contraer menú (flecha)"}
-                    aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
-                >
-                    {isCollapsed ? (
-                        <ChevronRight className="w-4 h-4" />
-                    ) : (
-                        <ChevronLeft className="w-4 h-4" />
-                    )}
-                </button>
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                title={isCollapsed ? link.name : undefined}
+                                className={`
+                                    flex items-center gap-3 px-3.5 ${isCollapsed ? "justify-center px-2.5" : ""} py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
+                                    ${isActive
+                                        ? "bg-black text-white shadow-sm dark:bg-white dark:text-black font-semibold"
+                                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 hover:text-black dark:hover:bg-zinc-900 dark:hover:text-white"
+                                    }
+                                `}
+                            >
+                                <div className="shrink-0">
+                                    <Icon />
+                                </div>
+                                <span className={`truncate transition-opacity duration-200 ${isCollapsed ? "hidden" : "block"}`}>
+                                    {link.name}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </nav>
+            </div>
 
-                <div className={`p-6 pb-2 flex items-center justify-between md:justify-start ${isCollapsed ? "md:justify-center md:px-0" : "gap-3"} transition-all`}>
-                    <div className={`flex items-center ${isCollapsed ? "gap-3 md:gap-0 md:justify-center w-full" : "gap-3"}`}>
-                        <img src="/shopli_snbg.svg" alt="ShopLI Logo" className="w-7 h-7 shrink-0" />
-                        <h1 className={`text-2xl font-bold tracking-tight text-black dark:text-white transition-opacity duration-200 truncate ${isCollapsed ? "md:hidden" : "block"}`}>
-                            ShopLI
-                        </h1>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setIsOpen(false)}
-                        className="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                        aria-label="Cerrar menú"
-                    >
-                        <CloseIcon />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-3 py-4 md:py-6 space-y-1">
-                    <nav className="flex flex-col space-y-1">
-                        {NAV_LINKS.map((link) => {
-                            if ((link as any).ownerOnly && user.role !== "DUENO") {
-                                return null;
-                            }
-                            const Icon = link.icon;
-                            const isActive = pathname.startsWith(link.href);
-
-                            return (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    onClick={() => setIsOpen(false)}
-                                    title={isCollapsed ? link.name : undefined}
-                                    className={`
-                                        flex items-center gap-3 px-3.5 ${isCollapsed ? "md:justify-center md:px-2.5" : ""} py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
-                                        ${isActive
-                                            ? "bg-black text-white shadow-sm dark:bg-white dark:text-black font-semibold"
-                                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 hover:text-black dark:hover:bg-zinc-900 dark:hover:text-white"
-                                        }
-                                    `}
-                                >
-                                    <div className="shrink-0">
-                                        <Icon />
-                                    </div>
-                                    <span className={`truncate transition-opacity duration-200 ${isCollapsed ? "md:hidden" : "block"}`}>
-                                        {link.name}
-                                    </span>
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                </div>
-
-                <div className="p-3 border-t border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-black/50 transition-all">
-                    <div className={isCollapsed ? "block md:hidden" : "block"}>
+            <div className="p-3 border-t border-gray-100 dark:border-zinc-900 bg-gray-50/50 dark:bg-black/50 transition-all">
+                {!isCollapsed ? (
+                    <div>
                         <div className="flex flex-col gap-1.5 mb-3 px-1">
                             <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                                 {user.name || "Usuario"}
@@ -178,28 +148,26 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                             <span>Cerrar Sesión</span>
                         </button>
                     </div>
-
-                    {isCollapsed && (
-                        <div className="hidden md:flex flex-col items-center gap-2 py-1">
-                            <div
-                                className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-300"
-                                title={`${user.name || "Usuario"} (${user.role})`}
-                            >
-                                {user.name ? user.name[0].toUpperCase() : "U"}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => signOut()}
-                                className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
-                                title="Cerrar Sesión"
-                                aria-label="Cerrar Sesión"
-                            >
-                                <LogOut className="w-4 h-4" />
-                            </button>
+                ) : (
+                    <div className="flex flex-col items-center gap-2 py-1">
+                        <div
+                            className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center font-bold text-xs text-zinc-700 dark:text-zinc-300"
+                            title={`${user.name || "Usuario"} (${user.role})`}
+                        >
+                            {user.name ? user.name[0].toUpperCase() : "U"}
                         </div>
-                    )}
-                </div>
-            </aside>
-        </>
+                        <button
+                            type="button"
+                            onClick={() => signOut()}
+                            className="p-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                            title="Cerrar Sesión"
+                            aria-label="Cerrar Sesión"
+                        >
+                            <LogOut className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+            </div>
+        </aside>
     );
 }
