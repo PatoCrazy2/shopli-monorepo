@@ -14,6 +14,7 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ user }: MobileHeaderProps) {
   const isHidden = useMobileScroll();
+  const firstName = user.name?.trim().split(" ")[0] || "Usuario";
 
   return (
     <header
@@ -21,7 +22,7 @@ export function MobileHeader({ user }: MobileHeaderProps) {
         isHidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >
-      {/* Lado izquierdo: Logotipo intacto */}
+      {/* Lado izquierdo: Logotipo oficial de ShopLI */}
       <Link href="/dashboard/inicio" className="flex items-center gap-2 shrink-0 active:scale-95 transition-transform">
         <Image src="/shopli_snbg.svg" alt="ShopLI" width={24} height={24} className="w-6 h-6 object-contain" />
         <span className="font-bold text-lg tracking-tight text-zinc-950 dark:text-zinc-50 font-sans">
@@ -29,11 +30,10 @@ export function MobileHeader({ user }: MobileHeaderProps) {
         </span>
       </Link>
 
-      {/* Lado derecho: Saludo y Nombre del usuario */}
-      <div className="flex items-center max-w-[65%] justify-end pl-2">
-        <span className="font-bold text-base sm:text-lg tracking-tight text-zinc-950 dark:text-zinc-50 font-sans truncate">
-          <span className="font-normal text-zinc-500 dark:text-zinc-400">Bienvenido, </span>
-          {user.name || "Usuario"}
+      {/* Lado derecho: Primer nombre limpio (Estilo Luma / Stripe) */}
+      <div className="flex items-center justify-end pl-2">
+        <span className="font-bold text-base tracking-tight text-zinc-950 dark:text-zinc-50 font-sans truncate max-w-[160px]">
+          {firstName}
         </span>
       </div>
     </header>
