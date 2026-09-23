@@ -31,11 +31,20 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
   const pathname = usePathname();
   const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
 
+  // Cerrar el cajón ÚNICAMENTE cuando la ruta destino haya terminado de cargar (cambio de pathname)
+  useEffect(() => {
+    if (isOpen && navigatingHref) {
+      setNavigatingHref(null);
+      onClose();
+    }
+  }, [pathname]);
+
+  // Si el usuario cierra el cajón manualmente (con la 'X' o tocando el fondo)
   useEffect(() => {
     if (!isOpen) {
       setNavigatingHref(null);
     }
-  }, [isOpen, pathname]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -49,10 +58,13 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
   ];
 
   const handleLinkClick = (href: string) => {
-    setNavigatingHref(href);
-    setTimeout(() => {
+    // Si ya estamos en esa página, cerramos de inmediato
+    if (pathname === href) {
       onClose();
-    }, 220);
+      return;
+    }
+    // Mantiene el cajón abierto mostrando el spinner hasta que Next.js cargue la nueva página
+    setNavigatingHref(href);
   };
 
   return (
@@ -60,7 +72,9 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-        onClick={onClose}
+        onClick={() => {
+          if (!navigatingHref) onClose();
+        }}
         aria-hidden="true"
       />
 
