@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { db, SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
 import { Sidebar } from "@/components/Sidebar";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
-import { PwaInstallModal } from "@/components/pwa/pwa-install-prompt";
 import { getEffectiveSubscription } from "@/lib/subscription-plans";
 
 export default async function DashboardLayout({
@@ -67,7 +66,6 @@ export default async function DashboardLayout({
     // 4. Renderiza <Sidebar> + {children} en un flex layout full-height
     return (
         <div className="flex h-screen w-full bg-white dark:bg-zinc-950 overflow-hidden text-gray-900 dark:text-gray-100 font-sans selection:bg-black selection:text-white">
-            <PwaInstallModal />
             <Sidebar 
                 user={{ 
                     name: session.user.name, 
