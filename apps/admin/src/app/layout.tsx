@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
-import { ProgressBarProvider } from "@/components/providers/ProgressBarProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -72,9 +71,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ServiceWorkerRegister />
-        <ProgressBarProvider>
-          {children}
-        </ProgressBarProvider>
+        {children}
       </body>
     </html>
   );
