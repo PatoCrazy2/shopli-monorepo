@@ -1,9 +1,11 @@
 // ShopLI Admin PWA Service Worker (Production-Ready)
-const CACHE_NAME = "shopli-admin-v1";
+const CACHE_NAME = "shopli-admin-v2";
 
 const PRECACHE_ASSETS = [
   "/manifest.webmanifest",
+  "/icons/icon-48x48.png",
   "/icons/icon-192x192.png",
+  "/icons/icon-256x256.png",
   "/icons/icon-512x512.png",
   "/icons/maskable-icon-512x512.png",
   "/icons/apple-touch-icon.png",
