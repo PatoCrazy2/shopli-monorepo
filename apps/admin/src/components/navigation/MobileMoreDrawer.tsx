@@ -230,7 +230,7 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
                   <Link
                     href="/dashboard/billing"
                     onClick={() => handleLinkClick("/dashboard/billing")}
-                    className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border transition-all active:scale-[0.98] ${
+                    className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-2xl border transition-all active:scale-[0.98] ${
                       isLoading
                         ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 ring-2 ring-black dark:ring-white"
                         : isBilling
@@ -238,14 +238,34 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
                         : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/60 dark:border-zinc-800/80 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-black dark:text-white" />
-                    ) : (
-                      <CreditCard className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+                    <div className="flex items-center gap-3">
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-black dark:text-white" />
+                      ) : (
+                        <CreditCard className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {isLoading ? "Cargando plan..." : "Suscripción & Plan"}
+                      </span>
+                    </div>
+
+                    {user.planBadge && !isLoading && (
+                      <span
+                        className={`shrink-0 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                          isBilling
+                            ? "bg-white text-black border-white/80 dark:bg-black dark:text-white dark:border-zinc-700"
+                            : user.planBadge.toLowerCase().includes("arranque")
+                            ? "bg-zinc-200/80 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border-zinc-300/80 dark:border-zinc-700"
+                            : user.planBadge.toLowerCase().includes("crecimiento")
+                            ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 border-zinc-800 dark:border-zinc-200"
+                            : user.planBadge.toLowerCase().includes("multi") || user.planBadge.toLowerCase().includes("sucursal")
+                            ? "bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300/40"
+                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700"
+                        }`}
+                      >
+                        {user.planBadge}
+                      </span>
                     )}
-                    <span className="text-sm font-medium">
-                      {isLoading ? "Cargando plan..." : "Suscripción & Plan"}
-                    </span>
                   </Link>
                 );
               })()}
