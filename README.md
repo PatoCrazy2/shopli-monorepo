@@ -28,7 +28,7 @@
 
 ## System Topology
 
-ShopLI separates administrative reporting and configuration from edge sales execution. The admin dashboard leverages server-side rendering (RSC) and Server Actions, while the POS runs as a highly resilient Progressive Web App (PWA) using an offline-first transactional engine.
+ShopLI separates administrative reporting and configuration from edge sales execution. Both the admin dashboard (Next.js App Router) and the edge POS (Vite React) operate as Progressive Web Apps (PWAs): the admin portal leverages an Apple-like standalone PWA with App Shell caching and server-side rendering (RSC), while the POS runs as a zero-latency, offline-first transactional engine.
 
 ```
                                ┌──────────────────┐
@@ -54,7 +54,7 @@ ShopLI separates administrative reporting and configuration from edge sales exec
                   ▼                                           ▼
        ┌─────────────────────┐                     ┌─────────────────────┐
        │     apps/admin      │                     │      apps/pos       │
-       │ (Next.js Dashboard) │                     │ (Vite React PWA)    │
+       │  (Next.js PWA / BI) │                     │ (Vite React PWA)    │
        └─────────────────────┘                     └──────────┬──────────┘
                                                               │
                                                               ▼
@@ -95,6 +95,12 @@ To optimize data transfers, prevent stale inventory display, and eliminate offli
 Offline sales decrement local stock immediately to provide instant UI feedback. During online reconciliation:
 * **Asynchronous Reordering:** The database processes offline sales using their client-originated transaction timestamps.
 * **Reconciliation handshakes:** Inventory counts are reconciled downstream during catalog pulls by comparing local schema states with server modification logs.
+
+### Admin PWA & App Shell Architecture (Apple-like UX)
+The administrative portal (`apps/admin`) is packaged as an installable, standalone Progressive Web App engineered to Apple human interface guidelines:
+* **App Shell Precaching:** The dedicated Service Worker (`/sw.js`) intercepts static Next.js assets (`/_next/static/*`), vector icons, and typography, caching them locally with a Cache-First strategy to guarantee near-instantaneous subsequent launches.
+* **Zero-Trust Financial Isolation:** To preserve absolute transactional integrity and adhere to system security boundaries, all `/api/*` endpoints, authentication tokens, and mutation requests strictly bypass the Service Worker cache (`Network-Only`), ensuring live reconciliation metrics are always fetched directly from PostgreSQL.
+* **Apple iOS & Multi-Platform Adaptability:** Fully configured with `display: "standalone"`, Dynamic Island safe-area awareness (`env(safe-area-inset-*)`), device-specific Apple launch splash screens, Android maskable adaptive icons, and multi-platform install prompts (native `beforeinstallprompt` on desktop/Android and guided Apple-style sheets on iOS Safari).
 
 ### Monorepo Schema & Package Segregation
 * **Single Source of Truth:** All PostgreSQL schemas, custom types, and seed workflows reside in the `@shopli/db` workspace package.
