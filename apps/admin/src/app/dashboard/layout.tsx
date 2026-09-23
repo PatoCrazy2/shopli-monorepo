@@ -81,7 +81,7 @@ export default async function DashboardLayout({
             <Sidebar user={userData} />
 
             {/* Contenido principal */}
-            <main className="flex-1 w-full overflow-y-auto transition-all duration-300 ease-out bg-gray-50/50 dark:bg-black">
+            <main id="dashboard-scroll-container" className="flex-1 w-full overflow-y-auto transition-all duration-300 ease-out bg-gray-50/50 dark:bg-black">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-18 pb-28 md:py-8 md:pt-8 animate-in fade-in duration-300">
                     <SubscriptionBanner
                         effectiveSub={effectiveSubscription}

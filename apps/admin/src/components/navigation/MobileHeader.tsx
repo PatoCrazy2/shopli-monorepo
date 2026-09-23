@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useMobileScroll } from "@/hooks/useMobileScroll";
 
 interface MobileHeaderProps {
   user: {
@@ -12,8 +13,14 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({ user }: MobileHeaderProps) {
+  const isHidden = useMobileScroll();
+
   return (
-    <header className="md:hidden fixed top-0 left-0 w-full z-40 bg-white/80 dark:bg-black/85 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3 flex items-center justify-between shadow-xs">
+    <header
+      className={`md:hidden fixed top-0 left-0 w-full z-40 bg-white/80 dark:bg-black/85 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3 flex items-center justify-between shadow-xs transition-transform duration-300 ease-out ${
+        isHidden ? "-translate-y-full" : "translate-y-0"
+      }`}
+    >
       {/* Lado izquierdo: Logotipo intacto */}
       <Link href="/dashboard/inicio" className="flex items-center gap-2 shrink-0 active:scale-95 transition-transform">
         <Image src="/shopli_snbg.svg" alt="ShopLI" width={24} height={24} className="w-6 h-6 object-contain" />

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Package, Wallet, Home, BarChart3, LayoutGrid } from "lucide-react";
 import { MobileMoreDrawer } from "./MobileMoreDrawer";
+import { useMobileScroll } from "@/hooks/useMobileScroll";
 
 interface MobileBottomNavProps {
   user: {
@@ -17,6 +18,7 @@ interface MobileBottomNavProps {
 export function MobileBottomNav({ user }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const isHidden = useMobileScroll();
 
   const isCatalog = pathname.startsWith("/dashboard/catalog");
   const isCuts = pathname.startsWith("/dashboard/cuts");
@@ -33,11 +35,15 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
     pathname.startsWith("/dashboard/users") ||
     pathname.startsWith("/dashboard/billing");
 
+  const shouldHide = isHidden && !isDrawerOpen;
+
   return (
     <>
       {/* Floating Bottom Dock */}
       <nav
-        className="md:hidden fixed bottom-3 inset-x-3 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-950/10 dark:shadow-black/50 px-2 py-1.5 flex items-center justify-around select-none"
+        className={`md:hidden fixed bottom-3 inset-x-3 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-950/10 dark:shadow-black/50 px-2 py-1.5 flex items-center justify-around select-none transition-all duration-300 ease-out ${
+          shouldHide ? "translate-y-28 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+        }`}
         aria-label="Navegación principal móvil"
       >
         {/* 1. Catálogo */}
