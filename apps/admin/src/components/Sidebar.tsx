@@ -51,15 +51,15 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
     return (
         <aside
             className={`
-                hidden md:flex flex-col h-screen static z-30 bg-white dark:bg-black border-r border-gray-100 dark:border-zinc-900
-                transition-all duration-300 ease-out relative shrink-0
+                hidden md:flex flex-col h-screen relative z-30 shrink-0 bg-white dark:bg-black border-r border-gray-100 dark:border-zinc-900
+                transition-all duration-300 ease-out select-none
                 ${isCollapsed ? "w-20" : "w-64"}
             `}
         >
             <button
                 type="button"
                 onClick={toggleCollapse}
-                className="flex items-center justify-center absolute -right-3.5 top-7 z-30 w-7 h-7 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md text-zinc-500 hover:text-black dark:hover:text-white transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                className="flex items-center justify-center absolute -right-3.5 top-7 z-50 w-7 h-7 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-md text-zinc-500 hover:text-black dark:hover:text-white transition-all hover:scale-110 active:scale-95 cursor-pointer pointer-events-auto"
                 title={isCollapsed ? "Expandir menú" : "Contraer menú"}
                 aria-label={isCollapsed ? "Expandir menú" : "Contraer menú"}
             >
