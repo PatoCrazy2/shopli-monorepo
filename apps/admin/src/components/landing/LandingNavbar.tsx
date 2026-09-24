@@ -107,6 +107,16 @@ export default function LandingNavbar() {
             >
               Precios
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("faq");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              FAQs
+            </button>
           </nav>
 
           {/* Action buttons Desktop & Mobile Trigger */}
@@ -210,6 +220,17 @@ export default function LandingNavbar() {
               className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
               Precios
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                const el = document.getElementById("faq");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
+            >
+              FAQs
             </button>
           </nav>
         </div>
