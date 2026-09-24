@@ -413,17 +413,26 @@ export default function PricingSection() {
 
                   {/* Botón de Conversión (CTA) */}
                   <div className="relative z-10 mt-8 pt-4">
-                    <Link
-                      href={registerHref}
-                      className={`w-full py-3.5 px-5 rounded-2xl text-xs font-semibold tracking-wide uppercase flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer ${
-                        isFeatured
-                          ? "bg-white text-black hover:bg-neutral-200 shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] active:scale-[0.98]"
-                          : "bg-white/[0.05] hover:bg-white/[0.12] text-white border border-white/[0.1] hover:border-white/[0.2] active:scale-[0.98]"
-                      }`}
-                    >
-                      <span>{plan.ctaText}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
+                    {isFeatured ? (
+                      <div className="relative group/btn p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
+                        <div className="absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none opacity-100" />
+                        <Link
+                          href={registerHref}
+                          className="relative z-10 w-full py-3.5 px-5 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-xs tracking-wide uppercase flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border border-transparent hover:border-white/[0.14] active:scale-[0.98]"
+                        >
+                          <span>{plan.ctaText}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-neutral-300 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:text-white" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <Link
+                        href={registerHref}
+                        className="w-full py-3.5 px-5 rounded-2xl text-xs font-semibold tracking-wide uppercase flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer bg-white/[0.05] hover:bg-white/[0.12] text-white border border-white/[0.1] hover:border-white/[0.2] active:scale-[0.98]"
+                      >
+                        <span>{plan.ctaText}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
                     <p className="text-[10px] text-center text-neutral-500 mt-2.5">
                       14 días sin costo · No requiere tarjeta
                     </p>
@@ -616,13 +625,16 @@ export default function PricingSection() {
               Sin tarjeta bancaria, sin descargas complejas y sin contratos forzosos.
               Configura tu catálogo en minutos y cobra a velocidad absoluta.
             </p>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-xs sm:text-sm font-semibold tracking-wide uppercase bg-white text-black hover:bg-neutral-200 transition-all duration-200 shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.5)] active:scale-[0.98] cursor-pointer"
-            >
-              <span>Comenzar prueba gratis</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="relative group/bottom p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
+              <div className="absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none opacity-100" />
+              <Link
+                href="/register"
+                className="relative z-10 inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-xs sm:text-sm tracking-wide uppercase transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border border-transparent hover:border-white/[0.14] active:scale-[0.98]"
+              >
+                <span>Comenzar prueba gratis</span>
+                <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover/bottom:translate-x-0.5 group-hover/bottom:text-white" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
