@@ -6,6 +6,7 @@ import LandingScrollRestoration from "@/components/landing/LandingScrollRestorat
 import HeroSection from "@/components/landing/HeroSection";
 import EcosystemIntroSection from "@/components/landing/EcosystemIntroSection";
 import PhoneShowcaseSection from "@/components/landing/PhoneShowcaseSection";
+import PricingSection from "@/components/landing/PricingSection";
 
 export default async function HomePage() {
   const session = await auth();
@@ -57,6 +58,18 @@ export default async function HomePage() {
 
       {/* Sección Showcase iPhone 16 con Demo de POS */}
       <PhoneShowcaseSection />
+
+      {/* Divisor Metálico Premium de Transición */}
+      <div className="relative z-20 w-full max-w-6xl mx-auto px-6 sm:px-12 pointer-events-none select-none">
+        <div className="relative w-full h-[1px] flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
+          <div className="w-1/3 sm:w-1/4 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent shadow-[0_0_12px_rgba(255,255,255,0.4)]" />
+          <div className="absolute w-48 h-8 -top-4 bg-white/[0.02] blur-xl rounded-full" />
+        </div>
+      </div>
+
+      {/* Sección de Precios, ROI, Comparativa y FAQ */}
+      <PricingSection />
     </div>
   );
 }
