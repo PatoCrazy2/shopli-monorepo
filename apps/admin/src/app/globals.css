@@ -136,6 +136,28 @@ input[type="password"]::-ms-clear {
   animation: googleBorderRotate 4s linear infinite;
 }
 
+/* Efecto de Haz de Luz Perimetral Delgado (Border Beam para tarjetas) */
+@keyframes borderBeamTravel {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.border-beam-glow {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(255, 255, 255, 0.15) 320deg,
+    rgba(255, 255, 255, 0.95) 360deg
+  );
+  animation: borderBeamTravel 6s linear infinite;
+}
+
+
 /* Utilidades para Showcase 3D y Spatial HUD */
 .perspective-showcase {
   perspective: 1400px;
