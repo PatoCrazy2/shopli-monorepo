@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Check,
@@ -16,14 +17,17 @@ import {
   Layers,
   Zap,
   Users,
+  MessageCircle,
+  Mail,
 } from "lucide-react";
+import { ContactDialog } from "./ContactDialog";
+
 
 type BillingCycle = "monthly" | "yearly";
 
 interface PricingPlan {
   id: string;
   name: string;
-  badge?: string;
   tagline: string;
   monthlyPrice: number;
   yearlyPrice: number;
@@ -65,7 +69,6 @@ const PLANS: PricingPlan[] = [
   {
     id: "CRECIMIENTO",
     name: "Crecimiento",
-    badge: "Más Popular",
     tagline: "Para negocios activos que necesitan inventario sin límites y blindaje total contra el robo hormiga.",
     monthlyPrice: 299,
     yearlyPrice: 2990,
@@ -89,7 +92,6 @@ const PLANS: PricingPlan[] = [
   {
     id: "MULTISUCURSAL",
     name: "Multi-Sucursal",
-    badge: "Empresarial",
     tagline: "Gestión centralizada para cadenas comerciales que requieren sincronización entre tiendas.",
     monthlyPrice: 599,
     yearlyPrice: 5990,
@@ -200,6 +202,9 @@ export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [contactPlan, setContactPlan] = useState<string | undefined>(undefined);
+  const [hoveredPlanId, setHoveredPlanId] = useState<string | null>(null);
 
   const toggleFaq = (id: string) => {
     setOpenFaqId((prev) => (prev === id ? null : id));
@@ -216,11 +221,10 @@ export default function PricingSection() {
       <div className="max-w-7xl mx-auto">
         {/* ==================== HEADER ==================== */}
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-14 sm:mb-18">
-          {/* Badge Monospaced de Sección */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[11px] font-mono tracking-wider uppercase bg-white/[0.04] border border-white/[0.08] text-neutral-300 backdrop-blur-md mb-5 shadow-sm">
-            <Sparkles className="w-3 h-3 text-white/80" />
-            <span>Precios & Retorno de Inversión</span>
-          </div>
+          {/* Label de Sección Monospaced (Sin Badge) */}
+          <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-neutral-400 mb-4 block">
+            Precios & Retorno de Inversión
+          </span>
 
           {/* Titular Principal */}
           <h2 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] mb-5">
@@ -253,7 +257,7 @@ export default function PricingSection() {
               <button
                 type="button"
                 onClick={() => setBillingCycle("yearly")}
-                className={`relative flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
+                className={`relative flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
                   billingCycle === "yearly"
                     ? "bg-white text-black shadow-[0_2px_12px_rgba(255,255,255,0.2)]"
                     : "text-neutral-400 hover:text-white"
@@ -261,13 +265,13 @@ export default function PricingSection() {
               >
                 <span>Facturación Anual</span>
                 <span
-                  className={`text-[10px] font-mono tracking-tight font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                  className={`text-[11px] font-mono tracking-tight transition-colors ${
                     billingCycle === "yearly"
-                      ? "bg-emerald-600 text-white"
-                      : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                      ? "text-neutral-600 font-semibold"
+                      : "text-neutral-400 font-normal"
                   }`}
                 >
-                  2 meses gratis
+                  · 2 meses bonificados
                 </span>
               </button>
             </div>
@@ -285,127 +289,219 @@ export default function PricingSection() {
               billingCycle === "yearly"
                 ? plan.effectiveMonthlyWithYearly
                 : plan.monthlyPrice;
+            const isHovered = hoveredPlanId === plan.id;
             const registerHref = `/register?plan=${plan.id}`;
+
+            const planKey = plan.id.toUpperCase();
+            const isArranque = planKey === "ARRANQUE";
+            const isCrecimiento = planKey === "CRECIMIENTO" || isFeatured;
+            const isMultiSucursal = planKey === "MULTISUCURSAL";
+
+            // Clase cromática del haz viajero según el plan
+            const beamClass = isArranque
+              ? "border-beam-glow-blue"
+              : isMultiSucursal
+              ? "border-beam-glow-amber"
+              : "border-beam-glow";
+
+            // Opacidad dinámica con "mute":
+            // Si Crecimiento no tiene hover pero OTRA tarjeta sí, Crecimiento se apaga (opacity-0).
+            const beamOpacity = isCrecimiento
+              ? hoveredPlanId === null
+                ? "opacity-40"
+                : isHovered
+                ? "opacity-100"
+                : "opacity-0"
+              : isHovered
+              ? "opacity-100"
+              : "opacity-0";
+
+            // Color del borde estático y resplandor al interactuar
+            const borderStaticClass = isCrecimiento
+              ? hoveredPlanId === null
+                ? "border border-white/20"
+                : isHovered
+                ? "border border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.12)]"
+                : "border border-white/[0.08]"
+              : isArranque
+              ? isHovered
+                ? "border border-sky-400/50 shadow-[0_0_30px_rgba(56,189,248,0.2)]"
+                : "border border-white/[0.08]"
+              : isMultiSucursal
+              ? isHovered
+                ? "border border-amber-400/50 shadow-[0_0_30px_rgba(245,158,11,0.2)]"
+                : "border border-white/[0.08]"
+              : "border border-white/[0.08]";
 
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-[28px] flex flex-col justify-between transition-all duration-300 ${
-                  isFeatured
-                    ? "bg-[#0c0c14]/90 border border-white/25 shadow-[0_0_50px_rgba(255,255,255,0.06),0_20px_40px_rgba(0,0,0,0.8)] lg:-translate-y-3 z-10"
-                    : "bg-[#09090e]/70 border border-white/[0.08] hover:border-white/[0.16] shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-0"
-                } p-7 sm:p-9 backdrop-blur-2xl`}
+                onMouseEnter={() => setHoveredPlanId(plan.id)}
+                onMouseLeave={() => setHoveredPlanId(null)}
+                className={`relative p-[1px] rounded-[28px] overflow-hidden group transition-all duration-300 ${
+                  isFeatured ? "lg:-translate-y-3 z-10" : "z-0"
+                }`}
               >
-                {/* Halo brillante interior para la tarjeta destacada */}
-                {isFeatured && (
-                  <div className="absolute inset-0 rounded-[28px] bg-gradient-to-b from-white/[0.06] via-transparent to-transparent pointer-events-none" />
-                )}
-
-                <div>
-                  {/* Badge de Plan */}
-                  <div className="flex items-center justify-between min-h-[28px] mb-4">
-                    <span className="text-xs font-mono uppercase tracking-wider text-neutral-400">
-                      {plan.target}
-                    </span>
-                    {plan.badge && (
-                      <span
-                        className={`text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full flex items-center gap-1 ${
-                          isFeatured
-                            ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-                            : "bg-white/[0.08] text-neutral-300 border border-white/[0.1]"
-                        }`}
-                      >
-                        {isFeatured && <Sparkles className="w-2.5 h-2.5" />}
-                        {plan.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Nombre y Tagline */}
-                  <h3 className="text-2xl font-bold tracking-tight text-white mb-2">
-                    {plan.name}
-                  </h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed mb-6">
-                    {plan.tagline}
-                  </p>
-
-                  {/* Precio */}
-                  <div className="pt-2 pb-6 border-b border-white/[0.06]">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-5xl font-extrabold tracking-tight text-white font-sans">
-                        ${price}
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-neutral-400 font-medium">MXN</span>
-                        <span className="text-[10px] text-neutral-500 font-mono">/ mes</span>
-                      </div>
-                    </div>
-
-                    {billingCycle === "yearly" ? (
-                      <p className="text-[11px] text-emerald-400 font-mono mt-2">
-                        Facturado anualmente: ${plan.yearlyPrice} MXN (Ahorras 2 meses)
-                      </p>
-                    ) : (
-                      <p className="text-[11px] text-neutral-500 font-mono mt-2">
-                        Sin compromisos a largo plazo.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Especificaciones Clave */}
-                  <div className="py-5 space-y-2 border-b border-white/[0.06] text-xs font-medium text-neutral-300">
-                    <div className="flex items-center gap-2.5">
-                      <Store className="w-4 h-4 text-neutral-400 shrink-0" />
-                      <span>{plan.specs.branches}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Layers className="w-4 h-4 text-neutral-400 shrink-0" />
-                      <span>{plan.specs.products}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Users className="w-4 h-4 text-neutral-400 shrink-0" />
-                      <span>{plan.specs.users}</span>
-                    </div>
-                  </div>
-
-                  {/* Lista de Prestaciones Destacadas */}
-                  <div className="pt-5 space-y-3">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block">
-                      Incluye:
-                    </span>
-                    {plan.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 text-xs text-neutral-300 leading-snug">
-                        <div
-                          className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                            isFeatured
-                              ? "bg-white/15 text-white"
-                              : "bg-white/[0.07] text-neutral-400"
-                          }`}
-                        >
-                          <Check className="w-2.5 h-2.5 stroke-[2.5]" />
-                        </div>
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
+                {/* 1. Halo difuso exterior (Bloom) para que la luz tiña el borde y el fondo */}
+                <div
+                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] h-[350%] pointer-events-none transition-opacity duration-300 ease-out z-0 blur-[6px] ${beamOpacity}`}
+                >
+                  <div className={`w-full h-full ${beamClass}`} />
                 </div>
 
-                {/* Botón de Conversión (CTA) */}
-                <div className="mt-8 pt-4">
-                  <Link
-                    href={registerHref}
-                    className={`w-full py-3.5 px-5 rounded-2xl text-xs font-semibold tracking-wide uppercase flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer ${
-                      isFeatured
-                        ? "bg-white text-black hover:bg-neutral-200 shadow-[0_4px_20px_rgba(255,255,255,0.25)] hover:shadow-[0_6px_25px_rgba(255,255,255,0.35)] active:scale-[0.98]"
-                        : "bg-white/[0.05] hover:bg-white/[0.12] text-white border border-white/[0.1] hover:border-white/[0.2] active:scale-[0.98]"
+                {/* 2. Haz de luz nítido viajero continuo */}
+                <div
+                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] h-[350%] pointer-events-none transition-opacity duration-300 ease-out z-0 ${beamOpacity}`}
+                >
+                  <div className={`w-full h-full ${beamClass}`} />
+                </div>
+
+                {/* Borde sutil estático (delgado y discreto) */}
+                <div
+                  className={`absolute inset-0 rounded-[28px] pointer-events-none z-10 transition-all duration-300 ${borderStaticClass}`}
+                />
+
+                {/* Contenedor interior de la tarjeta */}
+                <div className="relative w-full h-full rounded-[27px] bg-[#050507] overflow-hidden p-7 sm:p-9 flex flex-col justify-between z-10">
+                  {/* Fondo ambiental texturizado con la imagen del Hero */}
+                  <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
+                    <Image
+                      src="/shopli-new-hero.webp"
+                      alt="ShopLI Hero Ambient"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 33vw"
+                      priority={isFeatured}
+                      className="object-cover object-center opacity-30 group-hover:opacity-45 group-hover:scale-105 transition-all duration-700 ease-out"
+                    />
+                    {/* Viñeta oscura con gradiente para garantizar contraste WCAG AAA */}
+                    <div className="absolute inset-0 bg-[#050507]/75 backdrop-blur-[2px]" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#050507]/60 via-[#050507]/85 to-[#050507]/95" />
+                  </div>
+
+                  {/* Halo ambiental cromático superior en el fondo de la tarjeta */}
+                  <div
+                    className={`absolute -top-14 left-1/2 -translate-x-1/2 w-56 h-28 blur-3xl rounded-full pointer-events-none z-0 transition-all duration-500 ${
+                      isArranque
+                        ? isHovered
+                          ? "bg-sky-500/25 opacity-100"
+                          : "opacity-0"
+                        : isMultiSucursal
+                        ? isHovered
+                          ? "bg-amber-500/25 opacity-100"
+                          : "opacity-0"
+                        : hoveredPlanId === null
+                        ? "bg-white/[0.08] opacity-100"
+                        : isHovered
+                        ? "bg-white/[0.18] opacity-100"
+                        : "opacity-0"
                     }`}
-                  >
-                    <span>{plan.ctaText}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                  <p className="text-[10px] text-center text-neutral-500 mt-2.5">
-                    14 días sin costo · No requiere tarjeta
-                  </p>
+                  />
+
+
+                  {/* Contenido Superior de la Tarjeta */}
+                  <div className="relative z-10">
+                    {/* Categoría Target del Plan (Sin Badge) */}
+                    <div className="flex items-center justify-between min-h-[24px] mb-4">
+                      <span className="text-xs font-mono uppercase tracking-wider text-neutral-400">
+                        {plan.target}
+                      </span>
+                    </div>
+
+                    {/* Nombre y Tagline */}
+                    <h3 className="text-2xl font-bold tracking-tight text-white mb-2">
+                      {plan.name}
+                    </h3>
+                    <p className="text-xs text-neutral-400 leading-relaxed mb-6">
+                      {plan.tagline}
+                    </p>
+
+                    {/* Precio */}
+                    <div className="pt-2 pb-6 border-b border-white/[0.06]">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-5xl font-extrabold tracking-tight text-white font-sans">
+                          ${price}
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-neutral-400 font-medium">MXN</span>
+                          <span className="text-[10px] text-neutral-500 font-mono">/ mes</span>
+                        </div>
+                      </div>
+
+                      {billingCycle === "yearly" ? (
+                        <p className="text-[11px] text-zinc-300 font-mono mt-2">
+                          Facturado anualmente: ${plan.yearlyPrice} MXN (Ahorras 2 meses)
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-neutral-500 font-mono mt-2">
+                          Sin compromisos a largo plazo.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Especificaciones Clave */}
+                    <div className="py-5 space-y-2 border-b border-white/[0.06] text-xs font-medium text-neutral-300">
+                      <div className="flex items-center gap-2.5">
+                        <Store className="w-4 h-4 text-neutral-400 shrink-0" />
+                        <span>{plan.specs.branches}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Layers className="w-4 h-4 text-neutral-400 shrink-0" />
+                        <span>{plan.specs.products}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Users className="w-4 h-4 text-neutral-400 shrink-0" />
+                        <span>{plan.specs.users}</span>
+                      </div>
+                    </div>
+
+                    {/* Lista de Prestaciones Destacadas */}
+                    <div className="pt-5 space-y-3">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block">
+                        Incluye:
+                      </span>
+                      {plan.features.map((feature, idx) => (
+                        <div key={idx} className="flex items-start gap-2.5 text-xs text-neutral-300 leading-snug">
+                          <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                              isFeatured
+                                ? "bg-white/15 text-white"
+                                : "bg-white/[0.07] text-neutral-400"
+                            }`}
+                          >
+                            <Check className="w-2.5 h-2.5 stroke-[2.5]" />
+                          </div>
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Botón de Conversión (CTA) */}
+                  <div className="relative z-10 mt-8 pt-4">
+                    {isFeatured ? (
+                      <div className="relative group/btn p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
+                        <div className="absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none opacity-100" />
+                        <Link
+                          href={registerHref}
+                          className="relative z-10 w-full py-3.5 px-5 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-xs tracking-wide uppercase flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border border-transparent hover:border-white/[0.14] active:scale-[0.98]"
+                        >
+                          <span>{plan.ctaText}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-neutral-300 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:text-white" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <Link
+                        href={registerHref}
+                        className="w-full py-3.5 px-5 rounded-2xl text-xs font-semibold tracking-wide uppercase flex items-center justify-center gap-2 transition-all duration-300 cursor-pointer bg-white/[0.05] hover:bg-white/[0.12] text-white border border-white/[0.1] hover:border-white/[0.2] active:scale-[0.98]"
+                      >
+                        <span>{plan.ctaText}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                    <p className="text-[10px] text-center text-neutral-500 mt-2.5">
+                      14 días sin costo · No requiere tarjeta
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -510,7 +606,7 @@ export default function PricingSection() {
                           <td className="py-3 px-3 text-xs text-center font-medium text-white bg-white/[0.03]">
                             {typeof row.crecimiento === "boolean" ? (
                               row.crecimiento ? (
-                                <Check className="w-4 h-4 mx-auto text-emerald-400" />
+                                <Check className="w-4 h-4 mx-auto text-white" />
                               ) : (
                                 <Minus className="w-3.5 h-3.5 mx-auto text-neutral-600" />
                               )
@@ -540,7 +636,7 @@ export default function PricingSection() {
         </div>
 
         {/* ==================== PREGUNTAS FRECUENTES (FAQ ACORDEÓN) ==================== */}
-        <div className="mt-28 max-w-3xl mx-auto">
+        <div id="faq" className="mt-28 max-w-3xl mx-auto scroll-mt-24">
           <div className="text-center mb-10">
             <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 block mb-2">
               Dudas comunes
@@ -584,26 +680,117 @@ export default function PricingSection() {
           </div>
         </div>
 
-        {/* ==================== BANNER FINAL DE CONVERSIÓN ==================== */}
-        <div className="mt-28 max-w-4xl mx-auto rounded-3xl p-8 sm:p-12 relative overflow-hidden bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/[0.12] text-center backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
-          <div className="relative z-10 flex flex-col items-center">
-            <h3 className="text-2xl sm:text-4xl font-bold tracking-tight text-white mb-3">
-              Empieza a blindar las ventas de tu negocio hoy.
-            </h3>
-            <p className="text-xs sm:text-sm text-neutral-400 max-w-lg mb-8 leading-relaxed">
-              Sin tarjeta bancaria, sin descargas complejas y sin contratos forzosos.
-              Configura tu catálogo en minutos y cobra a velocidad absoluta.
-            </p>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-xs sm:text-sm font-semibold tracking-wide uppercase bg-white text-black hover:bg-neutral-200 transition-all duration-200 shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.5)] active:scale-[0.98] cursor-pointer"
-            >
-              <span>Comenzar prueba gratis</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+        {/* ==================== BANNER FINAL DUAL: CONVERSIÓN + CONTACTO ESPECIAL ==================== */}
+        <div className="mt-28 max-w-5xl mx-auto rounded-3xl p-8 sm:p-12 relative overflow-hidden bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/[0.12] backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Lado Izquierdo: Conversión Directa de Autoservicio */}
+            <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 mb-2 block">
+                Comienza hoy
+              </span>
+              <h3 className="text-2xl sm:text-4xl font-bold tracking-tight text-white mb-3">
+                Empieza a blindar las ventas de tu negocio.
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-400 max-w-md mb-6 leading-relaxed">
+                Sin tarjeta bancaria, sin descargas complejas y sin contratos forzosos.
+                Configura tu catálogo en minutos y cobra a velocidad absoluta.
+              </p>
+              <div className="relative group/bottom p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
+                <div className="absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none opacity-100" />
+                <Link
+                  href="/register"
+                  className="relative z-10 inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-xs sm:text-sm tracking-wide uppercase transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border border-transparent hover:border-white/[0.14] active:scale-[0.98]"
+                >
+                  <span>Comenzar prueba gratis</span>
+                  <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover/bottom:translate-x-0.5 group-hover/bottom:text-white" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Divisor Visual en Desktop */}
+            <div className="hidden lg:block lg:col-span-1 h-32 w-[1px] bg-gradient-to-b from-transparent via-white/[0.12] to-transparent mx-auto" />
+
+            {/* Lado Derecho: Contacto, Planes a Medida y WhatsApp */}
+            <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left pt-6 lg:pt-0 border-t border-white/[0.08] lg:border-t-0">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5 block">
+                Cadenas & Franquicias
+              </span>
+              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
+                ¿Necesitas un plan a medida?
+              </h4>
+              <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
+                Más de 3 sucursales, migración masiva de catálogo o soporte enterprise asistido.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto">
+                {/* Botón WhatsApp con Llenado Líquido Semi-Luma Esmeralda */}
+                <a
+                  href="/api/contact/whatsapp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative group/wa overflow-hidden inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.04] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-emerald-500/40 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:scale-[0.98]"
+                >
+
+                  {/* Cortina Líquida que emerge desde abajo */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-emerald-500/20 translate-y-full group-hover/wa:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
+                  />
+                  {/* Resplandor tenue en la base */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent opacity-0 group-hover/wa:opacity-100 transition-opacity duration-300"
+                  />
+                  {/* Contenido Elevado */}
+                  <span className="relative z-10 flex items-center justify-center gap-2.5 transition-transform duration-200 group-hover/wa:-translate-y-0.5">
+                    <MessageCircle className="w-4 h-4 text-emerald-400 group-hover/wa:text-emerald-300 transition-colors" />
+                    <span className="font-semibold text-neutral-100 group-hover/wa:text-white">Chatear por WhatsApp</span>
+                  </span>
+                </a>
+                
+                {/* Botón Correo con Llenado Líquido Plata Líquida Monocromática */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContactPlan("Planes a Medida / Cadenas");
+                    setIsContactOpen(true);
+                  }}
+                  className="relative group/mail overflow-hidden inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.02] text-neutral-300 hover:text-white font-medium text-xs tracking-wide border border-white/[0.07] hover:border-white/30 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.3)] active:scale-[0.98]"
+                >
+                  {/* Cortina Líquida Plata Líquida que emerge desde abajo */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 bg-gradient-to-t from-zinc-800/85 via-white/10 to-white/20 translate-y-full group-hover/mail:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
+                  />
+                  {/* Resplandor tenue en la base */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover/mail:opacity-100 transition-opacity duration-300"
+                  />
+                  {/* Contenido Elevado */}
+                  <span className="relative z-10 flex items-center justify-center gap-2.5 transition-transform duration-200 group-hover/mail:-translate-y-0.5">
+                    <Mail className="w-4 h-4 text-neutral-400 group-hover/mail:text-white transition-colors" />
+                    <span className="font-semibold text-neutral-200 group-hover/mail:text-white">Enviar mensaje por correo</span>
+                  </span>
+                </button>
+              </div>
+
+
+              <span className="text-[10px] text-neutral-500 font-mono mt-3">
+                Sin intermediarios · Atención directa del equipo fundador
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modal de Contacto y Cotizaciones Seguras */}
+      <ContactDialog
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+        defaultPlan={contactPlan}
+      />
     </section>
+
   );
 }

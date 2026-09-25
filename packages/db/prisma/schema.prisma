@@ -327,3 +327,21 @@ model StripeWebhookEvent {
   createdAt DateTime @default(now())
 }
 
+enum ContactStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+model ContactMessage {
+  id        String        @id @default(uuid())
+  nombre    String
+  email     String
+  telefono  String?
+  mensaje   String
+  status    ContactStatus @default(UNREAD)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+
