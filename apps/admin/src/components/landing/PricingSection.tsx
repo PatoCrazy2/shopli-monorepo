@@ -663,29 +663,59 @@ export default function PricingSection() {
                 Más de 3 sucursales, migración masiva de catálogo o soporte enterprise asistido.
               </p>
               
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto">
+                {/* Botón WhatsApp con Llenado Líquido Semi-Luma Esmeralda */}
                 <a
-                  href="/api/contact/whatsapp?plan=Multi-Sucursal"
+                  href="/api/contact/whatsapp"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-white/[0.2] transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  className="relative group/wa overflow-hidden inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.04] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-emerald-500/40 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:scale-[0.98]"
                 >
-                  <MessageCircle className="w-4 h-4 text-emerald-400" />
-                  <span>Chatear por WhatsApp</span>
+
+                  {/* Cortina Líquida que emerge desde abajo */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-emerald-500/20 translate-y-full group-hover/wa:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
+                  />
+                  {/* Resplandor tenue en la base */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent opacity-0 group-hover/wa:opacity-100 transition-opacity duration-300"
+                  />
+                  {/* Contenido Elevado */}
+                  <span className="relative z-10 flex items-center justify-center gap-2.5 transition-transform duration-200 group-hover/wa:-translate-y-0.5">
+                    <MessageCircle className="w-4 h-4 text-emerald-400 group-hover/wa:text-emerald-300 transition-colors" />
+                    <span className="font-semibold text-neutral-100 group-hover/wa:text-white">Chatear por WhatsApp</span>
+                  </span>
                 </a>
                 
+                {/* Botón Correo con Llenado Líquido Plata Líquida Monocromática */}
                 <button
                   type="button"
                   onClick={() => {
                     setContactPlan("Planes a Medida / Cadenas");
                     setIsContactOpen(true);
                   }}
-                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-neutral-300 hover:text-white font-medium text-xs tracking-wide border border-white/[0.06] hover:border-white/[0.15] transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  className="relative group/mail overflow-hidden inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.02] text-neutral-300 hover:text-white font-medium text-xs tracking-wide border border-white/[0.07] hover:border-white/30 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.3)] active:scale-[0.98]"
                 >
-                  <Mail className="w-4 h-4 text-neutral-300" />
-                  <span>Enviar mensaje por correo</span>
+                  {/* Cortina Líquida Plata Líquida que emerge desde abajo */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 bg-gradient-to-t from-zinc-800/85 via-white/10 to-white/20 translate-y-full group-hover/mail:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
+                  />
+                  {/* Resplandor tenue en la base */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover/mail:opacity-100 transition-opacity duration-300"
+                  />
+                  {/* Contenido Elevado */}
+                  <span className="relative z-10 flex items-center justify-center gap-2.5 transition-transform duration-200 group-hover/mail:-translate-y-0.5">
+                    <Mail className="w-4 h-4 text-neutral-400 group-hover/mail:text-white transition-colors" />
+                    <span className="font-semibold text-neutral-200 group-hover/mail:text-white">Enviar mensaje por correo</span>
+                  </span>
                 </button>
               </div>
+
 
               <span className="text-[10px] text-neutral-500 font-mono mt-3">
                 Sin intermediarios · Atención directa del equipo fundador
