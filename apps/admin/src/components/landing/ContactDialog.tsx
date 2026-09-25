@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import Script from "next/script";
 import { X, Send, AlertCircle, Loader2 } from "lucide-react";
 import { submitContactMessage } from "@/actions/contact";
 
@@ -14,6 +15,15 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  if (typeof window !== "undefined") {
+    (window as any).onContactTurnstileCallback = (token: string) => {
+      setTurnstileToken(token);
+    };
+  }
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -78,7 +88,10 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
     setErrorMessage(null);
 
     startTransition(async () => {
-      const result = await submitContactMessage(formData);
+      const result = await submitContactMessage({
+        ...formData,
+        turnstileToken: turnstileToken || undefined,
+      });
       if (result.success) {
         setStatus("success");
       } else {
@@ -99,6 +112,14 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      {siteKey && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          async
+          defer
+        />
+      )}
+
       {/* Backdrop con desenfoque de lujo */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
@@ -248,6 +269,17 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
                   className="w-full px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] focus:border-white/30 focus:ring-1 focus:ring-white/20 text-white placeholder-neutral-500 text-xs transition-colors outline-none resize-none"
                 />
               </div>
+
+              {/* Cloudflare Turnstile */}
+              {siteKey && (
+                <div className="flex justify-center pt-2">
+                  <div
+                    className="cf-turnstile"
+                    data-sitekey={siteKey}
+                    data-callback="onContactTurnstileCallback"
+                  />
+                </div>
+              )}
 
               <div className="pt-2">
                 <button

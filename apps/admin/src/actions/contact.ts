@@ -3,6 +3,7 @@
 import { db } from "@shopli/db";
 import { z } from "zod";
 import nodemailer from "nodemailer";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 const contactSchema = z.object({
   nombre: z
@@ -19,6 +20,7 @@ const contactSchema = z.object({
     .string()
     .min(10, "El mensaje debe tener al menos 10 caracteres")
     .max(2000, "El mensaje no puede exceder 2,000 caracteres"),
+  turnstileToken: z.string().optional(),
 });
 
 export type ContactFormData = z.infer<typeof contactSchema>;
@@ -33,10 +35,20 @@ export async function submitContactMessage(data: ContactFormData) {
     };
   }
 
-  const { nombre, email, telefono, mensaje } = parseResult.data;
+  const { nombre, email, telefono, mensaje, turnstileToken } = parseResult.data;
+
+  // 1. Verificación de Seguridad Anti-Bot (Turnstile)
+  const isHuman = await verifyTurnstileToken(turnstileToken);
+  if (!isHuman) {
+    console.warn("Bloqueo de seguridad: Envío de contacto falló verificación Turnstile.");
+    return {
+      success: false,
+      error: "No se pudo verificar la prueba de seguridad anti-spam. Intenta de nuevo.",
+    };
+  }
 
   try {
-    // 1. Guardar primero en la base de datos (Garantiza cero pérdida de leads)
+    // 2. Guardar en la base de datos
     const savedMessage = await db.contactMessage.create({
       data: {
         nombre: nombre.trim(),
