@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { X, Send, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { X, Send, AlertCircle, Loader2 } from "lucide-react";
 import { submitContactMessage } from "@/actions/contact";
 
 interface ContactDialogProps {
@@ -38,12 +38,38 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen && !isPending) {
-        onClose();
+        if (status === "success") {
+          handleReset();
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isPending, onClose]);
+  }, [isOpen, isPending, onClose, status]);
+
+  const handleReset = () => {
+    setStatus("idle");
+    setErrorMessage(null);
+    setFormData({
+      nombre: "",
+      email: "",
+      telefono: "",
+      mensaje: "",
+    });
+    onClose();
+  };
+
+  // Auto-cierre idéntico a OnboardingSuccessScreen
+  useEffect(() => {
+    if (status === "success") {
+      const timer = setTimeout(() => {
+        handleReset();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
 
   if (!isOpen) return null;
 
@@ -62,16 +88,13 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
     });
   };
 
-  const handleReset = () => {
-    setStatus("idle");
-    setErrorMessage(null);
-    setFormData({
-      nombre: "",
-      email: "",
-      telefono: "",
-      mensaje: "",
-    });
-    onClose();
+  const handleBackdropOrClose = () => {
+    if (isPending) return;
+    if (status === "success") {
+      handleReset();
+    } else {
+      onClose();
+    }
   };
 
   return (
@@ -79,9 +102,7 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
       {/* Backdrop con desenfoque de lujo */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
-        onClick={() => {
-          if (!isPending) onClose();
-        }}
+        onClick={handleBackdropOrClose}
         aria-hidden="true"
       />
 
@@ -95,7 +116,7 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
         {/* Botón Cerrar */}
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleBackdropOrClose}
           disabled={isPending}
           className="absolute top-5 right-5 p-2 rounded-full text-neutral-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
           aria-label="Cerrar modal"
@@ -104,24 +125,45 @@ export function ContactDialog({ isOpen, onClose, defaultPlan }: ContactDialogPro
         </button>
 
         {status === "success" ? (
-          /* Estado de Éxito */
-          <div className="py-8 flex flex-col items-center text-center">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 animate-in zoom-in duration-300">
-              <CheckCircle2 className="w-7 h-7" />
+          /* Estado de Éxito idéntico a Onboarding (Check animado + tipografía + pulso) */
+          <div className="py-8 flex flex-col items-center text-center animate-in fade-in duration-300">
+            {/* Icono central con palomita animada */}
+            <div className="mb-6">
+              <div className="w-20 h-20 rounded-full bg-white text-black shadow-xl shadow-white/10 flex items-center justify-center animate-check-pop">
+                <svg
+                  className="w-10 h-10 text-black"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline
+                    points="20 6 9 17 4 12"
+                    className="animate-check-stroke"
+                  />
+                </svg>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">
-              ¡Mensaje enviado con éxito!
+
+            {/* Título y descripción de éxito */}
+            <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-2">
+              ¡Mensaje enviado!
             </h3>
-            <p className="text-xs sm:text-sm text-neutral-400 max-w-sm mb-6 leading-relaxed">
-              Hemos registrado tu solicitud en nuestro sistema. Un asesor revisará tus requerimientos y te responderá a la brevedad.
+            <p className="text-neutral-400 text-sm sm:text-base leading-relaxed max-w-xs sm:max-w-sm">
+              Hemos registrado tu solicitud. Un asesor revisará tus requerimientos y te contactará a la brevedad.
             </p>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="py-3 px-6 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
-            >
-              Cerrar
-            </button>
+
+            {/* Indicador inferior sutil con animación de carga en las letras */}
+            <div className="mt-8 flex items-center justify-center gap-1.5 text-xs tracking-wide text-neutral-400 font-medium">
+              <span className="animate-pulse">Cerrando ventana</span>
+              <span className="inline-flex">
+                <span className="animate-bounce [animation-delay:-0.3s]">.</span>
+                <span className="animate-bounce [animation-delay:-0.15s]">.</span>
+                <span className="animate-bounce">.</span>
+              </span>
+            </div>
           </div>
         ) : (
           /* Formulario */
