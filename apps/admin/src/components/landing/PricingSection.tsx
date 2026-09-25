@@ -18,7 +18,10 @@ import {
   Zap,
   Users,
   MessageCircle,
+  Mail,
 } from "lucide-react";
+import { ContactDialog } from "./ContactDialog";
+
 
 type BillingCycle = "monthly" | "yearly";
 
@@ -199,6 +202,8 @@ export default function PricingSection() {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [contactPlan, setContactPlan] = useState<string | undefined>(undefined);
 
   const toggleFaq = (id: string) => {
     setOpenFaqId((prev) => (prev === id ? null : id));
@@ -657,24 +662,46 @@ export default function PricingSection() {
               <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
                 Más de 3 sucursales, migración masiva de catálogo o soporte enterprise asistido.
               </p>
-              <a
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5210000000000"}?text=${encodeURIComponent(
-                  "Hola, me gustaría cotizar un plan a medida para mi negocio en ShopLI."
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-white/[0.2] transition-all duration-200 cursor-pointer active:scale-[0.98]"
-              >
-                <MessageCircle className="w-4 h-4 text-neutral-300" />
-                <span>Hablar con un asesor</span>
-              </a>
-              <span className="text-[10px] text-neutral-500 font-mono mt-2">
-                Respuesta directa por WhatsApp
+              
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 w-full sm:w-auto">
+                <a
+                  href="/api/contact/whatsapp?plan=Multi-Sucursal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-white/[0.05] hover:bg-white/[0.12] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-white/[0.2] transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-400" />
+                  <span>Chatear por WhatsApp</span>
+                </a>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContactPlan("Planes a Medida / Cadenas");
+                    setIsContactOpen(true);
+                  }}
+                  className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-neutral-300 hover:text-white font-medium text-xs tracking-wide border border-white/[0.06] hover:border-white/[0.15] transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                >
+                  <Mail className="w-4 h-4 text-neutral-300" />
+                  <span>Enviar mensaje por correo</span>
+                </button>
+              </div>
+
+              <span className="text-[10px] text-neutral-500 font-mono mt-3">
+                Sin intermediarios · Atención directa del equipo fundador
               </span>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal de Contacto y Cotizaciones Seguras */}
+      <ContactDialog
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+        defaultPlan={contactPlan}
+      />
     </section>
+
   );
 }
