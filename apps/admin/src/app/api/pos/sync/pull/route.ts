@@ -70,6 +70,7 @@ export type PullSyncResponse = {
 
 import { getCorsHeaders, handleCorsPreflight } from "@/lib/cors";
 import { verifyPosSyncToken } from "@/lib/pos-token";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function OPTIONS(req: Request) {
   return handleCorsPreflight(req);
@@ -128,6 +129,15 @@ export async function GET(req: NextRequest) {
         { error: "No autorizado. Token de sincronización inválido o ausente." },
         { status: 401, headers: responseHeaders }
       );
+    }
+
+    // Rate Limiting (Sliding Window: 30 req/min por usuario/empresa con Circuit Breaker)
+    if (!isTestBypass) {
+      const rateLimitKey = syncPayload?.user_id || empresaId;
+      const rateLimitResponse = await checkRateLimit("pull", rateLimitKey, responseHeaders);
+      if (rateLimitResponse) {
+        return rateLimitResponse;
+      }
     }
 
     // 2. Consulta y validación de la Empresa (tokenVersion y Suscripción SaaS)

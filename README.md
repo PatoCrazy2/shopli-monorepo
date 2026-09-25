@@ -188,6 +188,13 @@ In addition to the client-side 2-tier PIN protections:
 * **Cloudflare Turnstile Verification:** Protects both the owner registration flow (`/register`) and unconfigured POS terminal onboarding (`/api/pos/auth`), thwarting automated credential spraying attacks.
 * **Strict CORS Whitelist:** The POS sync and auth endpoints enforce origin validation against `ALLOWED_POS_ORIGINS` in production, blocking cross-origin browser abuse.
 
+### Distributed Rate Limiting (Upstash Redis)
+To protect serverless database pools (Neon) against accidental client retry loops or rogue device sync floods:
+* **Sliding Window Enforcement:** The sync endpoints (`/api/pos/sync/pull` and `/api/pos/sync/push`) enforce a 30 requests-per-minute ceiling evaluated via `@upstash/ratelimit` over serverless Upstash Redis.
+* **Per-User/Tenant Scoping:** Rate limit buckets are keyed by the active `user_id` (falling back to `empresa_id`). This guarantees cashiers sharing a store's local Wi-Fi IP address do not deplete each other's quota.
+* **Resilient Circuit Breaker:** If Upstash credentials are not configured (e.g., lightweight dev environments) or if network connectivity to Redis encounters an outage, the system logs a diagnostic warning and fails open, preserving retail checkout continuity at store registers.
+* **Standard 429 & Retry-After Contract:** Exceeded limits return `HTTP 429 Too Many Requests` along with `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
+
 ### Two-Phase Tenant Onboarding & Google OAuth 2.0
 To ensure zero friction during account registration while maintaining strict multi-tenant isolation:
 * **Frictionless Credential Provisioning:** The `/register` flow decouples user identity from company creation. Users register with standard credentials (or 1-click Google OAuth), validated with active DNS MX record deliverability checks (`node:dns/promises`) and realtime password strength criteria ($ \ge 8$ chars, numbers, letters).
@@ -248,6 +255,10 @@ GOOGLE_CLIENT_SECRET="development-client-secret"
 # Cloudflare Turnstile (Anti-Bot / Captcha Invisible - Dummy keys para dev)
 NEXT_PUBLIC_TURNSTILE_SITE_KEY="1x00000000000000000000AA"
 TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"
+# Rate Limiting — Upstash Redis (Serverless)
+# En desarrollo es opcional (el circuit breaker permite operar sin él). Requerido en producción.
+UPSTASH_REDIS_REST_URL="https://tu-db.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="tu-token-aqui"
 # Notificaciones de Prospectos (Gmail SMTP & Alertas)
 SMTP_USER="tu-correo@gmail.com"
 SMTP_PASS="contraseña-de-aplicacion-16-caracteres"

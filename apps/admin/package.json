@@ -13,6 +13,8 @@
     "@auth/prisma-adapter": "^2.11.1",
     "@repo/ui": "workspace:^",
     "@shopli/db": "workspace:^",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.39.0",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "html5-qrcode": "^2.3.8",
