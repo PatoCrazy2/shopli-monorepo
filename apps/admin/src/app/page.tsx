@@ -7,6 +7,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import EcosystemIntroSection from "@/components/landing/EcosystemIntroSection";
 import PhoneShowcaseSection from "@/components/landing/PhoneShowcaseSection";
 import PricingSection from "@/components/landing/PricingSection";
+import LandingFooter from "@/components/landing/LandingFooter";
 
 export default async function HomePage() {
   const session = await auth();
@@ -70,6 +71,9 @@ export default async function HomePage() {
 
       {/* Sección de Precios, ROI, Comparativa y FAQ */}
       <PricingSection />
+
+      {/* Footer Modular con Fondo Hero */}
+      <LandingFooter />
     </div>
   );
 }
