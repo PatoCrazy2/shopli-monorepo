@@ -681,104 +681,111 @@ export default function PricingSection() {
         </div>
 
         {/* ==================== BANNER FINAL DUAL: CONVERSIÓN + CONTACTO ESPECIAL ==================== */}
-        <div className="mt-28 max-w-5xl mx-auto rounded-3xl p-8 sm:p-12 relative overflow-hidden bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/[0.12] backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div id="contacto" className="mt-28 max-w-5xl mx-auto rounded-3xl p-8 sm:p-12 relative overflow-hidden bg-gradient-to-b from-white/[0.07] to-white/[0.02] border border-white/[0.12] backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] scroll-mt-24">
+          {/* Divisor Visual Central en Desktop */}
+          <div className="hidden lg:block absolute left-1/2 top-12 bottom-12 w-[1px] -translate-x-1/2 bg-gradient-to-b from-transparent via-white/[0.12] to-transparent pointer-events-none" />
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-stretch">
             {/* Lado Izquierdo: Conversión Directa de Autoservicio */}
-            <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 mb-2 block">
-                Comienza hoy
-              </span>
-              <h3 className="text-2xl sm:text-4xl font-bold tracking-tight text-white mb-3">
-                Empieza a blindar las ventas de tu negocio.
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-400 max-w-md mb-6 leading-relaxed">
-                Sin tarjeta bancaria, sin descargas complejas y sin contratos forzosos.
-                Configura tu catálogo en minutos y cobra a velocidad absoluta.
-              </p>
-              <div className="relative group/bottom p-[1px] rounded-2xl overflow-hidden transition-all duration-300">
-                <div className="absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none opacity-100" />
-                <Link
-                  href="/register"
-                  className="relative z-10 inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-xs sm:text-sm tracking-wide uppercase transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border border-transparent hover:border-white/[0.14] active:scale-[0.98]"
-                >
-                  <span>Comenzar prueba gratis</span>
-                  <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover/bottom:translate-x-0.5 group-hover/bottom:text-white" />
-                </Link>
+            <div className="flex flex-col justify-between items-center lg:items-start text-center lg:text-left h-full">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 mb-2 block">
+                  Comienza hoy
+                </span>
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
+                  Empieza a blindar las ventas de tu negocio.
+                </h3>
+                <p className="text-xs sm:text-sm text-neutral-400 max-w-md mb-8 leading-relaxed">
+                  Sin tarjeta bancaria, sin descargas complejas y sin contratos forzosos.
+                  Configura tu catálogo en minutos y cobra a velocidad absoluta.
+                </p>
+              </div>
+
+              <div className="w-full sm:w-auto">
+                <div className="relative group/bottom p-[1px] rounded-2xl overflow-hidden transition-all duration-300 w-full sm:w-auto">
+                  <div className="absolute -inset-[100%] metallic-border-glow blur-[3px] pointer-events-none opacity-100" />
+                  <Link
+                    href="/register"
+                    className="relative z-10 inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl bg-[#0e0e12]/90 hover:bg-[#14141a]/90 text-white font-semibold text-xs sm:text-sm tracking-wide uppercase transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.35)] cursor-pointer backdrop-blur-xl border border-transparent hover:border-white/[0.14] active:scale-[0.98] w-full sm:w-auto"
+                  >
+                    <span>Comenzar prueba gratis</span>
+                    <ArrowRight className="w-4 h-4 text-neutral-300 transition-transform group-hover/bottom:translate-x-0.5 group-hover/bottom:text-white" />
+                  </Link>
+                </div>
               </div>
             </div>
 
-            {/* Divisor Visual en Desktop */}
-            <div className="hidden lg:block lg:col-span-1 h-32 w-[1px] bg-gradient-to-b from-transparent via-white/[0.12] to-transparent mx-auto" />
-
-            {/* Lado Derecho: Contacto, Planes a Medida y WhatsApp */}
-            <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left pt-6 lg:pt-0 border-t border-white/[0.08] lg:border-t-0">
-              <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 mb-1.5 block">
-                Cadenas & Franquicias
-              </span>
-              <h4 className="text-lg sm:text-xl font-bold text-white mb-2">
-                ¿Necesitas un plan a medida?
-              </h4>
-              <p className="text-xs text-neutral-400 mb-5 leading-relaxed">
-                Más de 3 sucursales, migración masiva de catálogo o soporte enterprise asistido.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto">
-                {/* Botón WhatsApp con Llenado Líquido Semi-Luma Esmeralda */}
-                <a
-                  href="/api/contact/whatsapp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative group/wa overflow-hidden inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.04] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-emerald-500/40 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:scale-[0.98]"
-                >
-
-                  {/* Cortina Líquida que emerge desde abajo */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-0 z-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-emerald-500/20 translate-y-full group-hover/wa:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
-                  />
-                  {/* Resplandor tenue en la base */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent opacity-0 group-hover/wa:opacity-100 transition-opacity duration-300"
-                  />
-                  {/* Contenido Elevado */}
-                  <span className="relative z-10 flex items-center justify-center gap-2.5 transition-transform duration-200 group-hover/wa:-translate-y-0.5">
-                    <MessageCircle className="w-4 h-4 text-emerald-400 group-hover/wa:text-emerald-300 transition-colors" />
-                    <span className="font-semibold text-neutral-100 group-hover/wa:text-white">Chatear por WhatsApp</span>
-                  </span>
-                </a>
-                
-                {/* Botón Correo con Llenado Líquido Plata Líquida Monocromática */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setContactPlan("Planes a Medida / Cadenas");
-                    setIsContactOpen(true);
-                  }}
-                  className="relative group/mail overflow-hidden inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white/[0.02] text-neutral-300 hover:text-white font-medium text-xs tracking-wide border border-white/[0.07] hover:border-white/30 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.3)] active:scale-[0.98]"
-                >
-                  {/* Cortina Líquida Plata Líquida que emerge desde abajo */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-0 z-0 bg-gradient-to-t from-zinc-800/85 via-white/10 to-white/20 translate-y-full group-hover/mail:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
-                  />
-                  {/* Resplandor tenue en la base */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover/mail:opacity-100 transition-opacity duration-300"
-                  />
-                  {/* Contenido Elevado */}
-                  <span className="relative z-10 flex items-center justify-center gap-2.5 transition-transform duration-200 group-hover/mail:-translate-y-0.5">
-                    <Mail className="w-4 h-4 text-neutral-400 group-hover/mail:text-white transition-colors" />
-                    <span className="font-semibold text-neutral-200 group-hover/mail:text-white">Enviar mensaje por correo</span>
-                  </span>
-                </button>
+            {/* Lado Derecho: Contacto, Asesoría y WhatsApp */}
+            <div className="flex flex-col justify-between items-center lg:items-start text-center lg:text-left pt-8 lg:pt-0 border-t border-white/[0.08] lg:border-t-0 h-full">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 mb-2 block">
+                  Asesoría & Contacto Directo
+                </span>
+                <h4 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
+                  ¿Tienes dudas o necesitas un plan a medida?
+                </h4>
+                <p className="text-xs sm:text-sm text-neutral-400 max-w-md mb-8 leading-relaxed">
+                  Habla directamente con nosotros para resolver tus preguntas de implementación, conocer el sistema o estructurar una propuesta para tu negocio.
+                </p>
               </div>
+              
+              <div className="w-full">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  {/* Botón WhatsApp con Llenado Líquido Semi-Luma Esmeralda */}
+                  <a
+                    href="/api/contact/whatsapp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative group/wa overflow-hidden flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-white/[0.04] text-white font-medium text-xs tracking-wide border border-white/[0.1] hover:border-emerald-500/40 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:scale-[0.98]"
+                  >
+                    {/* Cortina Líquida que emerge desde abajo */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 z-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-emerald-500/20 translate-y-full group-hover/wa:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
+                    />
+                    {/* Resplandor tenue en la base */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent opacity-0 group-hover/wa:opacity-100 transition-opacity duration-300"
+                    />
+                    {/* Contenido Elevado */}
+                    <span className="relative z-10 flex items-center justify-center gap-2 transition-transform duration-200 group-hover/wa:-translate-y-0.5">
+                      <MessageCircle className="w-4 h-4 text-emerald-400 group-hover/wa:text-emerald-300 transition-colors" />
+                      <span className="font-semibold text-neutral-100 group-hover/wa:text-white">WhatsApp</span>
+                    </span>
+                  </a>
+                  
+                  {/* Botón Correo con Llenado Líquido Plata Líquida Monocromática */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContactPlan("Asesoría General / Plan a Medida");
+                      setIsContactOpen(true);
+                    }}
+                    className="relative group/mail overflow-hidden flex-1 inline-flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-white/[0.02] text-neutral-300 hover:text-white font-medium text-xs tracking-wide border border-white/[0.07] hover:border-white/30 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.3)] active:scale-[0.98]"
+                  >
+                    {/* Cortina Líquida Plata Líquida que emerge desde abajo */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 z-0 bg-gradient-to-t from-zinc-800/85 via-white/10 to-white/20 translate-y-full group-hover/mail:translate-y-0 transition-transform duration-300 ease-out pointer-events-none"
+                    />
+                    {/* Resplandor tenue en la base */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover/mail:opacity-100 transition-opacity duration-300"
+                    />
+                    {/* Contenido Elevado */}
+                    <span className="relative z-10 flex items-center justify-center gap-2 transition-transform duration-200 group-hover/mail:-translate-y-0.5">
+                      <Mail className="w-4 h-4 text-neutral-400 group-hover/mail:text-white transition-colors" />
+                      <span className="font-semibold text-neutral-200 group-hover/mail:text-white">Enviar correo</span>
+                    </span>
+                  </button>
+                </div>
 
-
-              <span className="text-[10px] text-neutral-500 font-mono mt-3">
-                Sin intermediarios · Atención directa del equipo fundador
-              </span>
+                <span className="text-[10px] text-neutral-500 font-mono mt-3 block text-center lg:text-left">
+                  Sin intermediarios · Atención directa del equipo fundador
+                </span>
+              </div>
             </div>
           </div>
         </div>
