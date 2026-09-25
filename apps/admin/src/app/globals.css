@@ -150,12 +150,39 @@ input[type="password"]::-ms-clear {
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    transparent 280deg,
-    rgba(255, 255, 255, 0.15) 320deg,
-    rgba(255, 255, 255, 0.95) 360deg
+    transparent 260deg,
+    rgba(255, 255, 255, 0.2) 300deg,
+    rgba(255, 255, 255, 0.8) 340deg,
+    rgba(255, 255, 255, 1) 360deg
   );
   animation: borderBeamTravel 6s linear infinite;
 }
+
+.border-beam-glow-blue {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    rgba(14, 165, 233, 0.3) 290deg,
+    rgba(56, 189, 248, 0.9) 335deg,
+    rgba(186, 230, 253, 1) 360deg
+  );
+  animation: borderBeamTravel 6s linear infinite;
+}
+
+.border-beam-glow-amber {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    rgba(217, 119, 6, 0.3) 290deg,
+    rgba(245, 158, 11, 0.9) 335deg,
+    rgba(254, 240, 138, 1) 360deg
+  );
+  animation: borderBeamTravel 6s linear infinite;
+}
+
+
 
 
 /* Utilidades para Showcase 3D y Spatial HUD */

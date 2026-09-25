@@ -204,6 +204,7 @@ export default function PricingSection() {
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [contactPlan, setContactPlan] = useState<string | undefined>(undefined);
+  const [hoveredPlanId, setHoveredPlanId] = useState<string | null>(null);
 
   const toggleFaq = (id: string) => {
     setOpenFaqId((prev) => (prev === id ? null : id));
@@ -288,33 +289,76 @@ export default function PricingSection() {
               billingCycle === "yearly"
                 ? plan.effectiveMonthlyWithYearly
                 : plan.monthlyPrice;
+            const isHovered = hoveredPlanId === plan.id;
             const registerHref = `/register?plan=${plan.id}`;
+
+            const planKey = plan.id.toUpperCase();
+            const isArranque = planKey === "ARRANQUE";
+            const isCrecimiento = planKey === "CRECIMIENTO" || isFeatured;
+            const isMultiSucursal = planKey === "MULTISUCURSAL";
+
+            // Clase cromática del haz viajero según el plan
+            const beamClass = isArranque
+              ? "border-beam-glow-blue"
+              : isMultiSucursal
+              ? "border-beam-glow-amber"
+              : "border-beam-glow";
+
+            // Opacidad dinámica con "mute":
+            // Si Crecimiento no tiene hover pero OTRA tarjeta sí, Crecimiento se apaga (opacity-0).
+            const beamOpacity = isCrecimiento
+              ? hoveredPlanId === null
+                ? "opacity-40"
+                : isHovered
+                ? "opacity-100"
+                : "opacity-0"
+              : isHovered
+              ? "opacity-100"
+              : "opacity-0";
+
+            // Color del borde estático y resplandor al interactuar
+            const borderStaticClass = isCrecimiento
+              ? hoveredPlanId === null
+                ? "border border-white/20"
+                : isHovered
+                ? "border border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.12)]"
+                : "border border-white/[0.08]"
+              : isArranque
+              ? isHovered
+                ? "border border-sky-400/50 shadow-[0_0_30px_rgba(56,189,248,0.2)]"
+                : "border border-white/[0.08]"
+              : isMultiSucursal
+              ? isHovered
+                ? "border border-amber-400/50 shadow-[0_0_30px_rgba(245,158,11,0.2)]"
+                : "border border-white/[0.08]"
+              : "border border-white/[0.08]";
 
             return (
               <div
                 key={plan.id}
+                onMouseEnter={() => setHoveredPlanId(plan.id)}
+                onMouseLeave={() => setHoveredPlanId(null)}
                 className={`relative p-[1px] rounded-[28px] overflow-hidden group transition-all duration-300 ${
                   isFeatured ? "lg:-translate-y-3 z-10" : "z-0"
                 }`}
               >
-                {/* Haz de luz perimetral viajero continuo (Border Beam Animation) */}
+                {/* 1. Halo difuso exterior (Bloom) para que la luz tiña el borde y el fondo */}
                 <div
-                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] h-[350%] pointer-events-none transition-opacity duration-500 z-0 ${
-                    isFeatured
-                      ? "opacity-35 group-hover:opacity-100"
-                      : "opacity-0 group-hover:opacity-100"
-                  }`}
+                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] h-[350%] pointer-events-none transition-opacity duration-300 ease-out z-0 blur-[6px] ${beamOpacity}`}
                 >
-                  <div className="w-full h-full border-beam-glow" />
+                  <div className={`w-full h-full ${beamClass}`} />
+                </div>
+
+                {/* 2. Haz de luz nítido viajero continuo */}
+                <div
+                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350%] h-[350%] pointer-events-none transition-opacity duration-300 ease-out z-0 ${beamOpacity}`}
+                >
+                  <div className={`w-full h-full ${beamClass}`} />
                 </div>
 
                 {/* Borde sutil estático (delgado y discreto) */}
                 <div
-                  className={`absolute inset-0 rounded-[28px] pointer-events-none z-10 transition-colors duration-300 ${
-                    isFeatured
-                      ? "border border-white/20"
-                      : "border border-white/[0.08] group-hover:border-white/[0.15]"
-                  }`}
+                  className={`absolute inset-0 rounded-[28px] pointer-events-none z-10 transition-all duration-300 ${borderStaticClass}`}
                 />
 
                 {/* Contenedor interior de la tarjeta */}
@@ -334,10 +378,25 @@ export default function PricingSection() {
                     <div className="absolute inset-0 bg-gradient-to-b from-[#050507]/60 via-[#050507]/85 to-[#050507]/95" />
                   </div>
 
-                  {/* Halo ambiental sutil superior para el plan Crecimiento */}
-                  {isFeatured && (
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-white/[0.07] blur-2xl rounded-full pointer-events-none z-0" />
-                  )}
+                  {/* Halo ambiental cromático superior en el fondo de la tarjeta */}
+                  <div
+                    className={`absolute -top-14 left-1/2 -translate-x-1/2 w-56 h-28 blur-3xl rounded-full pointer-events-none z-0 transition-all duration-500 ${
+                      isArranque
+                        ? isHovered
+                          ? "bg-sky-500/25 opacity-100"
+                          : "opacity-0"
+                        : isMultiSucursal
+                        ? isHovered
+                          ? "bg-amber-500/25 opacity-100"
+                          : "opacity-0"
+                        : hoveredPlanId === null
+                        ? "bg-white/[0.08] opacity-100"
+                        : isHovered
+                        ? "bg-white/[0.18] opacity-100"
+                        : "opacity-0"
+                    }`}
+                  />
+
 
                   {/* Contenido Superior de la Tarjeta */}
                   <div className="relative z-10">
