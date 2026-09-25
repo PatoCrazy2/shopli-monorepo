@@ -245,6 +245,15 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 # Google OAuth 2.0 (Admin Dashboard)
 GOOGLE_CLIENT_ID="development-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="development-client-secret"
+# Cloudflare Turnstile (Anti-Bot / Captcha Invisible - Dummy keys para dev)
+NEXT_PUBLIC_TURNSTILE_SITE_KEY="1x00000000000000000000AA"
+TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"
+# Notificaciones de Prospectos (Gmail SMTP & Alertas)
+SMTP_USER="tu-correo@gmail.com"
+SMTP_PASS="contraseña-de-aplicacion-16-caracteres"
+CONTACT_RECEIVER_EMAIL="correo-donde-recibes-alertas@gmail.com"
+# Enlace Seguro de WhatsApp (Privado del servidor)
+WHATSAPP_BUSINESS_NUMBER="521234567890"
 ```
 
 **`apps/pos/.env`**
@@ -357,3 +366,4 @@ ShopLI uses a strict GitHub Actions pipeline ([`.github/workflows/ci.yml`](.gith
 * **Unit Testing & CI Compliance:** Write unit tests for all financial calculations, wholesale rule applications, and audit calculations. All tests must pass in CI before PR merge.
 * **High-Performance Landing & Zero-Jank Animation Standard:** Scroll-bound and video-synced 3D transforms must bypass React State mutations. They must execute via Direct DOM Transforms using `ref` and `requestAnimationFrame` to guarantee stable 60–120 FPS performance. Eliminate expensive dynamic rasterization filters (`filter: drop-shadow`) in favor of GPU-accelerated hardware pseudo-shadows.
 * **Strict SVG Security Baseline:** When `dangerouslyAllowSVG` is enabled in `next.config.ts`, it must be accompanied by strict Content Security Policy directives (`script-src 'none'; sandbox;`) and `contentDispositionType: "attachment"` to mitigate cross-site scripting (XSS) vectors.
+* **Privacy-Preserving Contact & Anti-Bot Shielding:** Direct business contact channels (WhatsApp phone numbers, alert dispatch emails) must never be statically embedded in public client bundles or DOM attributes. Route WhatsApp through a server proxy (`/api/contact/whatsapp`) and validate inbound lead capture actions with Cloudflare Turnstile token verification prior to database persistence or SMTP dispatch.
