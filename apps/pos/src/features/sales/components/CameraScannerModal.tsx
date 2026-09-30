@@ -322,7 +322,7 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
             {scannerError}
           </div>
         ) : (
-          <div id="qr-reader" className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0" />
+          <div id="qr-reader" className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0 [&_#qr-shaded-region]:!hidden [&_div[style*='border']]:!border-none" />
         )}
 
         {/* Minimalist targeting square frame (aligned to exactly 260px) */}

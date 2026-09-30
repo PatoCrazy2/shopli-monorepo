@@ -307,7 +307,7 @@ export function BarcodeScannerModal({
       <div className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
         <div
           id={containerId}
-          className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0"
+          className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0 [&_#qr-shaded-region]:!hidden [&_div[style*='border']]:!border-none"
         />
 
         {/* Mira de Escaneo Minimalista Estilo Apple / POS (Esquinas Blancas Limpias + Láser Sutil) */}
