@@ -1,5 +1,3 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 import Image from "next/image";
 import LandingNavbar from "@/components/landing/LandingNavbar";
 import LandingScrollRestoration from "@/components/landing/LandingScrollRestoration";
@@ -9,13 +7,7 @@ import PhoneShowcaseSection from "@/components/landing/PhoneShowcaseSection";
 import PricingSection from "@/components/landing/PricingSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 
-export default async function HomePage() {
-  const session = await auth();
-
-  if (session?.user) {
-    redirect("/dashboard/inicio");
-  }
-
+export default function HomePage() {
   return (
     <div className="relative min-h-screen w-full bg-[#050507] text-white font-sans overflow-x-clip selection:bg-white/20 selection:text-white">
       {/* Background del Hero nítido y ambiental estrictamente en el primer viewport (h-screen) */}
