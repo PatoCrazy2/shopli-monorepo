@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { db, SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
+import { SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileHeader } from "@/components/navigation/MobileHeader";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { getEffectiveSubscription } from "@/lib/subscription-plans";
+import { getEmpresaSubscription } from "@/lib/queries/get-empresa-subscription";
 
 export default async function DashboardLayout({
     children,
@@ -34,16 +35,7 @@ export default async function DashboardLayout({
     let effectiveSubscription = null;
 
     if (session.user.empresa_id) {
-        const empresa = await db.empresa.findUnique({
-            where: { id: session.user.empresa_id },
-            select: {
-                plan: true,
-                subscriptionStatus: true,
-                trialEndsAt: true,
-                gracePeriodEndsAt: true,
-                stripeSubscriptionId: true,
-            },
-        });
+        const empresa = await getEmpresaSubscription(session.user.empresa_id);
 
         if (empresa) {
             effectiveSubscription = getEffectiveSubscription(empresa);

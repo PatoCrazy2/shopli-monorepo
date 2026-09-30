@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { db, SubscriptionStatus } from "@shopli/db";
@@ -99,6 +100,10 @@ export async function POST(req: NextRequest) {
         await syncEmpresaFromStripeSubscription(sub, empresaIdFromEvent, statusOverride, tx);
       }
     });
+
+    if (empresaIdFromEvent) {
+      revalidateTag(`empresa-sub-${empresaIdFromEvent}`, "max");
+    }
 
     return NextResponse.json({ received: true });
   } catch (dbErr: any) {
