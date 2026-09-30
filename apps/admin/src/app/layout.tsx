@@ -17,14 +17,12 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
-  title: "ShopLI Admin",
-  description: "Panel de administración y reconciliación de ShopLI",
+  title: "ShopLI | Sistema POS y Control de Negocios Offline-First",
+  description: "Plataforma de punto de venta y analítica comercial offline-first. Vende sin interrupciones, concilia inventarios y toma decisiones con datos en tiempo real.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

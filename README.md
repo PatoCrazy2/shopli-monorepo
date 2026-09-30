@@ -101,6 +101,8 @@ The administrative portal (`apps/admin`) is packaged as an installable, standalo
 * **App Shell Precaching:** The dedicated Service Worker (`/sw.js`) intercepts static Next.js assets (`/_next/static/*`), vector icons, and typography, caching them locally with a Cache-First strategy to guarantee near-instantaneous subsequent launches.
 * **Zero-Trust Financial Isolation:** To preserve absolute transactional integrity and adhere to system security boundaries, all `/api/*` endpoints, authentication tokens, and mutation requests strictly bypass the Service Worker cache (`Network-Only`), ensuring live reconciliation metrics are always fetched directly from PostgreSQL.
 * **Apple iOS & Multi-Platform Adaptability:** Fully configured with `display: "standalone"`, Dynamic Island safe-area awareness (`env(safe-area-inset-*)`), device-specific Apple launch splash screens, Android maskable adaptive icons, and multi-platform install prompts (native `beforeinstallprompt` on desktop/Android and guided Apple-style sheets on iOS Safari).
+* **Isolated PWA Viewport & WCAG Accessibility:** The marketing surface (`/`) maintains an accessible, scalable viewport allowing standard pinch-to-zoom for WCAG compliance and optimal SEO indexing. In contrast, the authenticated management portal (`/dashboard/*`) applies an isolated, non-scalable viewport (`user-scalable=no`, `maximum-scale=1`) to emulate a fixed native tablet/desktop application without unintended double-tap zoom triggers.
+* **Edge Static Site Generation (SSG):** The public landing route is fully decoupled from server-side session checks, pre-rendering as a static document (`○ (Static)`) delivered directly from Edge CDNs with near-zero TTFB and full hydration for client-side 3D WebGL and CSS animations.
 
 ### Monorepo Schema & Package Segregation
 * **Single Source of Truth:** All PostgreSQL schemas, custom types, and seed workflows reside in the `@shopli/db` workspace package.
@@ -189,6 +191,7 @@ In addition to the client-side 2-tier PIN protections:
 * **Database-Persisted Lockout:** The server tracks `failedLoginAttempts` and `lockedUntil` on the PostgreSQL `User` model. After 5 consecutive failures, the account is locked for 15 minutes across cold starts and serverless container recycles.
 * **Cloudflare Turnstile Verification:** Protects both the owner registration flow (`/register`) and unconfigured POS terminal onboarding (`/api/pos/auth`), thwarting automated credential spraying attacks.
 * **Strict CORS Whitelist:** The POS sync and auth endpoints enforce origin validation against `ALLOWED_POS_ORIGINS` in production, blocking cross-origin browser abuse.
+* **HTTP Security Hardening & Content Security Policy (CSP):** The administrative web application enforces strict production HTTP headers. This includes HSTS with preload (`max-age=63072000`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a granular `Content-Security-Policy` (CSP) directive that locks execution down to origin sources while securely whitelisting required third-party integrators (Stripe JS for checkout, Cloudflare Turnstile for anti-bot validation, and Open Food/Beauty/Products Facts APIs for retail catalog autofill).
 
 ### Distributed Rate Limiting (Upstash Redis)
 To protect serverless database pools (Neon) against accidental client retry loops or rogue device sync floods:

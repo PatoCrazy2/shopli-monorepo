@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
@@ -7,6 +8,22 @@ import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 import { getEffectiveSubscription } from "@/lib/subscription-plans";
 import { getEmpresaSubscription } from "@/lib/queries/get-empresa-subscription";
+
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
+export const metadata: Metadata = {
+  title: {
+    template: "%s | ShopLI Admin",
+    default: "Dashboard | ShopLI Admin",
+  },
+};
 
 export default async function DashboardLayout({
     children,
