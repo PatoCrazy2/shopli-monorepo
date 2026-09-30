@@ -22,11 +22,12 @@ const productSchema = z.object({
   ),
 });
 
-export async function generateUniqueSKU(): Promise<string> {
+export async function generateUniqueSKU(empresaId?: string): Promise<string> {
   let attempts = 0;
   while (attempts < 10) {
     const slProducts = await db.producto.findMany({
       where: {
+        ...(empresaId ? { empresa_id: empresaId } : {}),
         codigo_interno: {
           startsWith: "SL-",
         },
@@ -51,8 +52,11 @@ export async function generateUniqueSKU(): Promise<string> {
 
     const nextSku = `SL-${String(maxNumber + 1).padStart(6, "0")}`;
 
-    const exists = await db.producto.findUnique({
-      where: { codigo_interno: nextSku },
+    const exists = await db.producto.findFirst({
+      where: {
+        codigo_interno: nextSku,
+        ...(empresaId ? { empresa_id: empresaId } : {}),
+      },
       select: { id: true },
     });
 
@@ -112,7 +116,7 @@ export async function upsertProduct(formData: FormData) {
 
       let parentSku = data.codigo_interno?.trim() || null;
       if (!parentSku) {
-        parentSku = product.codigo_interno || (await generateUniqueSKU());
+        parentSku = product.codigo_interno || (await generateUniqueSKU(empresaId));
       }
 
       await db.producto.update({
@@ -155,7 +159,7 @@ export async function upsertProduct(formData: FormData) {
             select: { codigo_interno: true }
           });
           if (!varSku) {
-            varSku = existingVar?.codigo_interno || (await generateUniqueSKU());
+            varSku = existingVar?.codigo_interno || (await generateUniqueSKU(empresaId));
           }
           await db.producto.update({
             where: { id: v.id },
@@ -172,7 +176,7 @@ export async function upsertProduct(formData: FormData) {
             }
           });
         } else {
-          const newVarSku = varSku || (await generateUniqueSKU());
+          const newVarSku = varSku || (await generateUniqueSKU(empresaId));
           const newVar = await db.producto.create({
             data: {
               nombre: variantFullName,
@@ -209,7 +213,7 @@ export async function upsertProduct(formData: FormData) {
       }
 
       // Crear Padre
-      const parentSku = data.codigo_interno?.trim() || (await generateUniqueSKU());
+      const parentSku = data.codigo_interno?.trim() || (await generateUniqueSKU(empresaId));
       const newProduct = await db.producto.create({
         data: {
           nombre: data.nombre,
@@ -239,7 +243,7 @@ export async function upsertProduct(formData: FormData) {
       // Crear variantes de este nuevo producto
       for (const v of variants) {
         const variantFullName = `${data.nombre} (${v.variante_nombre})`;
-        const varSku = v.codigo_interno?.trim() || (await generateUniqueSKU());
+        const varSku = v.codigo_interno?.trim() || (await generateUniqueSKU(empresaId));
         const newVar = await db.producto.create({
           data: {
             nombre: variantFullName,
@@ -366,7 +370,12 @@ export async function importCatalogAction(products: any[]) {
         if (item.proveedor) {
           const provName = item.proveedor.trim();
           let prov = await db.proveedor.findUnique({
-            where: { nombre: provName }
+            where: {
+              empresa_id_nombre: {
+                empresa_id: empresaId,
+                nombre: provName
+              }
+            }
           });
 
           if (!prov) {
@@ -376,8 +385,6 @@ export async function importCatalogAction(products: any[]) {
                 empresa_id: empresaId
               }
             });
-          } else if (prov.empresa_id !== empresaId) {
-            throw new Error(`El proveedor ${provName} pertenece a otra empresa.`);
           }
           proveedor_id = prov.id;
         }
@@ -399,17 +406,19 @@ export async function importCatalogAction(products: any[]) {
         // 3. Upsert por codigo_interno
         let sku = item.codigo_interno?.trim() || null;
         if (!sku) {
-          sku = await generateUniqueSKU();
+          sku = await generateUniqueSKU(empresaId);
         }
 
         const existing = await db.producto.findUnique({
-          where: { codigo_interno: sku }
+          where: {
+            empresa_id_codigo_interno: {
+              empresa_id: empresaId,
+              codigo_interno: sku
+            }
+          }
         });
 
         if (existing) {
-          if (existing.empresa_id !== empresaId) {
-            throw new Error(`El producto con SKU ${sku} pertenece a otra empresa.`);
-          }
           await db.producto.update({
             where: { id: existing.id },
             data: productData

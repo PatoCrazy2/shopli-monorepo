@@ -53,7 +53,7 @@ model Sucursal {
 
 model Proveedor {
   id        String   @id @default(uuid())
-  nombre    String   @unique
+  nombre    String
   contacto  String?
   createdAt DateTime @default(now())
   updatedAt                  DateTime @updatedAt @default(now())
@@ -62,12 +62,14 @@ model Proveedor {
 
   productos Producto[]
   gastos    Gasto[]
+
+  @@unique([empresa_id, nombre])
 }
 
 model Producto {
   id             String   @id @default(uuid())
   nombre         String
-  codigo_interno String?  @unique
+  codigo_interno String?
   descripcion    String?
   costo          Decimal  @db.Decimal(10, 2)
   precio_publico Decimal  @db.Decimal(10, 2)
@@ -93,6 +95,8 @@ model Producto {
   auditorias     AuditItem[]
   dynamicAudits  DynamicAuditItem[]
   movimientos    MovimientoInventario[]
+
+  @@unique([empresa_id, codigo_interno])
 }
 
 model Inventario_Sucursal {
