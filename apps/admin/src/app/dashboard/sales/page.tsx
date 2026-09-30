@@ -6,7 +6,7 @@ import Link from "next/link";
 export default async function SalesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ SUCURSAL?: string; date?: string }>;
+  searchParams: Promise<{ SUCURSAL?: string; date?: string; page?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -14,12 +14,14 @@ export default async function SalesPage({
   const sp = await searchParams;
   const sucursalId = sp.SUCURSAL;
   const dateStr = sp.date;
+  const page = Math.max(1, sp.page ? parseInt(sp.page, 10) || 1 : 1);
 
-  const ventas = await getSales({ sucursalId, dateStr });
+  const [{ ventas, total, pageSize }, sucursales] = await Promise.all([
+    getSales({ sucursalId, dateStr, page }),
+    getSucursales(),
+  ]);
 
   const totalVentas = ventas.reduce((acc, v) => acc + Number(v.total), 0);
-
-  const sucursales = await getSucursales();
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("es-MX", {
@@ -96,12 +98,12 @@ export default async function SalesPage({
             </span>
             <span className="text-zinc-300">|</span>
             <span className="text-sm font-bold text-zinc-500">
-               {ventas.length} transacciones registradas
+               {total} transacciones registradas
             </span>
           </div>
 
           <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-sm">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">Total Acumulado</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">Total Acumulado (Página)</span>
             <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">${totalVentas.toFixed(2)}</span>
           </div>
         </div>
@@ -201,6 +203,32 @@ export default async function SalesPage({
                 </div>
               </details>
             ))}
+          </div>
+        )}
+
+        {sucursalId && total > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {total} transacciones · Página {page} de {Math.max(1, Math.ceil(total / pageSize))}
+            </p>
+            <div className="flex gap-2">
+              {page > 1 && (
+                <Link
+                  href={`?SUCURSAL=${sucursalId}${dateStr ? `&date=${dateStr}` : ""}&page=${page - 1}`}
+                  className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-900 dark:text-white"
+                >
+                  ← Anterior
+                </Link>
+              )}
+              {page * pageSize < total && (
+                <Link
+                  href={`?SUCURSAL=${sucursalId}${dateStr ? `&date=${dateStr}` : ""}&page=${page + 1}`}
+                  className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                >
+                  Siguiente →
+                </Link>
+              )}
+            </div>
           </div>
         )}
       </div>
