@@ -1,24 +1,26 @@
 import { db } from "@shopli/db";
 import { auth } from "@/lib/auth";
 
-export async function getSales(filters: { sucursalId?: string; dateStr?: string }) {
+const PAGE_SIZE = 50;
+
+export async function getSales(filters: {
+  sucursalId?: string;
+  dateStr?: string;
+  page?: number;
+}) {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
 
-  if (!filters.sucursalId) return [];
-  
-  // Validamos que la sucursal pertenezca a la empresa
-  const sucursal = await db.sucursal.findUnique({
-    where: { id: filters.sucursalId },
-    select: { empresa_id: true }
-  });
-  if (!sucursal || sucursal.empresa_id !== empresaId) {
-    throw new Error("No autorizado");
+  if (!filters.sucursalId) {
+    return { ventas: [], total: 0, page: 1, pageSize: PAGE_SIZE };
   }
-  
+
+  const page = Math.max(1, filters.page ?? 1);
+
   const where: any = {
-    sucursal_id: filters.sucursalId
+    sucursal_id: filters.sucursalId,
+    sucursal: { empresa_id: empresaId },
   };
 
   if (filters.dateStr) {
@@ -29,26 +31,31 @@ export async function getSales(filters: { sucursalId?: string; dateStr?: string 
     where.fecha = { gte: start, lte: end };
   }
 
-  const ventas = await db.venta.findMany({
-    where,
-    orderBy: { fecha: "desc" },
-    include: {
-      turno: {
-        include: {
-          usuario: {
-            select: { name: true, id: true },
+  const [ventas, total] = await Promise.all([
+    db.venta.findMany({
+      where,
+      orderBy: { fecha: "desc" },
+      take: PAGE_SIZE,
+      skip: (page - 1) * PAGE_SIZE,
+      include: {
+        turno: {
+          include: {
+            usuario: {
+              select: { name: true, id: true },
+            },
+          },
+        },
+        detalles: {
+          include: {
+            producto: { select: { nombre: true } },
           },
         },
       },
-      detalles: {
-        include: {
-          producto: { select: { nombre: true } },
-        },
-      },
-    },
-  });
+    }),
+    db.venta.count({ where }),
+  ]);
 
-  return ventas;
+  return { ventas, total, page, pageSize: PAGE_SIZE };
 }
 
 export async function getSucursales() {

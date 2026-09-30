@@ -94,7 +94,14 @@ export function BarcodeScannerModal({
       scannerRef.current = html5QrCode;
 
       const qrConfig = {
-        fps: 15,
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        formatsToSupport: [
+          0, // QR_CODE
+          8, // EAN_13
+          14, // UPC_A
+          3, // CODE_128
+        ],
         videoConstraints: {
           facingMode: { ideal: "environment" },
           width: { ideal: 1280 },
@@ -122,24 +129,77 @@ export function BarcodeScannerModal({
           if (backCamera) {
             selectedCameraIdOrConfig = backCamera.id;
           } else {
-            // En laptops/PCs usa la única cámara existente, en smartphones la última suele ser la trasera
-            selectedCameraIdOrConfig =
-              devices.length > 1 ? devices[devices.length - 1].id : devices[0].id;
+            selectedCameraIdOrConfig = devices.length > 1 ? devices[devices.length - 1].id : devices[0].id;
           }
         }
       } catch (camErr) {
         console.warn("No se pudo enumerar cámaras previas, usando configuración por defecto:", camErr);
       }
 
-      try {
-        await html5QrCode.start(
-          selectedCameraIdOrConfig,
-          qrConfig,
-          (decodedText) => handleSuccess(decodedText),
-          () => {
-            // Ignorar frames sin código detectado
+      // Check native BarcodeDetector API for hardware acceleration
+      let useNativeDetector = false;
+      let nativeDetector: any = null;
+      if ("BarcodeDetector" in window) {
+        try {
+          const BarcodeDetectorCls = (window as any).BarcodeDetector;
+          const supportedFormats = await BarcodeDetectorCls.getSupportedFormats();
+          if (supportedFormats.includes("ean_13") || supportedFormats.includes("upc_a")) {
+            useNativeDetector = true;
+            nativeDetector = new BarcodeDetectorCls({
+              formats: ["ean_13", "upc_a", "code_128", "qr_code"]
+            });
           }
-        );
+        } catch (e) {
+          console.warn("BarcodeDetector fallback:", e);
+        }
+      }
+
+      try {
+        if (useNativeDetector && nativeDetector) {
+          // Native detector mode (Html5Qrcode only renders video, we detect in requestAnimationFrame)
+          await html5QrCode.start(
+            selectedCameraIdOrConfig,
+            qrConfig,
+            () => {}, // Empty callback since we scan natively
+            () => {}
+          );
+          
+          const videoEl = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
+          let active = true;
+          
+          const scanNative = async () => {
+            if (!active || !videoEl || hasDetectedRef.current) return;
+            try {
+              if (videoEl.readyState >= 2) {
+                const barcodes = await nativeDetector.detect(videoEl);
+                if (barcodes.length > 0) {
+                  const barcode = barcodes[0].rawValue;
+                  active = false;
+                  handleSuccess(barcode);
+                  return;
+                }
+              }
+            } catch (err) {}
+            requestAnimationFrame(scanNative);
+          };
+          
+          // Start native scanning loop
+          requestAnimationFrame(scanNative);
+          
+          // Cleanup when unmounting or stopping
+          scannerRef.current.stop = async () => {
+            active = false;
+            await html5QrCode.stop();
+          };
+        } else {
+          // Fallback to Html5Qrcode software decoding with strict optimizations
+          await html5QrCode.start(
+            selectedCameraIdOrConfig,
+            qrConfig,
+            (decodedText) => handleSuccess(decodedText),
+            () => {}
+          );
+        }
       } catch (startErr) {
         console.warn("Fallo con cámara específica, reintentando con facingMode environment:", startErr);
         await html5QrCode.start(
@@ -247,7 +307,7 @@ export function BarcodeScannerModal({
       <div className="relative flex-1 w-full bg-black flex items-center justify-center overflow-hidden">
         <div
           id={containerId}
-          className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0"
+          className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0 [&_#qr-shaded-region]:!hidden [&_div[style*='border']]:!border-none"
         />
 
         {/* Mira de Escaneo Minimalista Estilo Apple / POS (Esquinas Blancas Limpias + Láser Sutil) */}

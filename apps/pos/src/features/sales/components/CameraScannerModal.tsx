@@ -150,7 +150,14 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
       };
 
       const qrConfig = {
-        fps: 15,
+        fps: 10,
+        qrbox: { width: 250, height: 150 },
+        formatsToSupport: [
+          0, // QR_CODE
+          8, // EAN_13
+          14, // UPC_A
+          3, // CODE_128
+        ],
         videoConstraints: {
           facingMode: { ideal: "environment" },
           width: { ideal: 1280 },
@@ -164,7 +171,6 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
         let selectedCameraIdOrConfig: any = { facingMode: "environment" };
 
         if (devices && devices.length > 0) {
-          // Buscar explícitamente una cámara trasera ("back", "rear", "environment", "trasera", "posterior")
           const backCamera = devices.find(device => {
             const label = device.label.toLowerCase();
             return (
@@ -179,18 +185,66 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
           if (backCamera) {
             selectedCameraIdOrConfig = backCamera.id;
           } else {
-            // Si hay varias cámaras y no tienen etiquetas descriptivas aún (previo a permisos),
-            // en móviles la última cámara de la lista suele ser la trasera principal
             selectedCameraIdOrConfig = devices.length > 1 ? devices[devices.length - 1].id : { facingMode: "environment" };
           }
         }
 
-        await html5Qrcode.start(
-          selectedCameraIdOrConfig,
-          qrConfig,
-          handleDecodedText,
-          () => {}
-        );
+        let useNativeDetector = false;
+        let nativeDetector: any = null;
+        if ("BarcodeDetector" in window) {
+          try {
+            const BarcodeDetectorCls = (window as any).BarcodeDetector;
+            const supportedFormats = await BarcodeDetectorCls.getSupportedFormats();
+            if (supportedFormats.includes("ean_13") || supportedFormats.includes("upc_a")) {
+              useNativeDetector = true;
+              nativeDetector = new BarcodeDetectorCls({
+                formats: ["ean_13", "upc_a", "code_128", "qr_code"]
+              });
+            }
+          } catch (e) {
+            console.warn("BarcodeDetector fallback:", e);
+          }
+        }
+
+        if (useNativeDetector && nativeDetector) {
+          await html5Qrcode.start(
+            selectedCameraIdOrConfig,
+            qrConfig,
+            () => {},
+            () => {}
+          );
+          
+          const videoEl = document.querySelector("#qr-reader video") as HTMLVideoElement;
+          let active = true;
+          
+          const scanNative = async () => {
+            if (!active || !videoEl) return;
+            try {
+              if (videoEl.readyState >= 2) {
+                const barcodes = await nativeDetector.detect(videoEl);
+                if (barcodes.length > 0) {
+                  const barcode = barcodes[0].rawValue;
+                  handleDecodedText(barcode);
+                }
+              }
+            } catch (err) {}
+            requestAnimationFrame(scanNative);
+          };
+          
+          requestAnimationFrame(scanNative);
+          
+          html5QrcodeRef.current.stop = async () => {
+            active = false;
+            await html5Qrcode.stop();
+          };
+        } else {
+          await html5Qrcode.start(
+            selectedCameraIdOrConfig,
+            qrConfig,
+            handleDecodedText,
+            () => {}
+          );
+        }
       } catch (err) {
         console.warn("Fallo al iniciar con cámara específica, intentando fallback de facingMode:", err);
         try {
@@ -268,7 +322,7 @@ export default function CameraScannerModal({ isOpen, onClose, onAddToCart }: Cam
             {scannerError}
           </div>
         ) : (
-          <div id="qr-reader" className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0" />
+          <div id="qr-reader" className="!w-full !h-full flex items-center justify-center overflow-hidden [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!block !border-none !p-0 [&_#qr-shaded-region]:!hidden [&_div[style*='border']]:!border-none" />
         )}
 
         {/* Minimalist targeting square frame (aligned to exactly 260px) */}
