@@ -277,7 +277,7 @@ export default function PricingSection() {
             </div>
           </div>
           <span className="text-[11px] text-neutral-500 font-mono mt-3">
-            Precios en MXN netos (IVA incluido). Cancela en cualquier momento.
+            Precios finales en MXN (IVA incluido). Cancela en cualquier momento.
           </span>
         </div>
 

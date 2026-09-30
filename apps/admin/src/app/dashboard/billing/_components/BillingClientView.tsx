@@ -349,7 +349,7 @@ export function BillingClientView({
               </button>
             </div>
             <span className="text-xs text-gray-400 mt-2">
-              Precios netos en MXN con IVA (16%) incluido. Sin cargos ocultos.
+              Precios finales en MXN con IVA (16%) incluido. Sin cargos ocultos.
             </span>
           </div>
 
