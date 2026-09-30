@@ -4,7 +4,7 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { upsertProduct } from "../actions";
-import { ScanBarcode, Camera, Check } from "lucide-react";
+import { ScanBarcode, Camera, Check, Loader2, Sparkles } from "lucide-react";
 
 // Lazy-load del modal del escáner: solo se descarga el bundle de la cámara cuando el usuario hace clic
 const BarcodeScannerModal = dynamic(
@@ -38,6 +38,8 @@ export function ProductForm({ initialData }: ProductFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [parentSku, setParentSku] = useState(initialData?.codigo_interno || "");
+  const [productName, setProductName] = useState(initialData?.nombre || "");
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const [scannedFeedback, setScannedFeedback] = useState<string | null>(null);
   const [scannerTarget, setScannerTarget] = useState<
     "parent" | { variantIndex: number } | null
@@ -133,14 +135,29 @@ export function ProductForm({ initialData }: ProductFormProps) {
         </div>
 
         <div className="space-y-2 sm:col-span-2">
-          <label className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
-            Nombre del Producto <span className="text-red-500">*</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium leading-none text-gray-700 dark:text-gray-300">
+              Nombre del Producto <span className="text-red-500">*</span>
+            </label>
+            {isLookingUp && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-medium animate-pulse">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Buscando producto...
+              </span>
+            )}
+            {scannedFeedback === "autofilled" && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 animate-in fade-in duration-200">
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                ¡Nombre autocompletado!
+              </span>
+            )}
+          </div>
           <input
             name="nombre"
             type="text"
             required
-            defaultValue={initialData?.nombre}
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
             className="flex h-10 w-full rounded-md border border-gray-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
             placeholder="Galletas de Chocolate"
           />
@@ -312,11 +329,52 @@ export function ProductForm({ initialData }: ProductFormProps) {
         <BarcodeScannerModal
           isOpen={true}
           onClose={() => setScannerTarget(null)}
-          onScan={(barcode) => {
+          onScan={async (barcode) => {
             if (scannerTarget === "parent") {
               setParentSku(barcode);
               setScannedFeedback("parent");
-              setTimeout(() => setScannedFeedback(null), 3000);
+              setTimeout(() => setScannedFeedback((prev) => (prev === "parent" ? null : prev)), 3000);
+
+              // Si el nombre aún no está definido, intentar autocompletar en cascada
+              if (!productName.trim()) {
+                setIsLookingUp(true);
+                try {
+                  const apis = [
+                    "https://world.openfoodfacts.org",
+                    "https://world.openbeautyfacts.org",
+                    "https://world.openproductsfacts.org"
+                  ];
+
+                  let detectedName = null;
+
+                  for (const baseUrl of apis) {
+                    const res = await fetch(
+                      `${baseUrl}/api/v2/product/${encodeURIComponent(barcode)}?fields=product_name,product_name_es`,
+                      { headers: { Accept: "application/json" } }
+                    );
+                    
+                    if (res.ok) {
+                      const data = await res.json();
+                      const name = data?.product?.product_name_es || data?.product?.product_name;
+                      if (name && typeof name === "string" && name.trim()) {
+                        detectedName = name.trim();
+                        break; // Se encontró el producto, detenemos la cascada
+                      }
+                    }
+                  }
+
+                  if (detectedName) {
+                    setProductName(detectedName);
+                    setScannedFeedback("autofilled");
+                    setTimeout(() => setScannedFeedback((prev) => (prev === "autofilled" ? null : prev)), 4000);
+                  }
+                } catch (e) {
+                  // Silencioso: si falla la red o no hay internet, el usuario simplemente escribe el nombre
+                  console.warn("No se pudo autocompletar el producto desde las APIs públicas:", e);
+                } finally {
+                  setIsLookingUp(false);
+                }
+              }
             } else if (scannerTarget && typeof scannerTarget === "object") {
               updateVariant(scannerTarget.variantIndex, "codigo_interno", barcode);
               setScannedFeedback(`variant-${scannerTarget.variantIndex}`);
