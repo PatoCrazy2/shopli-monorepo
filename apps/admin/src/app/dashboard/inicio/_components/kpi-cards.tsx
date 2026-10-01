@@ -32,14 +32,30 @@ export async function KPICards() {
             </div>
           </div>
 
-          {/* Widget de Calendario vertical, mes sutil y número protagónico */}
-          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-2xl w-16 md:w-20 self-stretch py-2 px-1 backdrop-blur-sm shadow-xs shrink-0">
-            <span className="text-[9px] md:text-[10px] font-light tracking-[0.25em] text-zinc-400 uppercase leading-none">
-              {currentMonth}
-            </span>
-            <span className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-none mt-1.5">
-              {currentDay}
-            </span>
+          {/* Widget de Calendario físico con hojas apiladas y espiral delgada */}
+          <div className="relative w-16 md:w-20 self-stretch shrink-0 mt-1 mb-1">
+            {/* Hoja 3 (trasera) */}
+            <div className="absolute inset-0 translate-y-2 scale-[0.90] bg-white/[0.03] border border-white/5 rounded-2xl pointer-events-none" />
+            {/* Hoja 2 (intermedia) */}
+            <div className="absolute inset-0 translate-y-1 scale-[0.95] bg-white/[0.06] border border-white/10 rounded-2xl pointer-events-none" />
+
+            {/* Hoja principal frontal */}
+            <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-900/90 border border-white/15 rounded-2xl py-2 px-1 backdrop-blur-sm shadow-sm">
+              {/* Espiral delgada (alambres metálicos) */}
+              <div className="absolute -top-1.5 inset-x-0 flex justify-center gap-1.5 md:gap-2 pointer-events-none z-10">
+                <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
+                <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
+                <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
+                <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
+              </div>
+
+              <span className="text-[9px] md:text-[10px] font-light tracking-[0.25em] text-zinc-400 uppercase leading-none mt-1">
+                {currentMonth}
+              </span>
+              <span className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-none mt-1.5">
+                {currentDay}
+              </span>
+            </div>
           </div>
         </div>
       </div>
