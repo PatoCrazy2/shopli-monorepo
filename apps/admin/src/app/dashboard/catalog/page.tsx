@@ -6,7 +6,7 @@ import { CatalogFilterTabs } from "./_components/CatalogFilterTabs";
 import { CatalogSearchBar } from "./_components/CatalogSearchBar";
 import { ToggleProductButton } from "./_components/ToggleProductButton";
 import { auth } from "@/lib/auth";
-import { Plus, SearchX, PackageX, PackagePlus, Edit2 } from "lucide-react";
+import { Plus, SearchX, PackageX, PackagePlus, Edit2, Power } from "lucide-react";
 
 // RSC
 export default async function CatalogPage({
@@ -158,84 +158,72 @@ export default async function CatalogPage({
         </div>
       ) : (
         <>
-          {/* Vista Móvil: Lista de Tarjetas (Estilo Cortes) */}
-          <div className="flex flex-col gap-4 md:hidden">
+          {/* Vista Móvil: Filas Ultra-Compactas (Máxima Densidad, Sin Negro) */}
+          <div className="flex flex-col gap-2 md:hidden">
             {products.map((product) => {
               const isActive = (product as any).isActive as boolean;
 
               return (
                 <div
                   key={product.id}
-                  className="group bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700 relative overflow-hidden"
+                  className={`bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-xl p-3 shadow-2xs transition-all ${
+                    !isActive ? "opacity-60 bg-zinc-50/50" : ""
+                  }`}
                 >
-                  {/* Header de Tarjeta: Barra Negra Completa */}
-                  <div className="bg-zinc-950 dark:bg-zinc-900 text-white px-4 py-2.5 flex items-center justify-between gap-3 border-b border-zinc-900 dark:border-zinc-800">
-                    <h3 className="font-bold text-sm tracking-tight truncate">
-                      {product.nombre}
-                    </h3>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium shrink-0">
+                  {/* Fila 1: Nombre con Dot de Estado y Precio */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${
-                          isActive ? "bg-emerald-400" : "bg-zinc-500"
+                          isActive ? "bg-emerald-500" : "bg-zinc-400"
                         }`}
+                        title={isActive ? "Activo" : "Inactivo"}
                       />
-                      <span className={isActive ? "text-zinc-300" : "text-zinc-500"}>
-                        {isActive ? "Activo" : "Inactivo"}
-                      </span>
+                      <h3 className="font-bold text-sm text-zinc-900 dark:text-white truncate">
+                        {product.nombre}
+                      </h3>
+                    </div>
+
+                    <span className="font-mono font-bold text-sm text-zinc-900 dark:text-zinc-100 shrink-0">
+                      ${Number(product.precio_publico).toFixed(2)}
                     </span>
                   </div>
 
-                  {/* Cuerpo de la Tarjeta */}
-                  <div className="p-4 space-y-3">
-                    {/* Metadata Secundaria: SKU */}
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                      <span>SKU:</span>
-                      <span className="font-mono font-medium text-zinc-800 dark:text-zinc-200">
-                        {product.codigo_interno || "—"}
+                  {/* Fila 2: SKU · Costo a la izquierda y Acciones compactas a la derecha */}
+                  <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-900">
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 truncate">
+                      <span>SKU: {product.codigo_interno || "—"}</span>
+                      <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                      <span>
+                        Costo:{" "}
+                        <strong className="font-medium text-zinc-700 dark:text-zinc-300">
+                          ${Number(product.costo).toFixed(2)}
+                        </strong>
                       </span>
                     </div>
 
-                    {/* Grid Financiero: Precio y Costo */}
-                    <div className="grid grid-cols-2 gap-2 bg-zinc-50/70 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-900/60 p-2.5 text-center">
-                      <div className="flex flex-col items-center">
-                        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-                          Precio
-                        </span>
-                        <span className="text-base font-bold font-mono tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
-                          ${Number(product.precio_publico).toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-                          Costo
-                        </span>
-                        <span className="text-base font-medium font-mono tracking-tight text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          ${Number(product.costo).toFixed(2)}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Link
+                        href={`/dashboard/catalog/${product.id}`}
+                        className="inline-flex items-center justify-center h-7 w-7 rounded-lg text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                        title="Editar producto"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Link>
+
+                      <ToggleProductButton
+                        productId={product.id}
+                        productName={product.nombre}
+                        isActive={isActive}
+                        className={`inline-flex items-center justify-center h-7 w-7 rounded-lg transition-colors ${
+                          isActive
+                            ? "bg-zinc-100 text-zinc-600 hover:bg-red-50 hover:text-red-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                            : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
+                        }`}
+                      >
+                        <Power className="w-3.5 h-3.5" />
+                      </ToggleProductButton>
                     </div>
-                  </div>
-
-                  {/* Footer de Tarjeta: Franja de Borde a Borde con Fondo Gris */}
-                  <div className="bg-zinc-100/90 dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 p-2 flex items-center gap-2">
-                    <Link
-                      href={`/dashboard/catalog/${product.id}`}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 h-8.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700/80 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors shadow-2xs"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      <span>Editar</span>
-                    </Link>
-
-                    <ToggleProductButton
-                      productId={product.id}
-                      productName={product.nombre}
-                      isActive={isActive}
-                      className={`flex-1 inline-flex items-center justify-center h-8.5 rounded-lg text-xs font-bold transition-all shadow-2xs ${
-                        isActive
-                          ? "bg-white text-zinc-700 hover:bg-red-50 hover:text-red-600 border border-zinc-200 dark:border-zinc-700/80 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-red-950/40 dark:hover:text-red-400"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                      }`}
-                    />
                   </div>
                 </div>
               );

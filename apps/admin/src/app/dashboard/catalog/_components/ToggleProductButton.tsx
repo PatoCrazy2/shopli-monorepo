@@ -9,6 +9,7 @@ interface ToggleProductButtonProps {
   productName: string;
   isActive: boolean;
   className?: string;
+  children?: React.ReactNode;
 }
 
 export function ToggleProductButton({
@@ -16,6 +17,7 @@ export function ToggleProductButton({
   productName,
   isActive,
   className,
+  children,
 }: ToggleProductButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -65,7 +67,7 @@ export function ToggleProductButton({
           }`
         }
       >
-        {isActive ? "Desactivar" : "Reactivar"}
+        {children || (isActive ? "Desactivar" : "Reactivar")}
       </button>
 
       {/* Modal de Confirmación Estilo Apple */}
