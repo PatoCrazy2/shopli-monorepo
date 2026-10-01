@@ -6,6 +6,7 @@ import { getSucursales } from "../branches/queries";
 import Link from "next/link";
 import CutsAutoRefresh from "./CutsAutoRefresh";
 import ForceCloseButton from "./ForceCloseButton";
+import CutsFilters from "./CutsFilters";
 
 export default async function CutsPage({
   searchParams,
@@ -36,56 +37,21 @@ export default async function CutsPage({
     <div className="space-y-8 max-w-7xl mx-auto pb-20">
       <CutsAutoRefresh />
       {/* Header & Filters */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Cortes de Caja</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+      <div className="flex flex-row items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-0.5">
+          <h1 className="text-xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
+            Cortes de Caja
+          </h1>
+          <p className="hidden md:block text-zinc-500 dark:text-zinc-400 text-sm font-medium">
             Auditoría de ingresos y conciliación de inventario.
           </p>
         </div>
 
-        <form method="GET" className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Sucursal</label>
-            <select
-              name="sucursal"
-              defaultValue={sucursalId || ""}
-              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all appearance-none pr-10 relative min-w-[180px]"
-              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
-            >
-              <option value="">Todas las sucursales</option>
-              {sucursales.map(s => (
-                <option key={s.id} value={s.id}>{s.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Fecha de Apertura</label>
-            <input
-              type="date"
-              name="date"
-              defaultValue={date || ""}
-              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="h-11 mt-auto px-6 bg-black text-white rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg active:scale-95"
-          >
-            Filtrar
-          </button>
-
-          {(sucursalId || date) && (
-            <Link
-              href="/dashboard/cuts"
-              className="h-11 mt-auto px-4 flex items-center justify-center bg-zinc-100 text-zinc-600 rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all"
-            >
-              Limpiar
-            </Link>
-          )}
-        </form>
+        <CutsFilters
+          sucursales={sucursales}
+          currentSucursal={sucursalId}
+          currentDate={date}
+        />
       </div>
 
       <div className="flex flex-col gap-6">
