@@ -15,7 +15,7 @@ export function KPISkeleton() {
             <div className="h-12 w-48 md:h-16 md:w-64 animate-pulse rounded-md bg-zinc-800 mt-2 md:mt-3" />
           </div>
           {/* Widget de Calendario Skeleton */}
-          <div className="w-16 md:w-20 animate-pulse rounded-2xl bg-zinc-800 shrink-0" />
+          <div className="w-16 md:w-20 animate-pulse rounded-2xl bg-zinc-800 shrink-0 mt-1" />
         </div>
       </div>
 
