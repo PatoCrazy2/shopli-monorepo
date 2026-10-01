@@ -19,6 +19,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791?style=flat-square&logo=postgresql&logoColor=white)](https://neon.tech/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-Monorepo-EF4444?style=flat-square&logo=turborepo&logoColor=white)](https://turbo.build/)
+[![Vitest](https://img.shields.io/badge/Vitest-Test_Runner-6E9F18?style=flat-square&logo=vitest&logoColor=white)](https://vitest.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Offline--First-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
 [![CI Suite](https://img.shields.io/github/actions/workflow/status/PatoCrazy2/shopli-monorepo/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/PatoCrazy2/shopli-monorepo/actions)
 
@@ -369,7 +370,7 @@ ShopLI uses a strict GitHub Actions pipeline ([`.github/workflows/ci.yml`](.gith
 3. **Admin Test Execution (Vitest):** Runs the comprehensive admin test suite validating Stripe checkout/webhooks, subscription plan gates, branch/product limits, security policies, and 402 HTTP locks.
 4. **Ephemeral PostgreSQL Service:** Provisions an isolated `postgres:16-alpine` instance with healthchecks and runs Prisma migrations (`prisma db push`).
 5. **Deterministic Server Bootstrap & Healthcheck:** Launches the Next.js API in the background (`NODE_ENV: test`) and polls the OPTIONS sync endpoint before running POS tests.
-6. **POS Full Test Execution:** Runs all edge unit suites (financial calculations, inventory audit discrepancy formulas, asynchronous 72h reconciliation, and offline auth) along with end-to-end sync integration tests.
+6. **POS Full Test Execution (Incremental Bottom-Up & Test Drivers):** The verification architecture strictly follows an **Incremental Bottom-Up Integration Strategy**. It first validates foundational business logic and pure math at the unit level (financial rounding invariants, wholesale pricing formulas, Bcrypt offline hashes). Then, instead of mock-heavy superficial passes, automated **Test Drivers** (`push.test.ts` and `pull.test.ts` using `fake-indexeddb` and the deterministic `curl` bootstrap loop) programmatically drive end-to-end payload transmissions against the live Next.js background server and PostgreSQL container before PR approval.
 7. **Required Branch Checks:** Direct pushes to `main` are guarded; PRs require the `Build, Lint & Test` status check to pass before merging.
 
 ---
