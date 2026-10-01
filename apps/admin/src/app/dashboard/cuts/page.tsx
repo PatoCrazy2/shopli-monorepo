@@ -83,15 +83,13 @@ export default async function CutsPage({
             return (
               <div
                 key={turno.id}
-                className="group bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700 relative overflow-hidden"
+                className="group bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700 relative overflow-hidden"
               >
-                {/* 1. Fila Superior: Nombre del Cajero con fondo negro distintivo + Estado a la derecha */}
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <div className="inline-flex items-center px-3 py-1 rounded-xl bg-zinc-950 dark:bg-zinc-800 text-white shadow-xs">
-                    <h3 className="font-bold text-sm sm:text-base tracking-tight truncate">
-                      {turno.usuario.name || "Cajero Desconocido"}
-                    </h3>
-                  </div>
+                {/* 1. Header de Tarjeta: Barra Negra Completa de Borde a Borde */}
+                <div className="bg-zinc-950 dark:bg-zinc-900 text-white px-4 sm:px-5 py-2.5 flex items-center justify-between gap-3 border-b border-zinc-900 dark:border-zinc-800">
+                  <h3 className="font-bold text-sm sm:text-base tracking-tight truncate">
+                    {turno.usuario.name || "Cajero Desconocido"}
+                  </h3>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {!isClosed &&
@@ -102,17 +100,17 @@ export default async function CutsPage({
                       <span
                         className={`w-2 h-2 rounded-full shrink-0 ${
                           !isClosed
-                            ? "bg-amber-500 animate-pulse"
+                            ? "bg-amber-400 animate-pulse"
                             : isBalanced
-                            ? "bg-emerald-500"
-                            : "bg-rose-500"
+                            ? "bg-emerald-400"
+                            : "bg-rose-400"
                         }`}
                       />
                       <span
                         className={
                           !isClosed
-                            ? "text-amber-700 dark:text-amber-400 font-semibold"
-                            : "text-zinc-500 dark:text-zinc-400"
+                            ? "text-amber-300 font-semibold"
+                            : "text-zinc-400"
                         }
                       >
                         {turno.estado === "CERRADO" ? "Cerrado" : turno.estado}
@@ -121,24 +119,26 @@ export default async function CutsPage({
                   </div>
                 </div>
 
-                {/* 2. Segunda Fila (Metadata Secundaria): Sucursal · Fecha · Fondo */}
-                <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-3.5 flex-wrap">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {turno.sucursal.nombre}
-                  </span>
-                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                  <span suppressHydrationWarning>
-                    {formatDate(turno.fecha_apertura)}
-                    {turno.fecha_cierre && ` → ${formatDate(turno.fecha_cierre)}`}
-                  </span>
-                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
-                  <span>
-                    Fondo:{" "}
-                    <strong className="font-mono text-zinc-700 dark:text-zinc-300">
-                      ${Number(turno.monto_inicial).toFixed(2)}
-                    </strong>
-                  </span>
-                </div>
+                {/* Contenido interior de la Tarjeta */}
+                <div className="p-4 sm:p-5">
+                  {/* 2. Metadata Secundaria: Sucursal · Fecha · Fondo */}
+                  <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-3.5 flex-wrap">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                      {turno.sucursal.nombre}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                    <span suppressHydrationWarning>
+                      {formatDate(turno.fecha_apertura)}
+                      {turno.fecha_cierre && ` → ${formatDate(turno.fecha_cierre)}`}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                    <span>
+                      Fondo:{" "}
+                      <strong className="font-mono text-zinc-700 dark:text-zinc-300">
+                        ${Number(turno.monto_inicial).toFixed(2)}
+                      </strong>
+                    </span>
+                  </div>
 
                 {/* 3. Resumen Financiero: 3 Columnas perfectamente centradas en móvil */}
                 <div className="grid grid-cols-3 gap-1 sm:gap-4 py-1 text-center sm:text-left">
@@ -224,6 +224,7 @@ export default async function CutsPage({
                     />
                   </div>
                 )}
+                </div>
               </div>
             );
           })
