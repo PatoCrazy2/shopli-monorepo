@@ -6,40 +6,20 @@
 
 export function KPISkeleton() {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-px bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-xs">
-      {/* 1. Ventas Hoy Skeleton */}
-      <div className="col-span-2 md:col-span-1 bg-white dark:bg-zinc-950 p-4 sm:p-5 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2">
-          <div className="h-3 w-20 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-          <div className="h-4 w-4 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-        </div>
-        <div className="mt-2 space-y-1.5">
-          <div className="h-7 w-32 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-          <div className="h-3 w-36 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-        </div>
+    <div className="space-y-6 md:space-y-8 pt-2">
+      <div className="px-1 md:px-2">
+        <div className="h-4 w-24 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+        <div className="h-12 w-48 md:h-16 md:w-64 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800 mt-2" />
       </div>
 
-      {/* 2. Ganancias Skeleton */}
-      <div className="col-span-1 bg-white dark:bg-zinc-950 p-4 sm:p-5 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2">
-          <div className="h-3 w-16 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-          <div className="h-4 w-4 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
+      <div className="grid grid-cols-2 gap-3 md:gap-5">
+        <div className="bg-white dark:bg-zinc-950 rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xs border border-zinc-100 dark:border-zinc-800/80 h-24 md:h-32 flex flex-col justify-center">
+          <div className="h-3 w-20 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-800 mb-2" />
+          <div className="h-6 w-24 md:h-8 md:w-32 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-800" />
         </div>
-        <div className="mt-2 space-y-1.5">
-          <div className="h-6 w-24 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-          <div className="h-3 w-28 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-        </div>
-      </div>
-
-      {/* 3. Tickets Skeleton */}
-      <div className="col-span-1 bg-white dark:bg-zinc-950 p-4 sm:p-5 flex flex-col justify-between">
-        <div className="flex items-center justify-between pb-2">
-          <div className="h-3 w-14 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-          <div className="h-4 w-4 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-        </div>
-        <div className="mt-2 space-y-1.5">
-          <div className="h-6 w-16 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
-          <div className="h-3 w-24 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-900" />
+        <div className="bg-white dark:bg-zinc-950 rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-xs border border-zinc-100 dark:border-zinc-800/80 h-24 md:h-32 flex flex-col justify-center">
+          <div className="h-3 w-20 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-800 mb-2" />
+          <div className="h-6 w-16 md:h-8 md:w-20 animate-pulse rounded-md bg-zinc-100 dark:bg-zinc-800" />
         </div>
       </div>
     </div>
