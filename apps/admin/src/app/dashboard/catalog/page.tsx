@@ -6,7 +6,7 @@ import { CatalogFilterTabs } from "./_components/CatalogFilterTabs";
 import { CatalogSearchBar } from "./_components/CatalogSearchBar";
 import { ToggleProductButton } from "./_components/ToggleProductButton";
 import { auth } from "@/lib/auth";
-import { Plus, SearchX, PackageX, PackagePlus, Edit2, Power } from "lucide-react";
+import { Plus, SearchX, PackageX, PackagePlus, Edit2, Trash2 } from "lucide-react";
 
 // RSC
 export default async function CatalogPage({
@@ -159,30 +159,22 @@ export default async function CatalogPage({
       ) : (
         <>
           {/* Vista Móvil: Filas Ultra-Compactas (Máxima Densidad, Sin Negro) */}
-          <div className="flex flex-col gap-2 md:hidden">
+          <div className="flex flex-col gap-2.5 md:hidden">
             {products.map((product) => {
               const isActive = (product as any).isActive as boolean;
 
               return (
                 <div
                   key={product.id}
-                  className={`bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-xl p-3 shadow-2xs transition-all ${
+                  className={`bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3.5 shadow-sm transition-all ${
                     !isActive ? "opacity-60 bg-zinc-50/50" : ""
                   }`}
                 >
-                  {/* Fila 1: Nombre con Dot de Estado y Precio */}
+                  {/* Fila 1: Nombre y Precio */}
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          isActive ? "bg-emerald-500" : "bg-zinc-400"
-                        }`}
-                        title={isActive ? "Activo" : "Inactivo"}
-                      />
-                      <h3 className="font-bold text-sm text-zinc-900 dark:text-white truncate">
-                        {product.nombre}
-                      </h3>
-                    </div>
+                    <h3 className="font-bold text-sm tracking-tight text-zinc-900 dark:text-white truncate">
+                      {product.nombre}
+                    </h3>
 
                     <span className="font-mono font-bold text-sm text-zinc-900 dark:text-zinc-100 shrink-0">
                       ${Number(product.precio_publico).toFixed(2)}
@@ -190,13 +182,13 @@ export default async function CatalogPage({
                   </div>
 
                   {/* Fila 2: SKU · Costo a la izquierda y Acciones compactas a la derecha */}
-                  <div className="flex items-center justify-between gap-2 mt-1.5 pt-1.5 border-t border-zinc-100 dark:border-zinc-900">
-                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 truncate">
+                  <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-900">
+                    <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 dark:text-zinc-400 truncate">
                       <span>SKU: {product.codigo_interno || "—"}</span>
                       <span className="text-zinc-300 dark:text-zinc-700">·</span>
                       <span>
                         Costo:{" "}
-                        <strong className="font-medium text-zinc-700 dark:text-zinc-300">
+                        <strong className="font-semibold text-zinc-700 dark:text-zinc-300">
                           ${Number(product.costo).toFixed(2)}
                         </strong>
                       </span>
@@ -221,7 +213,7 @@ export default async function CatalogPage({
                             : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400"
                         }`}
                       >
-                        <Power className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </ToggleProductButton>
                     </div>
                   </div>
