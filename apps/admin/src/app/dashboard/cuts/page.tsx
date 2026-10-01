@@ -211,10 +211,10 @@ export default async function CutsPage({
                 </div>
                 </div>
 
-                {/* Footer de Tarjeta: Franja de Borde a Borde con Fondo Gris Tenue */}
+                {/* Footer de Tarjeta: Franja de Borde a Borde con Fondo Gris Visible */}
                 {(((turno as any).gastos && (turno as any).gastos.length > 0) ||
                   (turno.auditorias && turno.auditorias.length > 0)) && (
-                  <div className="bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-100 dark:border-zinc-800/80 px-4 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="bg-zinc-100/90 dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 px-4 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-3">
                     <ExpensesDetailsDrawer
                       gastos={(turno as any).gastos || []}
                       totalGastos={totalGastos}

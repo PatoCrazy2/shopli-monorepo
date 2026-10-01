@@ -58,7 +58,7 @@ export default function CutsLoading() {
             </div>
 
             {/* Footer Franja Gris Sincronizada */}
-            <div className="bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-100 dark:border-zinc-800/80 px-4 sm:px-5 py-2.5 flex items-center justify-between">
+            <div className="bg-zinc-100/90 dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 px-4 sm:px-5 py-2.5 flex items-center justify-between">
               <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
               <div className="h-4 w-36 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
             </div>
