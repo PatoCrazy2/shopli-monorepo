@@ -32,15 +32,15 @@ export async function KPICards() {
             </div>
           </div>
 
-          {/* Widget de Calendario físico con hojas apiladas */}
-          <div className="relative w-16 h-20 md:w-20 md:h-24 self-center shrink-0 mb-1">
+          {/* Widget de Calendario físico con hojas apiladas (Formato Cuadrado) */}
+          <div className="relative w-18 h-18 md:w-22 md:h-22 self-center shrink-0 mb-1">
             {/* Hoja 3 (trasera) */}
-            <div className="absolute inset-0 translate-y-2.5 scale-[0.88] bg-white/[0.04] border border-white/10 rounded-2xl pointer-events-none" />
+            <div className="absolute inset-0 translate-y-2 scale-[0.90] bg-white/[0.04] border border-white/10 rounded-2xl pointer-events-none" />
             {/* Hoja 2 (intermedia) */}
-            <div className="absolute inset-0 translate-y-1.5 scale-[0.94] bg-white/[0.08] border border-white/15 rounded-2xl pointer-events-none" />
+            <div className="absolute inset-0 translate-y-1 scale-[0.95] bg-white/[0.08] border border-white/15 rounded-2xl pointer-events-none" />
 
-            {/* Hoja principal frontal - sólida sin backdrop-filter para evitar desfasamiento en scroll */}
-            <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-900 border border-white/20 rounded-2xl py-2 px-1 shadow-lg">
+            {/* Hoja principal frontal */}
+            <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-900 border border-white/20 rounded-2xl p-2 shadow-lg">
               {/* Espiral delgada (alambres metálicos) */}
               <div className="absolute -top-1.5 inset-x-0 flex justify-center gap-1.5 md:gap-2 pointer-events-none z-10">
                 <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
@@ -49,10 +49,10 @@ export async function KPICards() {
                 <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
               </div>
 
-              <span className="text-[9px] md:text-[10px] font-light tracking-[0.25em] text-zinc-400 uppercase leading-none mt-1">
+              <span className="text-[9px] md:text-[10px] font-light tracking-[0.25em] text-zinc-400 uppercase leading-none">
                 {currentMonth}
               </span>
-              <span className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-none mt-1.5">
+              <span className="text-2xl md:text-3xl font-bold tracking-tight text-white leading-none mt-1">
                 {currentDay}
               </span>
             </div>
