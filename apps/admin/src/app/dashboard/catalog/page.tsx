@@ -69,34 +69,34 @@ export default async function CatalogPage({
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header Estilo Apple con Acciones Responsivas */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:shadow-md">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
+      {/* Header Compacto (Estilo Cortes) con Acciones Responsivas */}
+      <div className="flex flex-row items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
               Catálogo
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-              {activeCount} activos
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+              {activeCount}
             </span>
           </div>
-          <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
+          <p className="hidden md:block text-zinc-500 dark:text-zinc-400 text-sm font-medium">
             Gestiona los productos e inventario global del sistema.
           </p>
         </div>
 
         {/* Acciones Responsivas */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <PrintCatalogButton />
           <ImportCatalogModal />
 
           <Link
             href="/dashboard/catalog/new"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-black px-4 sm:px-6 text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-lg active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200 gap-2 shrink-0"
+            className="inline-flex h-9 sm:h-11 items-center justify-center rounded-xl bg-black px-3 sm:px-6 text-xs sm:text-sm font-bold text-white transition-all hover:bg-zinc-800 shadow-sm active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200 gap-1.5 sm:gap-2 shrink-0"
           >
             <Plus className="h-4 w-4 shrink-0" />
-            <span className="hidden xs:inline">Nuevo Producto</span>
-            <span className="xs:hidden">Nuevo</span>
+            <span className="hidden sm:inline">Nuevo Producto</span>
+            <span className="sm:hidden">Nuevo</span>
           </Link>
         </div>
       </div>
