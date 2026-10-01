@@ -1,21 +1,21 @@
 export default function CatalogLoading() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20 animate-pulse">
-      {/* 1. Header con Acciones Sincronizado */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-36 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
-            <div className="h-5 w-20 bg-zinc-100 dark:bg-zinc-800 rounded-full" />
+      {/* 1. Header Compacto (Estilo Cortes) con Acciones Sincronizado */}
+      <div className="flex flex-row items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 md:h-9 w-28 md:w-36 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+            <div className="h-4.5 w-10 bg-zinc-100 dark:bg-zinc-800 rounded-full" />
           </div>
-          <div className="h-4 w-64 bg-zinc-100 dark:bg-zinc-850 rounded-lg" />
+          <div className="hidden md:block h-4 w-64 bg-zinc-100 dark:bg-zinc-850 rounded-lg" />
         </div>
 
         {/* Acciones Responsivas Sincronizadas */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
-          <div className="h-11 w-32 sm:w-36 bg-zinc-100 dark:bg-zinc-800 rounded-xl" />
-          <div className="h-11 w-28 sm:w-32 bg-zinc-100 dark:bg-zinc-800 rounded-xl" />
-          <div className="h-11 w-28 sm:w-36 bg-zinc-900 dark:bg-zinc-700 rounded-xl" />
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="h-9 sm:h-11 w-9 sm:w-36 bg-zinc-100 dark:bg-zinc-800 rounded-xl" />
+          <div className="h-9 sm:h-11 w-9 sm:w-28 bg-zinc-100 dark:bg-zinc-800 rounded-xl" />
+          <div className="h-9 sm:h-11 w-16 sm:w-36 bg-zinc-900 dark:bg-zinc-700 rounded-xl" />
         </div>
       </div>
 
@@ -25,38 +25,26 @@ export default function CatalogLoading() {
         <div className="h-10 w-full sm:w-64 bg-zinc-100 dark:bg-zinc-900 rounded-xl" />
       </div>
 
-      {/* 3. Vista Móvil: Lista de Tarjetas Sincronizadas (Estilo Cortes) */}
-      <div className="flex flex-col gap-4 md:hidden">
-        {[1, 2, 3, 4].map((i) => (
+      {/* 3. Vista Móvil: Filas Ultra-Compactas Sincronizadas (~60px) */}
+      <div className="flex flex-col gap-2.5 md:hidden">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-xs overflow-hidden"
+            className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3.5 shadow-sm space-y-2"
           >
-            {/* Header: Barra negra */}
-            <div className="bg-zinc-950 dark:bg-zinc-900 px-4 py-2.5 flex items-center justify-between gap-3 border-b border-zinc-900 dark:border-zinc-800">
-              <div className="h-5 w-36 bg-zinc-800 dark:bg-zinc-700 rounded-md" />
-              <div className="h-4 w-14 bg-zinc-800 dark:bg-zinc-700 rounded-md" />
+            {/* Fila 1: Nombre y Precio */}
+            <div className="flex items-center justify-between gap-3">
+              <div className="h-4 w-36 bg-zinc-200 dark:bg-zinc-800 rounded-sm" />
+              <div className="h-4 w-14 bg-zinc-200 dark:bg-zinc-800 rounded-sm" />
             </div>
 
-            {/* Contenido */}
-            <div className="p-4 space-y-3">
-              <div className="h-3.5 w-28 bg-zinc-100 dark:bg-zinc-850 rounded-sm" />
-              <div className="grid grid-cols-2 gap-2 bg-zinc-50/70 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-900/60 p-2.5">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="h-2.5 w-10 bg-zinc-200 dark:bg-zinc-800 rounded-xs" />
-                  <div className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="h-2.5 w-10 bg-zinc-200 dark:bg-zinc-800 rounded-xs" />
-                  <div className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 rounded-md" />
-                </div>
+            {/* Fila 2: SKU · Costo y Botones de acción */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-900">
+              <div className="h-3 w-40 bg-zinc-100 dark:bg-zinc-850 rounded-xs" />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <div className="h-7 w-7 rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+                <div className="h-7 w-7 rounded-lg bg-zinc-100 dark:bg-zinc-800" />
               </div>
-            </div>
-
-            {/* Footer Franja Gris */}
-            <div className="bg-zinc-100/90 dark:bg-zinc-900 border-t border-zinc-200/80 dark:border-zinc-800 p-2 flex items-center gap-2">
-              <div className="flex-1 h-8.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-              <div className="flex-1 h-8.5 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
             </div>
           </div>
         ))}
