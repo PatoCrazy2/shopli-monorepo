@@ -54,8 +54,11 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
     <>
       {/* Floating Bottom Dock */}
       <nav
-        className={`md:hidden fixed bottom-3 inset-x-3 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-950/10 dark:shadow-black/50 px-2 py-1.5 flex items-center justify-around select-none transition-all duration-300 ease-out ${
-          shouldHide ? "translate-y-28 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
+        style={{
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+        }}
+        className={`md:hidden fixed inset-x-3 z-40 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-950/10 dark:shadow-black/50 px-1.5 py-1 flex items-center justify-around select-none touch-manipulation transition-all duration-300 ease-out ${
+          shouldHide ? "translate-y-36 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
         }`}
         aria-label="Navegación principal móvil"
       >
@@ -63,7 +66,8 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         <Link
           href="/dashboard/catalog"
           onClick={() => handleTabClick("/dashboard/catalog")}
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
+          aria-current={isCatalog ? "page" : undefined}
+          className={`flex-1 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
             isCatalog
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -72,7 +76,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
           <Package className={`w-5 h-5 ${isCatalog ? "stroke-[2.5]" : "stroke-[1.8]"} ${pendingHref === "/dashboard/catalog" ? "animate-pulse text-zinc-900 dark:text-zinc-100" : ""}`} />
           <span className="text-[10px] tracking-tight">Catálogo</span>
           {pendingHref === "/dashboard/catalog" && (
-            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+            <span className="absolute bottom-1 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
           )}
         </Link>
 
@@ -80,7 +84,8 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         <Link
           href="/dashboard/cuts"
           onClick={() => handleTabClick("/dashboard/cuts")}
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
+          aria-current={isCuts ? "page" : undefined}
+          className={`flex-1 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
             isCuts
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -89,7 +94,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
           <Wallet className={`w-5 h-5 ${isCuts ? "stroke-[2.5]" : "stroke-[1.8]"} ${pendingHref === "/dashboard/cuts" ? "animate-pulse text-zinc-900 dark:text-zinc-100" : ""}`} />
           <span className="text-[10px] tracking-tight">Cortes</span>
           {pendingHref === "/dashboard/cuts" && (
-            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+            <span className="absolute bottom-1 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
           )}
         </Link>
 
@@ -97,7 +102,8 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         <Link
           href="/dashboard/inicio"
           onClick={() => handleTabClick("/dashboard/inicio")}
-          className="flex-1 flex flex-col items-center justify-center py-0.5 active:scale-90 transition-transform group relative"
+          aria-current={isHome ? "page" : undefined}
+          className="flex-1 min-h-[48px] flex flex-col items-center justify-center py-0.5 active:scale-90 transition-transform group relative"
           aria-label="Ir a Inicio"
         >
           <div
@@ -127,7 +133,8 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         <Link
           href="/dashboard/analytics"
           onClick={() => handleTabClick("/dashboard/analytics")}
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
+          aria-current={isAnalytics ? "page" : undefined}
+          className={`flex-1 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
             isAnalytics
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -136,7 +143,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
           <BarChart3 className={`w-5 h-5 ${isAnalytics ? "stroke-[2.5]" : "stroke-[1.8]"} ${pendingHref === "/dashboard/analytics" ? "animate-pulse text-zinc-900 dark:text-zinc-100" : ""}`} />
           <span className="text-[10px] tracking-tight">Analítica</span>
           {pendingHref === "/dashboard/analytics" && (
-            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+            <span className="absolute bottom-1 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
           )}
         </Link>
 
@@ -144,7 +151,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         <button
           type="button"
           onClick={() => setIsDrawerOpen(true)}
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
+          className={`flex-1 min-h-[48px] min-w-[48px] flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
             isSecondaryActive || isDrawerOpen
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
