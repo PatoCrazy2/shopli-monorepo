@@ -9,13 +9,13 @@ export const dynamic = "force-dynamic";
 export default function DashboardInicioPage() {
   return (
     <div className="flex-1 space-y-8">
-      {/* Header estático — se renderiza de inmediato, sin esperar datos */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
+      {/* Header con el patrón exacto del dashboard en Desktop, oculto en Mobile */}
+      <div className="hidden md:flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tight text-zinc-900">
+          <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 dark:text-white">
             Resumen de Operaciones
           </h1>
-          <p className="text-zinc-500 font-medium leading-relaxed">
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium leading-relaxed">
             Vista general del rendimiento financiero y transaccional del día.
           </p>
         </div>

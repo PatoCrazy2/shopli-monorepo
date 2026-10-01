@@ -31,15 +31,15 @@ export function useMobileScroll(containerId: string = "dashboard-scroll-containe
 
       // Si estamos en los primeros 25px de la página, siempre mostrar las barras
       if (currentScrollY <= 25) {
-        setIsHidden(false);
+        setIsHidden((prev) => (prev ? false : prev));
       }
       // Scroll hacia abajo significativo (> 12px)
       else if (deltaY > 12) {
-        setIsHidden(true);
+        setIsHidden((prev) => (!prev ? true : prev));
       }
       // Scroll hacia arriba significativo (< -6px)
       else if (deltaY < -6) {
-        setIsHidden(false);
+        setIsHidden((prev) => (prev ? false : prev));
       }
 
       lastScrollY.current = currentScrollY;
