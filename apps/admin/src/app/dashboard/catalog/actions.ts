@@ -465,3 +465,39 @@ export async function importCatalogAction(products: any[]) {
     return { error: "Error crítico durante la importación" };
   }
 }
+
+export async function fetchCatalogForPrintAction() {
+  const session = await auth();
+  if (!session?.user?.empresa_id) {
+    throw new Error("No autorizado");
+  }
+  const empresaId = session.user.empresa_id;
+
+  const products = await db.producto.findMany({
+    where: {
+      empresa_id: empresaId,
+      isActive: true,
+      parent_id: null,
+    },
+    include: {
+      variants: {
+        where: { isActive: true },
+        orderBy: { variante_nombre: "asc" },
+      },
+    },
+    orderBy: { nombre: "asc" },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    nombre: p.nombre,
+    codigo_interno: p.codigo_interno,
+    precio_publico: Number(p.precio_publico),
+    variants: p.variants.map((v) => ({
+      id: v.id,
+      variante_nombre: v.variante_nombre || "",
+      codigo_interno: v.codigo_interno,
+    })),
+  }));
+}
+

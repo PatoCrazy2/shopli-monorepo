@@ -4,17 +4,17 @@ import { useState } from "react";
 import { PrintLabelsModal, CatalogProduct } from "./PrintLabelsModal";
 
 interface PrintCatalogButtonProps {
-  products: CatalogProduct[];
+  products?: CatalogProduct[];
 }
 
-export function PrintCatalogButton({ products }: PrintCatalogButtonProps) {
+export function PrintCatalogButton({ products }: PrintCatalogButtonProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black px-3.5 sm:px-5 text-sm font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 shadow-sm active:scale-95 transition-all shrink-0"
+        className="inline-flex h-9 sm:h-11 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black px-2.5 sm:px-5 text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 shadow-sm active:scale-95 transition-all shrink-0"
         title="Imprimir planillas de códigos QR para productos de tu catálogo"
       >
         <svg
@@ -35,11 +35,13 @@ export function PrintCatalogButton({ products }: PrintCatalogButtonProps) {
         <span className="hidden sm:inline">Imprimir Etiquetas</span>
       </button>
 
-      <PrintLabelsModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        products={products}
-      />
+      {isOpen && (
+        <PrintLabelsModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          products={products}
+        />
+      )}
     </>
   );
 }
