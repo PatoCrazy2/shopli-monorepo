@@ -9,13 +9,13 @@ export function KPISkeleton() {
     <div className="space-y-6 md:space-y-8 pt-2">
       {/* Dato Principal Skeleton (Premium Black Card) */}
       <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-black rounded-3xl p-6 md:p-8 shadow-xl border border-zinc-800">
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex items-stretch justify-between gap-4">
+          <div className="flex flex-col justify-between">
             <div className="h-4 w-24 animate-pulse rounded-md bg-zinc-800" />
-            <div className="h-12 w-48 md:h-16 md:w-64 animate-pulse rounded-md bg-zinc-800 mt-2.5" />
+            <div className="h-12 w-48 md:h-16 md:w-64 animate-pulse rounded-md bg-zinc-800 mt-2 md:mt-3" />
           </div>
           {/* Widget de Calendario Skeleton */}
-          <div className="h-[52px] w-[54px] animate-pulse rounded-xl bg-zinc-800" />
+          <div className="w-16 md:w-20 animate-pulse rounded-2xl bg-zinc-800 shrink-0" />
         </div>
       </div>
 

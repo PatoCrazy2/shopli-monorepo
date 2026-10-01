@@ -22,22 +22,22 @@ export async function KPICards() {
         {/* Glow sutil de fondo */}
         <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
-        <div className="flex justify-between items-start relative z-10">
-          <div>
-            <h2 className="text-[13px] md:text-sm font-medium text-zinc-400">
+        <div className="flex items-stretch justify-between relative z-10 gap-4">
+          <div className="flex flex-col justify-between">
+            <h2 className="text-[13px] md:text-sm font-medium text-zinc-400 leading-none">
               Ventas de hoy
             </h2>
-            <div className="text-5xl md:text-6xl font-bold tracking-tight text-white mt-1">
+            <div className="text-5xl md:text-6xl font-bold tracking-tight text-white leading-none mt-2 md:mt-3">
               ${ventasHoy.toFixed(2)}
             </div>
           </div>
 
-          {/* Widget de Calendario */}
-          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl min-w-[54px] py-2 px-1 backdrop-blur-sm shadow-sm">
-            <span className="text-[9px] font-mono font-semibold tracking-[0.2em] text-zinc-400 mb-0.5">
+          {/* Widget de Calendario vertical, mes sutil y número protagónico */}
+          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-2xl w-16 md:w-20 self-stretch py-2 px-1 backdrop-blur-sm shadow-xs shrink-0">
+            <span className="text-[9px] md:text-[10px] font-light tracking-[0.25em] text-zinc-400 uppercase leading-none">
               {currentMonth}
             </span>
-            <span className="text-xl font-bold leading-none text-zinc-100">
+            <span className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-none mt-1.5">
               {currentDay}
             </span>
           </div>
