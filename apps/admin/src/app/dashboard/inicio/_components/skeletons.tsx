@@ -7,9 +7,16 @@
 export function KPISkeleton() {
   return (
     <div className="space-y-6 md:space-y-8 pt-2">
-      <div className="px-1 md:px-2">
-        <div className="h-4 w-24 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-        <div className="h-12 w-48 md:h-16 md:w-64 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800 mt-2" />
+      {/* Dato Principal Skeleton (Premium Black Card) */}
+      <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-black rounded-3xl p-6 md:p-8 shadow-xl border border-zinc-800">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="h-4 w-24 animate-pulse rounded-md bg-zinc-800" />
+            <div className="h-12 w-48 md:h-16 md:w-64 animate-pulse rounded-md bg-zinc-800 mt-2.5" />
+          </div>
+          {/* Widget de Calendario Skeleton */}
+          <div className="h-[52px] w-[54px] animate-pulse rounded-xl bg-zinc-800" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:gap-5">

@@ -7,15 +7,40 @@ import { getKPIData } from "../queries";
 export async function KPICards() {
   const { ventasHoy, gananciaHoy, ticketsTotales } = await getKPIData();
 
+  // Formatear la fecha actual en zona horaria local (México)
+  const now = new Date();
+  const dayFormatter = new Intl.DateTimeFormat("es-MX", { timeZone: "America/Mexico_City", day: "2-digit" });
+  const monthFormatter = new Intl.DateTimeFormat("es-MX", { timeZone: "America/Mexico_City", month: "short" });
+  
+  const currentDay = dayFormatter.format(now);
+  const currentMonth = monthFormatter.format(now).toUpperCase(); // ej. OCT
+
   return (
     <div className="space-y-6 md:space-y-8 pt-2">
-      {/* Dato Principal: Estilo Nu (Gigante, limpio, sin bordes) */}
-      <div className="px-1 md:px-2">
-        <h2 className="text-[13px] md:text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Ventas de hoy
-        </h2>
-        <div className="text-5xl md:text-6xl font-semibold tracking-tight text-zinc-900 dark:text-white mt-1">
-          ${ventasHoy.toFixed(2)}
+      {/* Dato Principal: Premium Black Card con Widget de Calendario */}
+      <div className="bg-gradient-to-br from-zinc-900 via-zinc-950 to-black rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden border border-zinc-800">
+        {/* Glow sutil de fondo */}
+        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+
+        <div className="flex justify-between items-start relative z-10">
+          <div>
+            <h2 className="text-[13px] md:text-sm font-medium text-zinc-400">
+              Ventas de hoy
+            </h2>
+            <div className="text-5xl md:text-6xl font-bold tracking-tight text-white mt-1">
+              ${ventasHoy.toFixed(2)}
+            </div>
+          </div>
+
+          {/* Widget de Calendario */}
+          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded-xl min-w-[54px] py-2 px-1 backdrop-blur-sm shadow-sm">
+            <span className="text-[9px] font-mono font-semibold tracking-[0.2em] text-zinc-400 mb-0.5">
+              {currentMonth}
+            </span>
+            <span className="text-xl font-bold leading-none text-zinc-100">
+              {currentDay}
+            </span>
+          </div>
         </div>
       </div>
 
