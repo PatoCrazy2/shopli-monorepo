@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { generateLabelsPDF, LabelProductInput } from "@/lib/label-generator";
+import { fetchCatalogForPrintAction } from "../actions";
 
 export interface CatalogProduct {
   id: string;
@@ -18,42 +19,75 @@ export interface CatalogProduct {
 interface PrintLabelsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  products: CatalogProduct[];
+  products?: CatalogProduct[];
 }
 
-export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModalProps) {
+export function PrintLabelsModal({ isOpen, onClose, products: initialProducts }: PrintLabelsModalProps) {
+  const [products, setProducts] = useState<CatalogProduct[]>(initialProducts || []);
+  const [isLoading, setIsLoading] = useState(!initialProducts || initialProducts.length === 0);
   const [format, setFormat] = useState<"letter" | "thermal">("letter");
   const [printMode, setPrintMode] = useState<"all" | "select">("all");
   const [globalQty, setGlobalQty] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
 
-  // Estado de ids seleccionados (solo independientes y variantes)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => {
-    const ids = new Set<string>();
-    products.forEach((p) => {
-      if (p.variants && p.variants.length > 0) {
-        p.variants.forEach((v) => ids.add(v.id));
-      } else {
-        ids.add(p.id);
-      }
-    });
-    return ids;
-  });
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialProducts && initialProducts.length > 0) {
+      setProducts(initialProducts);
+      const ids = new Set<string>();
+      const qtys: Record<string, number> = {};
+      initialProducts.forEach((p) => {
+        if (p.variants && p.variants.length > 0) {
+          p.variants.forEach((v) => {
+            ids.add(v.id);
+            qtys[v.id] = 1;
+          });
+        } else {
+          ids.add(p.id);
+          qtys[p.id] = 1;
+        }
+      });
+      setSelectedIds(ids);
+      setQuantities(qtys);
+      setIsLoading(false);
+      return;
+    }
 
-  // Estado de cantidades por ID
-  const [quantities, setQuantities] = useState<Record<string, number>>(() => {
-    const qtys: Record<string, number> = {};
-    products.forEach((p) => {
-      if (p.variants && p.variants.length > 0) {
-        p.variants.forEach((v) => {
-          qtys[v.id] = 1;
+    let isMounted = true;
+    setIsLoading(true);
+    fetchCatalogForPrintAction()
+      .then((data) => {
+        if (!isMounted) return;
+        setProducts(data);
+        const ids = new Set<string>();
+        const qtys: Record<string, number> = {};
+        data.forEach((p) => {
+          if (p.variants && p.variants.length > 0) {
+            p.variants.forEach((v) => {
+              ids.add(v.id);
+              qtys[v.id] = 1;
+            });
+          } else {
+            ids.add(p.id);
+            qtys[p.id] = 1;
+          }
         });
-      } else {
-        qtys[p.id] = 1;
-      }
-    });
-    return qtys;
-  });
+        setSelectedIds(ids);
+        setQuantities(qtys);
+      })
+      .catch((err) => {
+        console.error("Error loading products for print:", err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, initialProducts]);
 
   // Filtrado de productos en memoria
   const filteredProducts = useMemo(() => {
@@ -286,7 +320,12 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
           </div>
 
           {/* Vistas según Modo */}
-          {printMode === "all" ? (
+          {isLoading ? (
+            <div className="py-12 flex flex-col items-center justify-center space-y-3">
+              <div className="w-6 h-6 border-2 border-zinc-900 dark:border-zinc-100 border-t-transparent animate-spin rounded-full" />
+              <p className="text-xs text-zinc-500 font-medium">Cargando catálogo...</p>
+            </div>
+          ) : printMode === "all" ? (
             /* Modo Imprimir Todo: Solo configurar cantidad global de copias */
             <div className="p-5 rounded-xl border border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 space-y-4 flex flex-col items-center justify-center text-center">
               <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-full text-zinc-500 mb-2">
@@ -478,9 +517,10 @@ export function PrintLabelsModal({ isOpen, onClose, products }: PrintLabelsModal
           <button
             type="button"
             onClick={handlePrint}
-            className="h-10 px-6 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-md transition-colors"
+            disabled={isLoading}
+            className="h-10 px-6 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold hover:bg-zinc-800 dark:hover:bg-zinc-200 shadow-md transition-colors disabled:opacity-50"
           >
-            Generar y Descargar PDF
+            {isLoading ? "Cargando..." : "Generar y Descargar PDF"}
           </button>
         </div>
 

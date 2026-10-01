@@ -8,12 +8,14 @@ interface ToggleProductButtonProps {
   productId: string;
   productName: string;
   isActive: boolean;
+  className?: string;
 }
 
 export function ToggleProductButton({
   productId,
   productName,
   isActive,
+  className,
 }: ToggleProductButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -54,11 +56,14 @@ export function ToggleProductButton({
       <button
         type="button"
         onClick={handleOpen}
-        className={`inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-bold transition-all duration-200 shadow-sm ${
-          isActive
-            ? "bg-zinc-100 text-zinc-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-transparent dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-red-950/40 dark:hover:text-red-400"
-            : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
-        }`}
+        className={
+          className ||
+          `inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-bold transition-all duration-200 shadow-sm ${
+            isActive
+              ? "bg-zinc-100 text-zinc-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-transparent dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+          }`
+        }
       >
         {isActive ? "Desactivar" : "Reactivar"}
       </button>

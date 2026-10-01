@@ -4,10 +4,10 @@ import { useState } from "react";
 import { PrintLabelsModal, CatalogProduct } from "./PrintLabelsModal";
 
 interface PrintCatalogButtonProps {
-  products: CatalogProduct[];
+  products?: CatalogProduct[];
 }
 
-export function PrintCatalogButton({ products }: PrintCatalogButtonProps) {
+export function PrintCatalogButton({ products }: PrintCatalogButtonProps = {}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -35,11 +35,13 @@ export function PrintCatalogButton({ products }: PrintCatalogButtonProps) {
         <span className="hidden sm:inline">Imprimir Etiquetas</span>
       </button>
 
-      <PrintLabelsModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        products={products}
-      />
+      {isOpen && (
+        <PrintLabelsModal
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          products={products}
+        />
+      )}
     </>
   );
 }
