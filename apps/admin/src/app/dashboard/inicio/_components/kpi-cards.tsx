@@ -32,15 +32,15 @@ export async function KPICards() {
             </div>
           </div>
 
-          {/* Widget de Calendario físico con hojas apiladas y espiral delgada */}
-          <div className="relative w-16 md:w-20 self-stretch shrink-0 mt-1 mb-1">
+          {/* Widget de Calendario físico con hojas apiladas */}
+          <div className="relative w-16 h-20 md:w-20 md:h-24 self-center shrink-0">
             {/* Hoja 3 (trasera) */}
-            <div className="absolute inset-0 translate-y-2 scale-[0.90] bg-white/[0.03] border border-white/5 rounded-2xl pointer-events-none" />
+            <div className="absolute inset-0 translate-y-1.5 scale-[0.92] bg-zinc-800/60 border border-white/5 rounded-2xl pointer-events-none" />
             {/* Hoja 2 (intermedia) */}
-            <div className="absolute inset-0 translate-y-1 scale-[0.95] bg-white/[0.06] border border-white/10 rounded-2xl pointer-events-none" />
+            <div className="absolute inset-0 translate-y-0.5 scale-[0.96] bg-zinc-800/80 border border-white/10 rounded-2xl pointer-events-none" />
 
-            {/* Hoja principal frontal */}
-            <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-900/90 border border-white/15 rounded-2xl py-2 px-1 backdrop-blur-sm shadow-sm">
+            {/* Hoja principal frontal - sólida sin backdrop-filter para evitar desfasamiento en scroll */}
+            <div className="relative h-full w-full flex flex-col items-center justify-center bg-zinc-900 border border-white/15 rounded-2xl py-2 px-1 shadow-md">
               {/* Espiral delgada (alambres metálicos) */}
               <div className="absolute -top-1.5 inset-x-0 flex justify-center gap-1.5 md:gap-2 pointer-events-none z-10">
                 <span className="w-[2px] h-3 bg-gradient-to-b from-zinc-100 via-zinc-300 to-zinc-500 rounded-full shadow-xs" />
