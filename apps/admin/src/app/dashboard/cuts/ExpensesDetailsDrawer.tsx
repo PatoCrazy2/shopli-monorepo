@@ -24,13 +24,33 @@ export default function ExpensesDetailsDrawer({
     return null;
   }
 
+  // Lista reutilizable de gastos para Móvil y Desktop
+  const renderExpensesList = () => (
+    <div className="divide-y divide-zinc-100 dark:divide-zinc-900 my-1">
+      {gastos.map((g) => (
+        <div
+          key={g.id}
+          className="py-2.5 flex items-center justify-between gap-4 text-xs font-mono"
+        >
+          <span className="font-sans font-medium text-zinc-800 dark:text-zinc-200 leading-snug">
+            {g.descripcion}
+          </span>
+          <span className="font-bold text-zinc-900 dark:text-zinc-100 shrink-0">
+            -${Number(g.monto).toFixed(2)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <>
-      {/* Gatillo en la tarjeta: Texto sobrio y profesional */}
+      {/* Gatillo en la tarjeta: Toggle en Desktop y Disparador de Bottom Sheet en Mobile */}
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-mono transition-colors group cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-mono transition-colors group cursor-pointer select-none"
+        aria-expanded={isOpen}
         aria-label="Ver detalle de gastos de caja chica"
       >
         <span className="text-zinc-400">Gastos caja:</span>
@@ -38,12 +58,35 @@ export default function ExpensesDetailsDrawer({
           -${totalGastos.toFixed(2)}
         </span>
         <span className="text-[11px] text-zinc-400">({gastos.length})</span>
-        <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
+        <ChevronRight
+          className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${
+            isOpen ? "rotate-90" : "group-hover:translate-x-0.5"
+          }`}
+        />
       </button>
 
-      {/* Drawer deslizable (Bottom Sheet) */}
+      {/* 1. VISTA DESKTOP: Despliegue inline bajo el botón (acordeón integrado) */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end flex-col">
+        <div className="hidden md:block w-full mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-100 dark:border-zinc-800/80">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
+              Gastos de Caja Chica • -${totalGastos.toFixed(2)} ({gastos.length} comprobantes)
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="text-xs font-mono text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+            >
+              [Cerrar]
+            </button>
+          </div>
+          {renderExpensesList()}
+        </div>
+      )}
+
+      {/* 2. VISTA MÓVIL: Drawer deslizable (Bottom Sheet) */}
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex justify-end flex-col">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
@@ -80,19 +123,7 @@ export default function ExpensesDetailsDrawer({
 
             {/* Lista detallada */}
             <div className="overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-900 my-2">
-              {gastos.map((g) => (
-                <div
-                  key={g.id}
-                  className="py-3 flex items-center justify-between gap-4 text-xs font-mono"
-                >
-                  <span className="font-sans font-medium text-zinc-800 dark:text-zinc-200 leading-snug">
-                    {g.descripcion}
-                  </span>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100 shrink-0">
-                    -${Number(g.monto).toFixed(2)}
-                  </span>
-                </div>
-              ))}
+              {renderExpensesList()}
             </div>
 
             {/* Footer */}
