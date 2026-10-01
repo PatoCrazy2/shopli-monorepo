@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getCuts } from "./queries";
-import { resolveAuditItem } from "./actions";
 import { getSucursales } from "../branches/queries";
 import Link from "next/link";
 import CutsAutoRefresh from "./CutsAutoRefresh";
 import ForceCloseButton from "./ForceCloseButton";
 import CutsFilters from "./CutsFilters";
+import ExpensesDetailsDrawer from "./ExpensesDetailsDrawer";
+import AuditDetailsDrawer from "./AuditDetailsDrawer";
 
 export default async function CutsPage({
   searchParams,
@@ -252,137 +253,18 @@ export default async function CutsPage({
                   </div>
                 </div>
 
-                {/* Gastos de Caja Chica Section */}
-                {(turno as any).gastos && (turno as any).gastos.length > 0 && (
-                  <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                    <div className="flex items-center gap-3 px-2">
-                      <div className="h-1 w-12 bg-red-500 rounded-full" />
-                      <h4 className="text-xs font-black uppercase tracking-[0.25em] text-zinc-900 dark:text-white">
-                        Gastos de Caja Chica del Turno
-                      </h4>
-                    </div>
-                    <div className="overflow-x-auto rounded-xl md:rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs bg-white dark:bg-zinc-950 max-w-xl">
-                      <table className="w-full text-sm text-left border-collapse">
-                        <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
-                          <tr>
-                            <th className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500">Descripción / Motivo</th>
-                            <th className="px-6 py-3 text-right text-[10px] font-black uppercase tracking-widest text-zinc-500">Monto</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                          {(turno as any).gastos.map((g: any) => (
-                            <tr key={g.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                              <td className="px-6 py-3 font-medium text-zinc-900 dark:text-white">
-                                {g.descripcion}
-                              </td>
-                              <td className="px-6 py-3 text-right font-bold text-red-600 dark:text-red-400">
-                                -${Number(g.monto).toFixed(2)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Inventory Audits Section */}
-                {turno.auditorias.length > 0 && (
-                  <div className="mt-12 space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                    <div className="flex items-center gap-3 px-2">
-                      <div className="h-1 w-12 bg-black dark:bg-white rounded-full" />
-                      <h4 className="text-xs font-black uppercase tracking-[0.25em] text-zinc-900 dark:text-white">
-                        Auditoría de Inventario "A Ciegas"
-                      </h4>
-                    </div>
-
-                    {turno.auditorias.map(audit => (
-                      <div key={audit.id} className="overflow-x-auto rounded-xl md:rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-                        <table className="w-full text-sm text-left border-collapse min-w-[600px]">
-                          <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
-                            <tr>
-                              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Producto</th>
-                              <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">Sistema</th>
-                              <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">Contado</th>
-                              <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">Dif.</th>
-                              <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">Estado</th>
-                              <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-zinc-500">Resolución</th>
-                            </tr>
-                          </thead>
-                          <tbody suppressHydrationWarning className="divide-y divide-zinc-100 dark:divide-zinc-900 bg-white dark:bg-zinc-950">
-                            {audit.items.map((item: any) => {
-                              const isResolved = item.resolved;
-                              const hasDiscrepancy = item.discrepancy !== 0;
-
-                              return (
-                                <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                                  <td className="px-6 py-4">
-                                    <span className="font-bold text-zinc-900 dark:text-white">{item.producto.nombre}</span>
-                                    <div className="text-[10px] font-mono text-zinc-400 mt-0.5">{item.producto.codigo_interno}</div>
-                                  </td>
-                                  <td className="px-6 py-4 text-center text-zinc-500 font-medium">
-                                    {item.expectedStock}
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    <span className="inline-flex h-8 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900 font-black text-zinc-900 dark:text-white ring-1 ring-zinc-200 dark:ring-zinc-800">
-                                      {item.countedStock}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    <span className={`inline-flex px-2 py-1 rounded-md text-[11px] font-black ${!hasDiscrepancy ? 'text-zinc-300' : item.discrepancy > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'}`}>
-                                      {item.discrepancy > 0 ? '+' : ''}{item.discrepancy}
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                    {!hasDiscrepancy ? (
-                                      <div className="flex justify-center"><div className="w-1.5 h-1.5 rounded-full bg-zinc-200" /></div>
-                                    ) : isResolved ? (
-                                      <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">OK</span>
-                                    ) : (
-                                      <span className="inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter bg-amber-100 text-amber-700 animate-pulse">PEND</span>
-                                    )}
-                                  </td>
-                                  <td className="px-6 py-4 text-right">
-                                    {!hasDiscrepancy ? (
-                                      <span className="text-[10px] font-black text-emerald-600/50 italic">Sincronizado</span>
-                                    ) : isResolved ? (
-                                      <div className="inline-block text-left text-[11px] bg-zinc-50 dark:bg-zinc-900 p-2 rounded-lg border border-zinc-100 dark:border-zinc-800 max-w-[240px]">
-                                        <div className="font-black text-zinc-700 dark:text-zinc-300 truncate">{item.reason}</div>
-                                        {item.comments && <div className="text-zinc-400 italic mt-0.5 line-clamp-1">{item.comments}</div>}
-                                      </div>
-                                    ) : (
-                                      <form action={resolveAuditItem as any} className="flex flex-col gap-2 items-end">
-                                        <input type="hidden" name="id" value={item.id} />
-                                        <input type="hidden" name="sucursalId" value={turno.sucursal_id} />
-                                        <div className="flex items-center gap-2">
-                                          <select
-                                            name="reason"
-                                            required
-                                            className="h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1 text-[11px] font-bold text-zinc-900 dark:text-white focus:ring-2 focus:ring-black outline-none"
-                                          >
-                                            <option value="">Razón...</option>
-                                            <option value="Error de registro (POS)">Error de Registro</option>
-                                            <option value="Faltante de anaquel/Robo">Faltante/Robo</option>
-                                            <option value="Daño/Merma">Daño/Merma</option>
-                                          </select>
-                                          <input
-                                            type="text"
-                                            name="comments"
-                                            placeholder="Notas..."
-                                            className="h-8 w-24 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1 text-[11px] focus:ring-2 focus:ring-black outline-none"
-                                          />
-                                          <button type="submit" className="h-8 px-3 bg-black text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-zinc-800 transition-all">OK</button>
-                                        </div>
-                                      </form>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    ))}
+                {/* Footer de Tarjeta: Divulgación Progresiva para Gastos y Auditoría */}
+                {(((turno as any).gastos && (turno as any).gastos.length > 0) ||
+                  (turno.auditorias && turno.auditorias.length > 0)) && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-zinc-100 dark:border-zinc-900">
+                    <ExpensesDetailsDrawer
+                      gastos={(turno as any).gastos || []}
+                      totalGastos={totalGastos}
+                    />
+                    <AuditDetailsDrawer
+                      auditorias={turno.auditorias || []}
+                      sucursalId={turno.sucursal_id}
+                    />
                   </div>
                 )}
               </div>

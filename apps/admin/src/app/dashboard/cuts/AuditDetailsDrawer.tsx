@@ -14,7 +14,7 @@ interface AuditItem {
   comments?: string | null;
   producto: {
     nombre: string;
-    codigo_interno: string;
+    codigo_interno: string | null;
   };
 }
 
@@ -133,7 +133,7 @@ export default function AuditDetailsDrawer({
                           {item.producto.nombre}
                         </span>
                         <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
-                          SKU: {item.producto.codigo_interno}
+                          SKU: {item.producto.codigo_interno || "N/A"}
                         </div>
                       </div>
 
