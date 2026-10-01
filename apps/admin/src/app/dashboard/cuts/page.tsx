@@ -209,11 +209,12 @@ export default async function CutsPage({
                     </span>
                   </div>
                 </div>
+                </div>
 
-                {/* Footer de Tarjeta: Divulgación Progresiva para Gastos y Auditoría */}
+                {/* Footer de Tarjeta: Franja de Borde a Borde con Fondo Gris Tenue */}
                 {(((turno as any).gastos && (turno as any).gastos.length > 0) ||
                   (turno.auditorias && turno.auditorias.length > 0)) && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 mt-2.5 border-t border-zinc-100 dark:border-zinc-900/80 pl-1.5">
+                  <div className="bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-100 dark:border-zinc-800/80 px-4 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-3">
                     <ExpensesDetailsDrawer
                       gastos={(turno as any).gastos || []}
                       totalGastos={totalGastos}
@@ -224,7 +225,6 @@ export default async function CutsPage({
                     />
                   </div>
                 )}
-                </div>
               </div>
             );
           })
