@@ -18,7 +18,7 @@ export function MobileHeader({ user }: MobileHeaderProps) {
 
   return (
     <header
-      className={`md:hidden fixed top-0 left-0 w-full z-40 bg-white/80 dark:bg-black/85 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3 flex items-center justify-between shadow-xs transition-transform duration-300 ease-out ${
+      className={`md:hidden fixed top-0 left-0 w-full z-40 bg-white/80 dark:bg-black/85 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 px-4 py-3 flex items-center justify-between shadow-xs transition-transform duration-300 ease-out will-change-transform ${
         isHidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >

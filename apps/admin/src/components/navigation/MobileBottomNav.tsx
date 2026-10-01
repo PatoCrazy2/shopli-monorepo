@@ -57,7 +57,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         style={{
           bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
         }}
-        className={`md:hidden fixed inset-x-3 z-40 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-950/10 dark:shadow-black/50 px-1.5 py-1 flex items-center justify-around select-none touch-manipulation transition-all duration-300 ease-out ${
+        className={`md:hidden fixed inset-x-3 z-40 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-zinc-950/10 dark:shadow-black/50 px-1.5 py-1 flex items-center justify-around select-none touch-manipulation transition-[transform,opacity] duration-300 ease-out will-change-transform ${
           shouldHide ? "translate-y-36 opacity-0 pointer-events-none" : "translate-y-0 opacity-100"
         }`}
         aria-label="Navegación principal móvil"
