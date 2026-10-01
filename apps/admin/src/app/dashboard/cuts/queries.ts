@@ -31,7 +31,7 @@ export async function getCuts(sucursalId?: string, date?: string) {
   return await db.turno.findMany({
     where,
     orderBy: { fecha_apertura: "desc" },
-    take: date ? undefined : 20, // Si no hay fecha, traemos los últimos 20
+    take: date ? 50 : 20, // Protección de memoria: límite seguro para evitar sobrecarga con relaciones anidadas
     include: {
       usuario: { select: { name: true } },
       sucursal: { select: { nombre: true } },
