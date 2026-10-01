@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Package, Wallet, Home, BarChart3, LayoutGrid } from "lucide-react";
 import { MobileMoreDrawer } from "./MobileMoreDrawer";
 import { useMobileScroll } from "@/hooks/useMobileScroll";
@@ -18,22 +18,35 @@ interface MobileBottomNavProps {
 export function MobileBottomNav({ user }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const isHidden = useMobileScroll();
 
-  const isCatalog = pathname.startsWith("/dashboard/catalog");
-  const isCuts = pathname.startsWith("/dashboard/cuts");
-  const isHome = pathname.startsWith("/dashboard/inicio");
-  const isAnalytics = pathname.startsWith("/dashboard/analytics");
+  // Limpiar pendingHref cuando la navegación concluye y el pathname cambia
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
+  const activeHref = pendingHref || pathname;
+  const isCatalog = activeHref.startsWith("/dashboard/catalog");
+  const isCuts = activeHref.startsWith("/dashboard/cuts");
+  const isHome = activeHref.startsWith("/dashboard/inicio");
+  const isAnalytics = activeHref.startsWith("/dashboard/analytics");
+
+  const handleTabClick = (href: string) => {
+    if (!pathname.startsWith(href)) {
+      setPendingHref(href);
+    }
+  };
 
   // Determine if active route is one of the secondary routes (in drawer)
   const isSecondaryActive =
-    pathname.startsWith("/dashboard/branches") ||
-    pathname.startsWith("/dashboard/inventory") ||
-    pathname.startsWith("/dashboard/sales") ||
-    pathname.startsWith("/dashboard/audits") ||
-    pathname.startsWith("/dashboard/gastos") ||
-    pathname.startsWith("/dashboard/users") ||
-    pathname.startsWith("/dashboard/billing");
+    activeHref.startsWith("/dashboard/branches") ||
+    activeHref.startsWith("/dashboard/inventory") ||
+    activeHref.startsWith("/dashboard/sales") ||
+    activeHref.startsWith("/dashboard/audits") ||
+    activeHref.startsWith("/dashboard/gastos") ||
+    activeHref.startsWith("/dashboard/users") ||
+    activeHref.startsWith("/dashboard/billing");
 
   const shouldHide = isHidden && !isDrawerOpen;
 
@@ -49,33 +62,42 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         {/* 1. Catálogo */}
         <Link
           href="/dashboard/catalog"
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
+          onClick={() => handleTabClick("/dashboard/catalog")}
+          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
             isCatalog
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
           }`}
         >
-          <Package className={`w-5 h-5 ${isCatalog ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <Package className={`w-5 h-5 ${isCatalog ? "stroke-[2.5]" : "stroke-[1.8]"} ${pendingHref === "/dashboard/catalog" ? "animate-pulse text-zinc-900 dark:text-zinc-100" : ""}`} />
           <span className="text-[10px] tracking-tight">Catálogo</span>
+          {pendingHref === "/dashboard/catalog" && (
+            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+          )}
         </Link>
 
         {/* 2. Cortes */}
         <Link
           href="/dashboard/cuts"
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
+          onClick={() => handleTabClick("/dashboard/cuts")}
+          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
             isCuts
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
           }`}
         >
-          <Wallet className={`w-5 h-5 ${isCuts ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <Wallet className={`w-5 h-5 ${isCuts ? "stroke-[2.5]" : "stroke-[1.8]"} ${pendingHref === "/dashboard/cuts" ? "animate-pulse text-zinc-900 dark:text-zinc-100" : ""}`} />
           <span className="text-[10px] tracking-tight">Cortes</span>
+          {pendingHref === "/dashboard/cuts" && (
+            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+          )}
         </Link>
 
         {/* 3. Inicio (Hero / Center) */}
         <Link
           href="/dashboard/inicio"
-          className="flex-1 flex flex-col items-center justify-center py-0.5 active:scale-90 transition-transform group"
+          onClick={() => handleTabClick("/dashboard/inicio")}
+          className="flex-1 flex flex-col items-center justify-center py-0.5 active:scale-90 transition-transform group relative"
           aria-label="Ir a Inicio"
         >
           <div
@@ -83,7 +105,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
               isHome
                 ? "bg-black text-white dark:bg-white dark:text-black ring-4 ring-zinc-200/50 dark:ring-zinc-800/80 scale-105"
                 : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 group-hover:bg-zinc-200"
-            }`}
+            } ${pendingHref === "/dashboard/inicio" ? "animate-pulse" : ""}`}
           >
             <Home className="w-5 h-5 stroke-[2.2]" />
           </div>
@@ -96,19 +118,26 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
           >
             Inicio
           </span>
+          {pendingHref === "/dashboard/inicio" && (
+            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+          )}
         </Link>
 
         {/* 4. Analítica */}
         <Link
           href="/dashboard/analytics"
-          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
+          onClick={() => handleTabClick("/dashboard/analytics")}
+          className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 rounded-xl transition-all duration-200 active:scale-95 relative ${
             isAnalytics
               ? "text-zinc-950 dark:text-zinc-50 font-semibold"
               : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
           }`}
         >
-          <BarChart3 className={`w-5 h-5 ${isAnalytics ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <BarChart3 className={`w-5 h-5 ${isAnalytics ? "stroke-[2.5]" : "stroke-[1.8]"} ${pendingHref === "/dashboard/analytics" ? "animate-pulse text-zinc-900 dark:text-zinc-100" : ""}`} />
           <span className="text-[10px] tracking-tight">Analítica</span>
+          {pendingHref === "/dashboard/analytics" && (
+            <span className="absolute bottom-0 w-1 h-1 bg-black dark:bg-white rounded-full animate-ping" />
+          )}
         </Link>
 
         {/* 5. Más (Drawer Hub) */}
