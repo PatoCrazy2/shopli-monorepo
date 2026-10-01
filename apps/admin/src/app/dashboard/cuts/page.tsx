@@ -85,11 +85,13 @@ export default async function CutsPage({
                 key={turno.id}
                 className="group bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xs transition-all hover:border-zinc-300 dark:hover:border-zinc-700 relative overflow-hidden"
               >
-                {/* 1. Fila Superior: Nombre del Cajero + Estado Discreto a la derecha */}
-                <div className="flex items-center justify-between gap-3 mb-1">
-                  <h3 className="font-bold text-base md:text-lg text-zinc-900 dark:text-white tracking-tight truncate">
-                    {turno.usuario.name || "Cajero Desconocido"}
-                  </h3>
+                {/* 1. Fila Superior: Nombre del Cajero con fondo negro distintivo + Estado a la derecha */}
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="inline-flex items-center px-3 py-1 rounded-xl bg-zinc-950 dark:bg-zinc-800 text-white shadow-xs">
+                    <h3 className="font-bold text-sm sm:text-base tracking-tight truncate">
+                      {turno.usuario.name || "Cajero Desconocido"}
+                    </h3>
+                  </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {!isClosed &&
@@ -120,7 +122,7 @@ export default async function CutsPage({
                 </div>
 
                 {/* 2. Segunda Fila (Metadata Secundaria): Sucursal · Fecha · Fondo */}
-                <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-4 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-3.5 flex-wrap">
                   <span className="font-semibold text-zinc-700 dark:text-zinc-300">
                     {turno.sucursal.nombre}
                   </span>
@@ -138,45 +140,45 @@ export default async function CutsPage({
                   </span>
                 </div>
 
-                {/* 3. Resumen Financiero: 3 Columnas Limpias e Integradas */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 py-1">
+                {/* 3. Resumen Financiero: 3 Columnas perfectamente centradas en móvil */}
+                <div className="grid grid-cols-3 gap-1 sm:gap-4 py-1 text-center sm:text-left">
                   {/* Sistema */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col items-center sm:items-start">
                     <span className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400">
                       Sistema
                     </span>
-                    <span className="text-base sm:text-lg font-bold font-mono text-zinc-900 dark:text-zinc-100 tracking-tight mt-0.5">
+                    <span className="text-sm sm:text-lg font-bold font-mono text-zinc-900 dark:text-zinc-100 tracking-tight mt-0.5">
                       ${sistema.toFixed(2)}
                     </span>
-                    <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate">
+                    <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate max-w-full">
                       Ventas: ${ventasSistema.toFixed(2)}
                     </span>
                   </div>
 
                   {/* Reportado */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col items-center sm:items-start">
                     <span className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400">
                       Reportado
                     </span>
                     <span
-                      className={`text-base sm:text-lg font-bold font-mono tracking-tight mt-0.5 ${
+                      className={`text-sm sm:text-lg font-bold font-mono tracking-tight mt-0.5 ${
                         !isClosed ? "text-zinc-400" : "text-zinc-900 dark:text-zinc-100"
                       }`}
                     >
                       ${isClosed ? reportado.toFixed(2) : "--.--"}
                     </span>
-                    <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate">
+                    <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 truncate max-w-full">
                       {isClosed ? "Conteo físico" : "En curso"}
                     </span>
                   </div>
 
                   {/* Diferencia */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col items-center sm:items-start">
                     <span className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400">
                       Diferencia
                     </span>
                     <span
-                      className={`text-base sm:text-lg font-bold font-mono tracking-tight mt-0.5 ${
+                      className={`text-sm sm:text-lg font-bold font-mono tracking-tight mt-0.5 ${
                         !isClosed
                           ? "text-zinc-400"
                           : isBalanced
@@ -189,7 +191,7 @@ export default async function CutsPage({
                         : `${diferencia > 0 ? "+" : ""}${isBalanced ? "0.00" : diferencia.toFixed(2)}`}
                     </span>
                     <span
-                      className={`text-[10px] sm:text-[11px] font-medium mt-0.5 truncate ${
+                      className={`text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full ${
                         !isClosed
                           ? "text-zinc-400"
                           : isBalanced
