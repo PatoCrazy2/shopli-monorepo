@@ -8,10 +8,16 @@ export default function CutsLoading() {
           <div className="hidden md:block h-4 w-72 bg-zinc-100 dark:bg-zinc-850 rounded-lg" />
         </div>
 
-        {/* Desktop: Formulario falso | Mobile: Botón filtros 44px */}
-        <div className="hidden md:flex items-center gap-3">
-          <div className="h-11 w-44 bg-zinc-100 dark:bg-zinc-850 rounded-xl" />
-          <div className="h-11 w-36 bg-zinc-100 dark:bg-zinc-850 rounded-xl" />
+        {/* Desktop: Formulario falso con labels sincronizados | Mobile: Botón filtros 44px */}
+        <div className="hidden md:flex items-end gap-3">
+          <div className="flex flex-col gap-1.5">
+            <div className="h-2.5 w-14 bg-zinc-200 dark:bg-zinc-800 rounded-xs ml-1" />
+            <div className="h-11 w-44 bg-zinc-100 dark:bg-zinc-850 rounded-xl" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="h-2.5 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-xs ml-1" />
+            <div className="h-11 w-36 bg-zinc-100 dark:bg-zinc-850 rounded-xl" />
+          </div>
           <div className="h-11 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
         </div>
         <div className="flex md:hidden">
