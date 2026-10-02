@@ -8,7 +8,8 @@ import {
     ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { 
-    AlertTriangle, Activity, ShoppingBag, Landmark, Store, Users
+    AlertTriangle, Activity, ShoppingBag, Landmark, Store, Users,
+    ChevronDown, Check
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
@@ -87,15 +88,18 @@ export function AnalyticsClient({
     <div className="space-y-6 pb-10">
       
       {/* Vercel-style Command Bar */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg w-fit border border-zinc-200 dark:border-zinc-800 overflow-x-auto hide-scrollbar max-w-full">
-           <TabButton active={activeTab === "finanzas"} onClick={() => setActiveTab("finanzas")} icon={<Landmark size={12} />}>Finanzas</TabButton>
-           <TabButton active={activeTab === "operaciones"} onClick={() => setActiveTab("operaciones")} icon={<Activity size={12} />}>Operaciones</TabButton>
-           <TabButton active={activeTab === "catalogo"} onClick={() => setActiveTab("catalogo")} icon={<ShoppingBag size={12} />}>Catálogo</TabButton>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
+        {/* Tabs: 3 columnas iguales en móvil, auto en desktop */}
+        <div className="grid grid-cols-3 sm:flex gap-1 p-0.5 sm:p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg w-full sm:w-fit border border-zinc-200 dark:border-zinc-800 shrink-0">
+           <TabButton active={activeTab === "finanzas"} onClick={() => setActiveTab("finanzas")} icon={<Landmark size={11} className="hidden sm:inline" />}>Finanzas</TabButton>
+           <TabButton active={activeTab === "operaciones"} onClick={() => setActiveTab("operaciones")} icon={<Activity size={11} className="hidden sm:inline" />}>Operaciones</TabButton>
+           <TabButton active={activeTab === "catalogo"} onClick={() => setActiveTab("catalogo")} icon={<ShoppingBag size={11} className="hidden sm:inline" />}>Catálogo</TabButton>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar w-full xl:w-auto">
-          <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0">
+        {/* Filters: 3 columnas iguales en móvil para que nunca se desborden ni salga barra lateral */}
+        <div className="grid grid-cols-3 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+          {/* Preset Buttons for Desktop */}
+          <div className="hidden sm:flex gap-0.5 p-0.5 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0">
             <PresetButton active={preset === "hoy"} onClick={() => handlePreset("hoy")}>Hoy</PresetButton>
             <PresetButton active={preset === "7d"} onClick={() => handlePreset("7d")}>7d</PresetButton>
             <PresetButton active={preset === "30d"} onClick={() => handlePreset("30d")}>30d</PresetButton>
@@ -103,28 +107,47 @@ export function AnalyticsClient({
             <PresetButton active={preset === "todo"} onClick={() => handlePreset("todo")}>Todo</PresetButton>
           </div>
 
-          <select 
-            className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all appearance-none pr-7 relative dark:bg-zinc-900 dark:border-zinc-800 shrink-0"
-            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '12px' }}
-            value={filters.sucursalId || ""}
-            onChange={(e) => handleFilterChange("sucursalId", e.target.value)}
-          >
-             <option value="">Sucursal: Todas</option>
-             {options.sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-          </select>
+          {/* Preset Select for Mobile */}
+          <div className="sm:hidden min-w-0">
+            <CustomSelect
+              value={preset}
+              onChange={(val) => handlePreset(val as any)}
+              placeholder="Rango"
+              options={[
+                { value: "hoy", label: "Hoy" },
+                { value: "7d", label: "7 días" },
+                { value: "30d", label: "30 días" },
+                { value: "ytd", label: "YTD" },
+                { value: "todo", label: "Todo" }
+              ]}
+              className="w-full"
+            />
+          </div>
+
+          {/* Sucursal Select */}
+          <div className="min-w-0">
+            <CustomSelect 
+              value={filters.sucursalId || ""}
+              onChange={(val) => handleFilterChange("sucursalId", val)}
+              placeholder="Sucursal"
+              options={options.sucursales.map(s => ({ value: s.id, label: s.nombre }))}
+              className="w-full"
+            />
+          </div>
           
-          <select 
-            className="h-8 px-2.5 rounded-lg border border-zinc-200 bg-zinc-50 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all appearance-none pr-7 relative dark:bg-zinc-900 dark:border-zinc-800 shrink-0"
-            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', backgroundSize: '12px' }}
-            value={filters.usuarioId || ""}
-            onChange={(e) => handleFilterChange("usuarioId", e.target.value)}
-          >
-             <option value="">Staff: Todos</option>
-             {options.usuarios.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
-          </select>
+          {/* Staff Select */}
+          <div className="min-w-0">
+            <CustomSelect 
+              value={filters.usuarioId || ""}
+              onChange={(val) => handleFilterChange("usuarioId", val)}
+              placeholder="Staff"
+              options={options.usuarios.map(u => ({ value: u.id, label: u.name || u.email }))}
+              className="w-full"
+            />
+          </div>
 
           {loading && (
-            <div className="shrink-0 ml-1">
+            <div className="hidden sm:flex shrink-0 ml-1">
               <div className="w-3.5 h-3.5 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin"></div>
             </div>
           )}
@@ -308,7 +331,7 @@ export function AnalyticsClient({
 function PresetButton({ active, onClick, children }: { active: boolean, onClick: () => void, children: React.ReactNode }) {
   return (
     <button onClick={onClick} className={cn(
-      "px-3 py-1 text-[11px] font-mono tracking-tight transition-all rounded-md whitespace-nowrap outline-none", 
+      "px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-mono tracking-tight transition-all rounded-md whitespace-nowrap outline-none", 
       active ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
     )}>
       {children}
@@ -319,7 +342,7 @@ function PresetButton({ active, onClick, children }: { active: boolean, onClick:
 function TabButton({ active, onClick, children, icon }: { active: boolean, onClick: () => void, children: React.ReactNode, icon?: React.ReactNode }) {
   return (
     <button onClick={onClick} className={cn(
-      "px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-all rounded-md flex items-center gap-1.5 whitespace-nowrap outline-none", 
+      "px-2 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition-all rounded-md flex items-center justify-center gap-1 whitespace-nowrap outline-none", 
       active ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
     )}>
       {icon}
@@ -392,3 +415,104 @@ function ListCard({ title, items, maxVal, icon }: { title: string, items: {label
 function EmptyState() {
     return <div className="h-full w-full flex flex-col items-center justify-center space-y-2 py-8"><Activity size={20} className="text-zinc-300 dark:text-zinc-800" /><p className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">Sin datos</p></div>;
 }
+
+interface CustomSelectOption {
+  value: string;
+  label: string;
+}
+
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  className
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: CustomSelectOption[];
+  placeholder: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [open]);
+
+  const selectedOption = options.find(o => o.value === value);
+  const displayLabel = selectedOption ? selectedOption.label : placeholder;
+
+  return (
+    <div ref={containerRef} className={cn("relative shrink-0", className)}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "h-7 sm:h-8 px-2 sm:px-2.5 w-full rounded-lg border font-mono text-[10px] sm:text-xs flex items-center justify-between gap-1 transition-all outline-none",
+          open
+            ? "border-zinc-900 bg-white dark:border-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 ring-1 ring-zinc-900/10 dark:ring-zinc-100/10"
+            : "border-zinc-200 bg-zinc-50 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+        )}
+      >
+        <span className="truncate">{displayLabel}</span>
+        <ChevronDown size={10} className={cn("text-zinc-400 transition-transform shrink-0", open && "rotate-180")} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[130px] sm:min-w-[150px] max-h-56 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950 text-[10px] sm:text-xs font-mono animate-in fade-in zoom-in-95 duration-100">
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
+            className={cn(
+              "w-full px-2.5 py-1.5 text-left rounded-lg transition-colors flex items-center justify-between",
+              value === ""
+                ? "bg-zinc-100 dark:bg-zinc-900 font-bold text-zinc-900 dark:text-zinc-100"
+                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+            )}
+          >
+            <span>{placeholder}</span>
+            {value === "" && <Check size={12} className="text-zinc-900 dark:text-zinc-100 shrink-0" />}
+          </button>
+          {options.map(opt => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full px-2.5 py-1.5 text-left rounded-lg transition-colors flex items-center justify-between gap-2",
+                  isSelected
+                    ? "bg-zinc-100 dark:bg-zinc-900 font-bold text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+                )}
+              >
+                <span className="truncate">{opt.label}</span>
+                {isSelected && <Check size={12} className="text-zinc-900 dark:text-zinc-100 shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+

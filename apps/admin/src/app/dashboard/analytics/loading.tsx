@@ -13,25 +13,26 @@ export default function AnalyticsLoading() {
       <div className="space-y-6 pb-10">
         
         {/* Vercel-style Command Bar */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg w-fit border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
-            <div className="h-7 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
-            <div className="h-7 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
-            <div className="h-7 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
+          <div className="grid grid-cols-3 sm:flex gap-1 p-0.5 sm:p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg w-full sm:w-fit border border-zinc-200 dark:border-zinc-800 shrink-0">
+            <div className="h-6 sm:h-7 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
+            <div className="h-6 sm:h-7 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
+            <div className="h-6 sm:h-7 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto">
-            <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800">
-               <div className="h-6 w-10 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
-               <div className="h-6 w-8 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
-               <div className="h-6 w-10 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
-               <div className="h-6 w-10 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
-               <div className="h-6 w-12 bg-zinc-300 dark:bg-zinc-700 rounded"></div>
+          <div className="grid grid-cols-3 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <div className="hidden sm:flex gap-0.5 p-0.5 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0">
+               <div className="h-5 w-8 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-5 w-6 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-5 w-8 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-5 w-8 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-5 w-10 bg-zinc-300 dark:bg-zinc-700 rounded"></div>
             </div>
-            <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
-            <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
+            <div className="h-7 sm:h-8 sm:hidden bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
+            <div className="h-7 sm:h-8 sm:w-28 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
+            <div className="h-7 sm:h-8 sm:w-28 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
           </div>
         </div>
 
