@@ -10,6 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function AnalyticsPage() {
     const session = await auth();
     if (!session?.user?.empresa_id) redirect("/login");
+    if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+        redirect("/dashboard");
+    }
     const empresaId = session.user.empresa_id;
 
     const hasAnalyticsAccess = await canAccessAnalytics(empresaId);

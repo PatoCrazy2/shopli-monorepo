@@ -5,6 +5,9 @@ import { auth } from "@/lib/auth";
 export async function getAnalyticsData(filters: AnalyticsFilters): Promise<AnalyticsData> {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar analítica");
+  }
   const empresaId = session.user.empresa_id;
 
   try {
@@ -29,7 +32,38 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       }
     }
 
-    // 2. Construcción de condiciones SQL parametrizadas para Ventas
+    // 2. Validación y clamping de fechas (máximo 366 días para proteger Neon)
+    const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+    const startDateClean = filters.startDate && DATE_REGEX.test(filters.startDate) ? filters.startDate : undefined;
+    const endDateClean = filters.endDate && DATE_REGEX.test(filters.endDate) ? filters.endDate : undefined;
+
+    let sDate: Date | undefined;
+    let eDate: Date | undefined;
+
+    if (startDateClean && endDateClean) {
+      sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
+      eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
+      
+      if (sDate > eDate) {
+        const tmp = sDate;
+        sDate = eDate;
+        eDate = tmp;
+      }
+
+      const diffMs = eDate.getTime() - sDate.getTime();
+      const maxMs = 366 * 24 * 60 * 60 * 1000;
+      if (diffMs > maxMs) {
+        sDate = new Date(eDate.getTime() - maxMs);
+      }
+    } else if (startDateClean) {
+      sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
+      eDate = new Date(sDate.getTime() + 366 * 24 * 60 * 60 * 1000);
+    } else if (endDateClean) {
+      eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
+      sDate = new Date(eDate.getTime() - 366 * 24 * 60 * 60 * 1000);
+    }
+
+    // 3. Construcción de condiciones SQL parametrizadas para Ventas
     const salesConditions: Prisma.Sql[] = [
       Prisma.sql`s.empresa_id = ${empresaId}`
     ];
@@ -38,16 +72,8 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       salesConditions.push(Prisma.sql`v.estado = ${filters.estado}::"EstadoVenta"`);
     }
 
-    if (filters.startDate && filters.endDate) {
-      const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
-      const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
-      salesConditions.push(Prisma.sql`v.fecha >= ${s} AND v.fecha <= ${e}`);
-    } else if (filters.startDate) {
-      const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
-      salesConditions.push(Prisma.sql`v.fecha >= ${s}`);
-    } else if (filters.endDate) {
-      const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
-      salesConditions.push(Prisma.sql`v.fecha <= ${e}`);
+    if (sDate && eDate) {
+      salesConditions.push(Prisma.sql`v.fecha >= ${sDate} AND v.fecha <= ${eDate}`);
     }
 
     if (filters.sucursalId) {
@@ -60,7 +86,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
 
     const salesWhereSql = Prisma.join(salesConditions, " AND ");
 
-    // 3. Construcción de condiciones SQL parametrizadas para Gastos
+    // 4. Construcción de condiciones SQL parametrizadas para Gastos
     const gastosConditions: Prisma.Sql[] = [
       Prisma.sql`s.empresa_id = ${empresaId}`
     ];
@@ -69,27 +95,21 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       gastosConditions.push(Prisma.sql`g.sucursal_id = ${filters.sucursalId}`);
     }
 
-    if (filters.startDate && filters.endDate) {
-      const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
-      const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
-      gastosConditions.push(Prisma.sql`g.fecha >= ${s} AND g.fecha <= ${e}`);
-    } else if (filters.startDate) {
-      const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
-      gastosConditions.push(Prisma.sql`g.fecha >= ${s}`);
-    } else if (filters.endDate) {
-      const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
-      gastosConditions.push(Prisma.sql`g.fecha <= ${e}`);
+    if (sDate && eDate) {
+      gastosConditions.push(Prisma.sql`g.fecha >= ${sDate} AND g.fecha <= ${eDate}`);
     }
 
     const gastosWhereSql = Prisma.join(gastosConditions, " AND ");
 
-    // 4. Ejecución paralela de consultas agregadas en PostgreSQL (Neon)
+    // 5. Ejecución paralela de consultas agregadas en PostgreSQL (Neon)
     const [
       totalsRes,
+      totalCostsRes,
       branchSalesRes,
       userSalesRes,
       dateSalesRes,
       productsRes,
+      categorySalesRes,
       monthlySalesRes,
       gastosRes
     ] = await Promise.all([
@@ -99,6 +119,18 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
           COALESCE(SUM(v.total), 0)::float as "totalRevenue",
           COUNT(v.id)::int as "totalTransactions"
         FROM "Venta" v
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+      `,
+
+      // Total costos (COGS) calculado nativamente en Postgres
+      db.$queryRaw<{ totalCosts: number | null }[]>`
+        SELECT 
+          COALESCE(SUM(d.cantidad * p.costo), 0)::float as "totalCosts"
+        FROM "Detalle_Venta" d
+        JOIN "Producto" p ON d.producto_id = p.id
+        JOIN "Venta" v ON d.venta_id = v.id
         JOIN "Turno" t ON v.turno_id = t.id
         JOIN "Sucursal" s ON v.sucursal_id = s.id
         WHERE ${salesWhereSql}
@@ -123,7 +155,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       db.$queryRaw<{ userId: string; userName: string; totalSales: number; transactionCount: number }[]>`
         SELECT 
           t.usuario_id as "userId",
-          COALESCE(u.name, u.email, 'Usuario') as "userName",
+          COALESCE(u.name, 'Cajero') as "userName",
           COALESCE(SUM(v.total), 0)::float as "totalSales",
           COUNT(v.id)::int as "transactionCount"
         FROM "Venta" v
@@ -131,7 +163,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
         JOIN "User" u ON t.usuario_id = u.id
         JOIN "Sucursal" s ON v.sucursal_id = s.id
         WHERE ${salesWhereSql}
-        GROUP BY t.usuario_id, u.name, u.email
+        GROUP BY t.usuario_id, u.name
         ORDER BY "totalSales" DESC
       `,
 
@@ -149,14 +181,14 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
         ORDER BY 1 ASC
       `,
 
-      // Desempeño por producto, costos y categorías
+      // Desempeño por producto y margen bruto con LIMIT 20 directo en DB
       db.$queryRaw<{
         productId: string;
         productName: string;
         category: string | null;
         unitsSold: number;
         revenue: number;
-        costs: number;
+        grossMargin: number;
       }[]>`
         SELECT 
           p.id as "productId",
@@ -164,7 +196,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
           p.categoria as "category",
           COALESCE(SUM(d.cantidad), 0)::int as "unitsSold",
           COALESCE(SUM(d.cantidad * d.precio_unitario_historico), 0)::float as revenue,
-          COALESCE(SUM(d.cantidad * p.costo), 0)::float as costs
+          COALESCE(SUM(d.cantidad * (d.precio_unitario_historico - p.costo)), 0)::float as "grossMargin"
         FROM "Detalle_Venta" d
         JOIN "Producto" p ON d.producto_id = p.id
         JOIN "Venta" v ON d.venta_id = v.id
@@ -173,6 +205,22 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
         WHERE ${salesWhereSql}
         GROUP BY p.id, p.nombre, p.categoria
         ORDER BY revenue DESC
+        LIMIT 20
+      `,
+
+      // Ventas agrupadas por categoría en SQL
+      db.$queryRaw<{ name: string; value: number }[]>`
+        SELECT 
+          COALESCE(p.categoria, 'Sin Categoría') as "name",
+          COALESCE(SUM(d.cantidad * d.precio_unitario_historico), 0)::float as "value"
+        FROM "Detalle_Venta" d
+        JOIN "Producto" p ON d.producto_id = p.id
+        JOIN "Venta" v ON d.venta_id = v.id
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY p.categoria
+        ORDER BY "value" DESC
       `,
 
       // Ventas agrupadas por mes para balance mensual
@@ -202,41 +250,28 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       `
     ]);
 
-    // 5. Procesamiento de totales y métricas de productos
+    // 6. Procesamiento de totales y métricas
     const totalRevenue = Number(totalsRes[0]?.totalRevenue) || 0;
     const totalTransactions = Number(totalsRes[0]?.totalTransactions) || 0;
+    const totalCosts = Number(totalCostsRes[0]?.totalCosts) || 0;
 
-    let totalCosts = 0;
-    const categoryMap = new Map<string, number>();
-
-    const topProducts: ProductPerformance[] = productsRes.slice(0, 15).map(p => ({
+    const topProducts: ProductPerformance[] = productsRes.map(p => ({
       productId: p.productId,
       productName: p.productName,
       category: p.category,
       unitsSold: Number(p.unitsSold) || 0,
       revenue: Number(p.revenue) || 0,
-      grossMargin: (Number(p.revenue) || 0) - (Number(p.costs) || 0)
+      grossMargin: Number(p.grossMargin) || 0
     }));
 
-    for (const p of productsRes) {
-      const pCost = Number(p.costs) || 0;
-      const pRevenue = Number(p.revenue) || 0;
-      const pCategory = p.category || "Sin Categoría";
-
-      totalCosts += pCost;
-      categoryMap.set(pCategory, (categoryMap.get(pCategory) || 0) + pRevenue);
-    }
-
     const catColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-    const categorySales: CategoryPerformance[] = Array.from(categoryMap.entries())
-      .map(([name, value], i) => ({
-        name,
-        value,
-        color: catColors[i % catColors.length]
-      }))
-      .sort((a, b) => b.value - a.value);
+    const categorySales: CategoryPerformance[] = categorySalesRes.map((c, i) => ({
+      name: c.name,
+      value: Number(c.value) || 0,
+      color: catColors[i % catColors.length]
+    }));
 
-    // 6. Procesamiento de Gastos y Balance Mensual
+    // 7. Procesamiento de Gastos y Balance Mensual
     let totalExpenses = 0;
     const expenseCategoryMap = new Map<string, number>();
     const monthlyBalanceMap = new Map<string, { revenue: number; fixed: number; variable: number }>();
@@ -273,7 +308,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       }))
       .sort((a, b) => b.value - a.value);
 
-    // Formatear meses al formato es-MX (ej. "marzo de 2026")
+    // Formatear meses al formato es-MX
     const sortedMonthKeys = Array.from(monthlyBalanceMap.keys()).sort().reverse();
     const monthlyBalance = sortedMonthKeys.map(key => {
       const [year, month] = key.split("-").map(Number);
@@ -333,17 +368,17 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       monthlyBalance
     };
   } catch (err) {
-    console.error("[Analytics] Error en getAnalyticsData:", err);
-    return {
-      summary: { totalRevenue: 0, totalTransactions: 0, averageTicket: 0, totalCosts: 0, totalExpenses: 0, grossProfit: 0, netProfit: 0, marginPercent: 0 },
-      branchSales: [], userSales: [], dateSales: [], topProducts: [], categorySales: [], expensesByCategory: [], monthlyBalance: []
-    };
+    console.error(`[Analytics][Error][Empresa: ${empresaId}] Error en getAnalyticsData:`, err);
+    throw new Error(err instanceof Error ? err.message : "Error al procesar la analítica");
   }
 }
 
 export async function getFilterOptions() {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar opciones de analítica");
+  }
   const empresaId = session.user.empresa_id;
 
   const [sucursales, usuarios] = await Promise.all([
@@ -353,10 +388,15 @@ export async function getFilterOptions() {
     }),
     db.user.findMany({ 
       where: { empresa_id: empresaId, active: true },
-      select: { id: true, name: true, email: true } 
+      select: { id: true, name: true } 
     })
   ]);
 
-  return { sucursales, usuarios };
+  return { 
+    sucursales, 
+    usuarios: usuarios.map(u => ({
+      id: u.id,
+      name: u.name || "Cajero"
+    }))
+  };
 }
-

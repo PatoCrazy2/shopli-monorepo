@@ -15,7 +15,7 @@ import { cn } from "@repo/ui/lib/utils";
 
 type FilterOptions = {
     sucursales: { id: string; nombre: string }[];
-    usuarios: { id: string; name: string | null; email: string }[];
+    usuarios: { id: string; name: string }[];
 };
 
 export function AnalyticsClient({ 
@@ -141,7 +141,7 @@ export function AnalyticsClient({
               value={filters.usuarioId || ""}
               onChange={(val) => handleFilterChange("usuarioId", val)}
               placeholder="Staff"
-              options={options.usuarios.map(u => ({ value: u.id, label: u.name || u.email }))}
+              options={options.usuarios.map(u => ({ value: u.id, label: u.name }))}
               className="w-full"
             />
           </div>
