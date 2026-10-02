@@ -2,9 +2,6 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getInventory, getBranches } from "./queries";
 import { InventoryClient } from "./InventoryClient";
-import { TransferModal } from "./TransferModal";
-import Link from "next/link";
-import { History } from "lucide-react";
 
 export const metadata = {
   title: "Inventario de Stock - ShopLI",
@@ -46,17 +43,6 @@ export default async function InventoryPage({
               ${totalInventoryValue.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard/inventory/history"
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors shadow-xs"
-          >
-            <History className="mr-1.5 w-3.5 h-3.5 text-zinc-500" />
-            Historial
-          </Link>
-          <TransferModal products={products} branches={branches} />
         </div>
       </div>
 

@@ -10,17 +10,13 @@ export default function InventoryLoading() {
           </div>
           <div className="h-4 w-72 bg-zinc-100 dark:bg-zinc-850 rounded mt-1.5" />
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-24 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-800" />
-          <div className="h-9 w-32 bg-zinc-900/10 dark:bg-zinc-800 rounded-lg" />
-        </div>
       </div>
 
       {/* 2. Barra de Comandos y Filtros Rápidos Skeleton */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="h-10 flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800" />
+          <div className="h-10 w-24 bg-zinc-900/10 dark:bg-zinc-800 rounded-xl shrink-0" />
           <div className="h-10 w-full sm:w-[280px] bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0" />
         </div>
 

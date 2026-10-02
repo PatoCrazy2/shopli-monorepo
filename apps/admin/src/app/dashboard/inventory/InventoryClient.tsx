@@ -80,7 +80,7 @@ export function InventoryClient({
       {/* Barra de Comandos y Filtros Rápidos */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Input Buscador Centralizado con Escáner */}
+          {/* Input Buscador Centralizado */}
           <div className="relative flex-1">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none">
               <Search className="w-4 h-4" />
@@ -91,11 +91,11 @@ export function InventoryClient({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nombre, código de barras o SKU..."
-              className="w-full h-10 pl-10 pr-20 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm placeholder:text-zinc-400 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-xs transition-colors"
+              className="w-full h-10 pl-10 pr-9 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm placeholder:text-zinc-400 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-xs transition-colors"
             />
 
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {searchQuery && (
+            {searchQuery && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
@@ -104,19 +104,20 @@ export function InventoryClient({
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setIsScannerOpen(true)}
-                title="Escanear código de barras físico o QR"
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-850 transition-colors"
-                aria-label="Abrir escáner de código de barras"
-              >
-                <ScanBarcode className="w-4 h-4" />
-              </button>
-            </div>
+              </div>
+            )}
           </div>
+
+          {/* Botón Escáner Destacado (Opción A) */}
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+            aria-label="Abrir escáner de código de barras"
+          >
+            <ScanBarcode className="w-4 h-4" />
+            <span>Escanear</span>
+          </button>
 
           {/* Filtro de Sucursal */}
           <div className="shrink-0">
