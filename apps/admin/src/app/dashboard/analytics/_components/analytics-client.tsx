@@ -281,45 +281,95 @@ export function AnalyticsClient({
           )}
 
           {activeTab === "catalogo" && (
-             <div className="bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden animate-in fade-in duration-500">
-                <div className="p-4 border-b border-zinc-100 dark:border-zinc-900">
-                   <h3 className="text-[11px] font-bold tracking-widest uppercase text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+             <div className="space-y-4 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between">
+                   <h3 className="text-xs font-bold tracking-widest uppercase text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                       <ShoppingBag size={14} className="text-zinc-400" />
                       Rentabilidad del Mix Comercial
                    </h3>
+                   <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
+                     Top {data.topProducts.length} Productos
+                   </span>
                 </div>
-                <div className="overflow-x-auto">
-                   <table className="w-full text-left">
-                      <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-900 text-[10px] text-zinc-500 tracking-widest uppercase font-bold">
-                         <tr>
-                            <th className="px-5 py-3">Producto</th>
-                            <th className="px-5 py-3">Categoría</th>
-                            <th className="px-5 py-3 text-right">Volumen</th>
-                            <th className="px-5 py-3 text-right">Ingreso Bruto</th>
-                            <th className="px-5 py-3 text-right">Margen Bruto</th>
-                         </tr>
+
+                {/* Vista Móvil: Filas Ultra-Compactas (Estilo Catálogo) */}
+                <div className="flex flex-col gap-2 md:hidden">
+                  {data.topProducts.map((p) => (
+                    <div
+                      key={p.productId}
+                      className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 shadow-sm"
+                    >
+                      {/* Fila 1: Nombre y Margen Bruto */}
+                      <div className="flex items-center justify-between gap-3">
+                        <h4 className="font-bold text-xs tracking-tight text-zinc-900 dark:text-white truncate">
+                          {p.productName}
+                        </h4>
+                        <span className={cn(
+                          "font-mono font-bold text-xs shrink-0",
+                          p.grossMargin >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"
+                        )}>
+                          {p.grossMargin >= 0 ? "+" : "-"}${Math.abs(p.grossMargin).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Fila 2: Categoría · Volumen · Ingreso Bruto */}
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-900 text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="truncate">{p.category || "General"}</span>
+                          <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                          <span className="shrink-0">{p.unitsSold} uds</span>
+                        </div>
+                        <span className="font-semibold text-zinc-800 dark:text-zinc-200 shrink-0">
+                          Ingreso: ${p.revenue.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {data.topProducts.length === 0 && (
+                    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl p-8 text-center text-xs font-mono uppercase tracking-widest text-zinc-400">
+                      Sin datos
+                    </div>
+                  )}
+                </div>
+
+                {/* Vista Escritorio: Tabla con estilos idénticos a Catálogo */}
+                <div className="hidden md:block rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 overflow-hidden relative">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-zinc-500 dark:text-zinc-400 min-w-[650px]">
+                      <thead className="text-xs text-zinc-600 uppercase bg-zinc-50/80 dark:bg-zinc-900/50 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800 tracking-wider">
+                        <tr>
+                          <th scope="col" className="px-6 py-3.5 font-semibold">Producto</th>
+                          <th scope="col" className="px-6 py-3.5 font-semibold">Categoría</th>
+                          <th scope="col" className="px-6 py-3.5 font-semibold text-right">Volumen</th>
+                          <th scope="col" className="px-6 py-3.5 font-semibold text-right">Ingreso Bruto</th>
+                          <th scope="col" className="px-6 py-3.5 font-semibold text-right">Margen Bruto</th>
+                        </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                         {data.topProducts.map((p, idx) => (
-                           <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
-                              <td className="px-5 py-3 text-zinc-900 dark:text-zinc-100 font-medium text-xs">{p.productName}</td>
-                              <td className="px-5 py-3">
-                                <span className="text-[9px] uppercase tracking-widest text-zinc-500">{p.category || "General"}</span>
-                              </td>
-                              <td className="px-5 py-3 text-right font-mono text-xs text-zinc-600 dark:text-zinc-400">{p.unitsSold}</td>
-                              <td className="px-5 py-3 text-right font-mono text-xs text-zinc-900 dark:text-zinc-100">${p.revenue.toLocaleString()}</td>
-                              <td className="px-5 py-3 text-right font-mono text-xs">
-                                <span className={cn(p.grossMargin >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500")}>
-                                  {p.grossMargin >= 0 ? "+" : "-"}${Math.abs(p.grossMargin).toLocaleString()}
-                                </span>
-                              </td>
-                           </tr>
-                         ))}
-                         {data.topProducts.length === 0 && (
-                           <tr><td colSpan={5} className="px-5 py-10 text-center text-xs font-mono uppercase tracking-widest text-zinc-400">Sin datos</td></tr>
-                         )}
+                        {data.topProducts.map((p) => (
+                          <tr key={p.productId} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40 transition-colors">
+                            <td className="px-6 py-3.5 font-medium text-zinc-900 dark:text-zinc-100 text-xs">{p.productName}</td>
+                            <td className="px-6 py-3.5 text-xs text-zinc-500 uppercase tracking-wider">{p.category || "General"}</td>
+                            <td className="px-6 py-3.5 text-right font-mono text-xs text-zinc-600 dark:text-zinc-400">{p.unitsSold}</td>
+                            <td className="px-6 py-3.5 text-right font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">${p.revenue.toLocaleString()}</td>
+                            <td className="px-6 py-3.5 text-right font-mono text-xs font-semibold">
+                              <span className={cn(p.grossMargin >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500")}>
+                                {p.grossMargin >= 0 ? "+" : "-"}${Math.abs(p.grossMargin).toLocaleString()}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                        {data.topProducts.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-10 text-center text-xs font-mono uppercase tracking-widest text-zinc-400">
+                              Sin datos
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
-                   </table>
+                    </table>
+                  </div>
                 </div>
              </div>
           )}
