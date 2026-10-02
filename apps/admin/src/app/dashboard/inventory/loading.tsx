@@ -1,14 +1,19 @@
 export default function InventoryLoading() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20 animate-pulse">
-      {/* 1. Header Corporativo Monocromático Skeleton */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
-        <div className="space-y-1">
+      {/* 1. Header Compacto (Estilo Catálogo) Skeleton */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+        <div className="space-y-2">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-            <div className="h-5 w-16 bg-zinc-100 dark:bg-zinc-800 rounded-md" />
+            <div className="h-8 w-56 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+            <div className="h-5 w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full" />
           </div>
-          <div className="h-4 w-72 bg-zinc-100 dark:bg-zinc-850 rounded mt-1.5" />
+          <div className="h-4 w-72 bg-zinc-100 dark:bg-zinc-850 rounded hidden md:block" />
+        </div>
+
+        <div className="flex flex-col sm:items-end space-y-1.5">
+          <div className="h-3 w-28 bg-zinc-100 dark:bg-zinc-850 rounded" />
+          <div className="h-8 w-44 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
         </div>
       </div>
 

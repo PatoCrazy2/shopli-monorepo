@@ -26,23 +26,30 @@ export default async function InventoryPage({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20">
-      {/* Header Corporativo Monocromático */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
-        <div>
+      {/* Header Compacto (Estilo Catálogo) con Monto Protagonista */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+            <h1 className="text-xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
               Inventario de Stock
             </h1>
-            <span className="text-xs font-mono tabular-nums tracking-tight px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
-              {products.length} SKUs
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+              {products.length}
             </span>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Control de existencias y movimientos. Valor total en almacén:{" "}
-            <span className="font-mono tabular-nums tracking-tight font-semibold text-zinc-900 dark:text-zinc-100">
-              ${totalInventoryValue.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
+          <p className="hidden md:block text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+            Control de existencias y movimientos de almacén.
           </p>
+        </div>
+
+        {/* Monto Total Protagonista (Integrado sin ser card) */}
+        <div className="flex flex-col sm:items-end">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Valor de Almacén
+          </span>
+          <span className="text-xl sm:text-2xl md:text-3xl font-mono font-black tabular-nums tracking-tight text-zinc-900 dark:text-white">
+            ${totalInventoryValue.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
       </div>
 
