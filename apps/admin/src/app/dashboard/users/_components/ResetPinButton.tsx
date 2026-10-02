@@ -7,9 +7,11 @@ import { KeyRound, X, Loader2, Check } from "lucide-react";
 export function ResetPinButton({
   userId,
   userName,
+  iconOnly = false,
 }: {
   userId: string;
   userName: string;
+  iconOnly?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [pin, setPin] = useState("");
@@ -63,11 +65,16 @@ export function ResetPinButton({
       <button
         type="button"
         onClick={handleOpen}
-        className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 transition-colors"
+        className={
+          iconOnly
+            ? "inline-flex items-center justify-center h-8 w-8 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            : "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200 transition-colors"
+        }
         title="Cambiar PIN de acceso"
+        aria-label="Cambiar PIN de acceso"
       >
-        <KeyRound size={13} />
-        <span>Cambiar PIN</span>
+        <KeyRound size={iconOnly ? 15 : 13} />
+        {!iconOnly && <span>Cambiar PIN</span>}
       </button>
 
       {isOpen && (
