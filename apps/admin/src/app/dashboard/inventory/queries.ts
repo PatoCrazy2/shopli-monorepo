@@ -6,15 +6,20 @@ export async function getInventory(sucursalId?: string) {
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
 
-  if (sucursalId) {
-    const sucursal = await db.sucursal.findUnique({
-      where: { id: sucursalId },
-      select: { empresa_id: true }
-    });
-    if (!sucursal || sucursal.empresa_id !== empresaId) {
-      throw new Error("No autorizado");
-    }
+  // Resolvemos sucursales válidas de la empresa en un viaje (validación RBAC fusionada)
+  const branchesQuery = await db.sucursal.findMany({
+    where: {
+      empresa_id: empresaId,
+      activo: true,
+      ...(sucursalId ? { id: sucursalId } : {})
+    },
+    select: { id: true }
+  });
+
+  if (sucursalId && branchesQuery.length === 0) {
+    throw new Error("No autorizado");
   }
+  const branchIds = branchesQuery.map(b => b.id);
 
   const productos = await db.producto.findMany({
     where: { 
@@ -25,10 +30,13 @@ export async function getInventory(sucursalId?: string) {
         { parent_id: null, variants: { none: {} } }
       ]
     },
+    orderBy: { nombre: 'asc' },
     include: {
       inventario: {
-        where: sucursalId ? { sucursal_id: sucursalId } : { sucursal: { empresa_id: empresaId } },
-        include: {
+        where: { sucursal_id: { in: branchIds } },
+        select: {
+          sucursal_id: true,
+          cantidad: true,
           sucursal: { select: { nombre: true, id: true } }
         }
       },
@@ -45,7 +53,7 @@ export async function getInventory(sucursalId?: string) {
       precio_mayoreo: p.precio_mayoreo ? Number(p.precio_mayoreo) : null,
       totalStock
     }
-  }).sort((a, b) => a.totalStock - b.totalStock);
+  });
 }
 
 export async function getBranches() {

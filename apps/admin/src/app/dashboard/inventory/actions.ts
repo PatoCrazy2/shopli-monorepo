@@ -5,7 +5,24 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { canAccessDynamicAudits } from "@/lib/check-plan-limits";
 
-export async function adjustStock(productId: string, amountToAdd: number, reason: string, sucursalId: string) {
+import {
+  StockOperation,
+  StockInReason,
+  STOCK_IN_REASONS,
+  StockOutReason,
+  STOCK_OUT_REASONS,
+  StockReason,
+  AdjustStockInput,
+} from "./constants";
+
+export async function adjustStock(
+  productIdOrData: string | AdjustStockInput,
+  amountArg?: number,
+  operationArg?: StockOperation,
+  reasonArg?: StockReason,
+  sucursalIdArg?: string,
+  notesArg?: string
+): Promise<{ success?: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.id || !session.user.empresa_id) {
     return { error: "No autorizado. Su sesión puede haber expirado." };
@@ -13,59 +30,118 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
   const empresaId = session.user.empresa_id;
   const userId = session.user.id;
 
+  let productId: string;
+  let amount: number;
+  let operation: StockOperation;
+  let reason: StockReason;
+  let sucursalId: string;
+  let notes: string | undefined;
+
+  if (typeof productIdOrData === "object" && productIdOrData !== null) {
+    productId = productIdOrData.productId;
+    amount = productIdOrData.amount;
+    operation = productIdOrData.operation;
+    reason = productIdOrData.reason;
+    sucursalId = productIdOrData.sucursalId;
+    notes = productIdOrData.notes;
+  } else {
+    productId = productIdOrData;
+    amount = amountArg!;
+    operation = operationArg!;
+    reason = reasonArg!;
+    sucursalId = sucursalIdArg!;
+    notes = notesArg;
+  }
+
+  if (!productId || !sucursalId) {
+    return { error: "Producto y sucursal son requeridos." };
+  }
+
+  const numericAmount = Number(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return { error: "La cantidad debe ser un número mayor a 0." };
+  }
+
+  if (operation === "IN") {
+    if (!STOCK_IN_REASONS.includes(reason as StockInReason)) {
+      return {
+        error: `Motivo inválido para ingreso. Permitidos: ${STOCK_IN_REASONS.join(", ")}`,
+      };
+    }
+  } else if (operation === "OUT") {
+    if (!STOCK_OUT_REASONS.includes(reason as StockOutReason)) {
+      return {
+        error: `Motivo inválido para salida. Permitidos: ${STOCK_OUT_REASONS.join(", ")}`,
+      };
+    }
+  } else {
+    return { error: "Tipo de operación no válida (debe ser IN u OUT)." };
+  }
+
   try {
-    // Validar pertenencia de la sucursal y del producto
-    const sucursal = await db.sucursal.findUnique({
-      where: { id: sucursalId },
-      select: { empresa_id: true }
-    });
+    const [sucursal, producto] = await Promise.all([
+      db.sucursal.findUnique({
+        where: { id: sucursalId },
+        select: { empresa_id: true },
+      }),
+      db.producto.findUnique({
+        where: { id: productId },
+        select: { empresa_id: true },
+      }),
+    ]);
+
     if (!sucursal || sucursal.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
-
-    const producto = await db.producto.findUnique({
-      where: { id: productId },
-      select: { empresa_id: true }
-    });
     if (!producto || producto.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
 
     let inv = await db.inventario_Sucursal.findUnique({
-      where: { sucursal_id_producto_id: { sucursal_id: sucursalId, producto_id: productId } }
+      where: { sucursal_id_producto_id: { sucursal_id: sucursalId, producto_id: productId } },
     });
 
     if (!inv) {
-      // Si no existe, inicializarlo en 0
       inv = await db.inventario_Sucursal.create({
-        data: { sucursal_id: sucursalId, producto_id: productId, cantidad: 0 }
+        data: { sucursal_id: sucursalId, producto_id: productId, cantidad: 0 },
       });
     }
 
+    const delta = operation === "IN" ? numericAmount : -numericAmount;
+    const tipoMovimiento =
+      operation === "IN"
+        ? reason === "AJUSTE_POSITIVO"
+          ? "AJUSTE"
+          : "INGRESO"
+        : reason === "AJUSTE_NEGATIVO"
+          ? "AJUSTE"
+          : "EGRESO";
+
+    const motivoLog =
+      notes && notes.trim().length > 0 ? `${reason} - ${notes.trim()}` : reason;
+
     await db.$transaction(async (tx) => {
-      // a) Actualizar el stock del producto usando $increment para seguridad
       await tx.inventario_Sucursal.update({
         where: { id: inv.id },
         data: {
-          cantidad: { increment: amountToAdd },
+          cantidad: { increment: delta },
           updatedAt: new Date(),
-        }
+        },
       });
 
-      // b) Log en MovimientoInventario (Historial Centralizado)
       await tx.movimientoInventario.create({
         data: {
           producto_id: productId,
           sucursal_id: sucursalId,
-          cantidad: amountToAdd,
-          tipo: "AJUSTE",
-          motivo: reason,
+          cantidad: delta,
+          tipo: tipoMovimiento,
+          motivo: motivoLog,
           usuario_id: userId,
-        }
+        },
       });
     });
 
-    revalidatePath('/dashboard/inventory');
+    revalidatePath("/dashboard/inventory");
     return { success: true };
   } catch (error: any) {
     console.error("Error adjustStock:", error);
@@ -79,33 +155,36 @@ export async function transferStock(data: { type: 'TRANSFER' | 'INGRESS', produc
   const empresaId = session.user.empresa_id;
 
   try {
-    // Validar propiedad del producto
-    const producto = await db.producto.findUnique({
-      where: { id: data.productId },
-      select: { empresa_id: true }
-    });
+    const isTransfer = data.type === 'TRANSFER' && Boolean(data.fromBranchId);
+
+    // Validar propiedad de producto y sucursales en paralelo
+    const [producto, destSucursal, originSucursal] = await Promise.all([
+      db.producto.findUnique({
+        where: { id: data.productId },
+        select: { empresa_id: true }
+      }),
+      db.sucursal.findUnique({
+        where: { id: data.toBranchId },
+        select: { empresa_id: true }
+      }),
+      isTransfer && data.fromBranchId
+        ? db.sucursal.findUnique({
+            where: { id: data.fromBranchId },
+            select: { empresa_id: true }
+          })
+        : Promise.resolve(null)
+    ]);
+
     if (!producto || producto.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
 
-    // Validar propiedad de la sucursal destino
-    const destSucursal = await db.sucursal.findUnique({
-      where: { id: data.toBranchId },
-      select: { empresa_id: true }
-    });
     if (!destSucursal || destSucursal.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
 
-    // Validar sucursal origen si aplica
-    if (data.type === 'TRANSFER' && data.fromBranchId) {
-      const originSucursal = await db.sucursal.findUnique({
-        where: { id: data.fromBranchId },
-        select: { empresa_id: true }
-      });
-      if (!originSucursal || originSucursal.empresa_id !== empresaId) {
-        return { error: "No autorizado" };
-      }
+    if (isTransfer && (!originSucursal || originSucursal.empresa_id !== empresaId)) {
+      return { error: "No autorizado" };
     }
     await db.$transaction(async (tx) => {
       // Ensure destination inventory exists
@@ -273,10 +352,23 @@ export async function applyAuditAdjustments(auditId: string) {
 
     const audit = await db.dynamicAudit.findUnique({
       where: { id: auditId },
-      include: { 
-        items: true,
-        sucursal: { select: { empresa_id: true } }
-      }
+      select: {
+        id: true,
+        sucursalId: true,
+        status: true,
+        isApplied: true,
+        sucursal: { select: { empresa_id: true } },
+        items: {
+          where: {
+            difference: { not: null },
+            countedQuantity: { not: null },
+          },
+          select: {
+            productId: true,
+            difference: true,
+          },
+        },
+      },
     });
 
     if (!audit) throw new Error("Auditoría no encontrada");
@@ -286,27 +378,31 @@ export async function applyAuditAdjustments(auditId: string) {
     if (audit.isApplied) throw new Error("Los ajustes de esta auditoría ya fueron aplicados.");
 
     await db.$transaction(async (tx) => {
-      // Aplicar cada diferencia al inventario
-      for (const item of audit.items) {
-        if (item.difference && item.difference !== 0) {
-          await tx.inventario_Sucursal.update({
+      // JS Filter de seguridad adicional y Promise.all para evitar Transaction Timeout
+      const itemsToUpdate = audit.items.filter(
+        (item) => item.difference != null && item.difference !== 0
+      );
+
+      await Promise.all(
+        itemsToUpdate.map((item) =>
+          tx.inventario_Sucursal.update({
             where: {
               sucursal_id_producto_id: {
                 sucursal_id: audit.sucursalId,
                 producto_id: item.productId,
-              }
+              },
             },
             data: {
-              cantidad: { increment: item.difference }
-            }
-          });
-        }
-      }
+              cantidad: { increment: item.difference! },
+            },
+          })
+        )
+      );
 
       // Marcar como aplicada
       await tx.dynamicAudit.update({
         where: { id: auditId },
-        data: { isApplied: true }
+        data: { isApplied: true },
       });
     });
 

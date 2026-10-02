@@ -38,8 +38,18 @@ export function QuickAdjustModal({ productId, productName, branches, selectedBra
       return;
     }
 
+    const operation = diff > 0 ? "IN" : "OUT";
+    const reason = diff > 0 ? "AJUSTE_POSITIVO" : "AJUSTE_NEGATIVO";
+
     startTransition(async () => {
-      const res = await adjustStock(productId, diff, "Ajuste manual de inventario", branchId);
+      const res = await adjustStock({
+        productId,
+        amount: Math.abs(diff),
+        operation,
+        reason,
+        sucursalId: branchId,
+        notes: "Ajuste manual de inventario",
+      });
       if (res.error) {
         alert(res.error);
       } else {

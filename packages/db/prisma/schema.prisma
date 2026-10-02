@@ -269,6 +269,9 @@ model MovimientoInventario {
   producto        Producto       @relation(fields: [producto_id], references: [id])
   sucursal        Sucursal       @relation(fields: [sucursal_id], references: [id])
   usuario         User           @relation(fields: [usuario_id], references: [id])
+
+  @@index([fecha(sort: Desc)])
+  @@index([sucursal_id, fecha(sort: Desc)])
 }
 
 enum TipoMovimiento {

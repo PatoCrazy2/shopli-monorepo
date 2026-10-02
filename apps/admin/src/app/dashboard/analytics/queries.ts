@@ -1,34 +1,17 @@
-import { db } from "@shopli/db";
-import type { Prisma, GastoCategoria } from "@shopli/db";
-import { AnalyticsFilters, AnalyticsData, InventoryAnalytics, CategoryPerformance } from "./types";
+import { db, Prisma } from "@shopli/db";
+import { AnalyticsFilters, AnalyticsData, CategoryPerformance, ProductPerformance } from "./types";
 import { auth } from "@/lib/auth";
 
 export async function getAnalyticsData(filters: AnalyticsFilters): Promise<AnalyticsData> {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar analítica");
+  }
   const empresaId = session.user.empresa_id;
 
   try {
-    const where: Prisma.VentaWhereInput = {
-      sucursal: {
-        empresa_id: empresaId
-      }
-    };
-
-    if (filters.estado) {
-      where.estado = filters.estado;
-    }
-
-    if (filters.startDate && filters.endDate) {
-      const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
-      const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
-      where.fecha = { gte: s, lte: e };
-    } else if (filters.startDate) {
-      where.fecha = { gte: new Date(`${filters.startDate}T00:00:00.000-06:00`) };
-    } else if (filters.endDate) {
-      where.fecha = { lte: new Date(`${filters.endDate}T23:59:59.999-06:00`) };
-    }
-    
+    // 1. Validaciones de alcance multi-tenant
     if (filters.sucursalId) {
       const sucursal = await db.sucursal.findUnique({
         where: { id: filters.sucursalId },
@@ -37,8 +20,8 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       if (!sucursal || sucursal.empresa_id !== empresaId) {
         throw new Error("No autorizado");
       }
-      where.sucursal_id = filters.sucursalId;
     }
+
     if (filters.usuarioId) {
       const usr = await db.user.findUnique({
         where: { id: filters.usuarioId },
@@ -47,212 +30,275 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       if (!usr || usr.empresa_id !== empresaId) {
         throw new Error("No autorizado");
       }
-      where.turno = { usuario_id: filters.usuarioId };
     }
 
-    // 1. Obtencion de ventas con detalles
-    const sales = await db.venta.findMany({
-      where,
-      include: {
-        turno: { select: { usuario_id: true } },
-        detalles: {
-          include: {
-            producto: {
-              select: { costo: true, nombre: true, categoria: true }
-            }
-          }
-        }
-      },
-      orderBy: { fecha: 'asc' }
-    });
+    // 2. Validación y clamping de fechas (máximo 366 días para proteger Neon)
+    const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+    const startDateClean = filters.startDate && DATE_REGEX.test(filters.startDate) ? filters.startDate : undefined;
+    const endDateClean = filters.endDate && DATE_REGEX.test(filters.endDate) ? filters.endDate : undefined;
 
-    // 2. Obtención de gastos en el periodo
-    const gastosWhere: Prisma.GastoWhereInput = {
-      sucursal: {
-        empresa_id: empresaId
+    let sDate: Date | undefined;
+    let eDate: Date | undefined;
+
+    if (startDateClean && endDateClean) {
+      sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
+      eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
+      
+      if (sDate > eDate) {
+        const tmp = sDate;
+        sDate = eDate;
+        eDate = tmp;
       }
-    };
-    if (filters.startDate && filters.endDate) {
-      const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
-      const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
-      gastosWhere.fecha = { gte: s, lte: e };
-    } else if (filters.startDate) {
-      gastosWhere.fecha = { gte: new Date(`${filters.startDate}T00:00:00.000-06:00`) };
-    } else if (filters.endDate) {
-      gastosWhere.fecha = { lte: new Date(`${filters.endDate}T23:59:59.999-06:00`) };
+
+      const diffMs = eDate.getTime() - sDate.getTime();
+      const maxMs = 366 * 24 * 60 * 60 * 1000;
+      if (diffMs > maxMs) {
+        sDate = new Date(eDate.getTime() - maxMs);
+      }
+    } else if (startDateClean) {
+      sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
+      eDate = new Date(sDate.getTime() + 366 * 24 * 60 * 60 * 1000);
+    } else if (endDateClean) {
+      eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
+      sDate = new Date(eDate.getTime() - 366 * 24 * 60 * 60 * 1000);
     }
+
+    // 3. Construcción de condiciones SQL parametrizadas para Ventas
+    const salesConditions: Prisma.Sql[] = [
+      Prisma.sql`s.empresa_id = ${empresaId}`
+    ];
+
+    if (filters.estado) {
+      salesConditions.push(Prisma.sql`v.estado = ${filters.estado}::"EstadoVenta"`);
+    }
+
+    if (sDate && eDate) {
+      salesConditions.push(Prisma.sql`v.fecha >= ${sDate} AND v.fecha <= ${eDate}`);
+    }
+
     if (filters.sucursalId) {
-      gastosWhere.sucursal_id = filters.sucursalId;
+      salesConditions.push(Prisma.sql`v.sucursal_id = ${filters.sucursalId}`);
     }
 
-    const gastos = await db.gasto.findMany({ where: gastosWhere });
-
-    // Agregaciones
-    let totalRevenue = 0;
-    let totalTransactions = sales.length;
-    let totalCosts = 0;
-    let totalExpenses = 0;
-    
-    const branchMap = new Map<string, { total: number; count: number }>();
-    const userMap = new Map<string, { total: number; count: number }>();
-    const dateMap = new Map<string, { rev: number; count: number }>();
-    const categoryMap = new Map<string, number>();
-    const expenseCategoryMap = new Map<string, number>();
-    const productMap = new Map<string, {
-      name: string;
-      category: string | null;
-      units: number;
-      revenue: number;
-      costs: number;
-    }>();
-
-    const monthlyBalanceMap = new Map<string, { 
-      revenue: number; 
-      fixed: number; 
-      variable: number 
-    }>();
-
-    for (const s of sales) {
-      const saleTotal = Number(s.total) || 0;
-      totalRevenue += saleTotal;
-
-      const monthKey = new Intl.DateTimeFormat('es-MX', { 
-        timeZone: 'America/Mexico_City', 
-        year: 'numeric', 
-        month: 'long' 
-      }).format(s.fecha);
-      
-      if (!monthlyBalanceMap.has(monthKey)) {
-          monthlyBalanceMap.set(monthKey, { revenue: 0, fixed: 0, variable: 0 });
-      }
-      monthlyBalanceMap.get(monthKey)!.revenue += saleTotal;
-
-      if (!branchMap.has(s.sucursal_id)) {
-        branchMap.set(s.sucursal_id, { total: 0, count: 0 });
-      }
-      const b = branchMap.get(s.sucursal_id)!;
-      b.total += saleTotal;
-      b.count += 1;
-
-      const userId = s.turno.usuario_id;
-      if (!userMap.has(userId)) {
-        userMap.set(userId, { total: 0, count: 0 });
-      }
-      const u = userMap.get(userId)!;
-      u.total += saleTotal;
-      u.count += 1;
-
-      const dateStr = new Intl.DateTimeFormat('en-CA', { 
-        timeZone: 'America/Mexico_City', 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit' 
-      }).format(s.fecha);
-      if (!dateMap.has(dateStr)) {
-        dateMap.set(dateStr, { rev: 0, count: 0 });
-      }
-      const dMapVal = dateMap.get(dateStr)!;
-      dMapVal.rev += saleTotal;
-      dMapVal.count += 1;
-
-      for (const d of s.detalles) {
-        const pCost = Number(d.producto.costo) || 0;
-        const pRevenue = Number(d.precio_unitario_historico) * d.cantidad;
-        const pCostTotal = pCost * d.cantidad;
-        const pCategory = d.producto.categoria || 'Sin Categoría';
-        
-        totalCosts += pCostTotal;
-        categoryMap.set(pCategory, (categoryMap.get(pCategory) || 0) + pRevenue);
-
-        const productId = d.producto_id;
-        if (!productMap.has(productId)) {
-         productMap.set(productId, {
-            name: d.producto.nombre,
-            category: d.producto.categoria,
-            units: 0,
-            revenue: 0,
-            costs: 0
-          });
-        }
-        const p = productMap.get(productId)!;
-        p.units += d.cantidad;
-        p.revenue += pRevenue;
-        p.costs += pCostTotal;
-      }
+    if (filters.usuarioId) {
+      salesConditions.push(Prisma.sql`t.usuario_id = ${filters.usuarioId}`);
     }
 
-    for (const g of gastos) {
-      const amount = Number(g.monto) || 0;
-      totalExpenses += amount;
-      
-      expenseCategoryMap.set(g.categoria, (expenseCategoryMap.get(g.categoria) || 0) + amount);
+    const salesWhereSql = Prisma.join(salesConditions, " AND ");
 
-      const monthKey = new Intl.DateTimeFormat('es-MX', { 
-        timeZone: 'America/Mexico_City', 
-        year: 'numeric', 
-        month: 'long' 
-      }).format(g.fecha);
+    // 4. Construcción de condiciones SQL parametrizadas para Gastos
+    const gastosConditions: Prisma.Sql[] = [
+      Prisma.sql`s.empresa_id = ${empresaId}`
+    ];
 
-      if (!monthlyBalanceMap.has(monthKey)) {
-          monthlyBalanceMap.set(monthKey, { revenue: 0, fixed: 0, variable: 0 });
-      }
-      
-      const isFixed = g.categoria === 'RENTA' || g.categoria === 'NOMINA';
-      if (isFixed) {
-          monthlyBalanceMap.get(monthKey)!.fixed += amount;
-      } else {
-          monthlyBalanceMap.get(monthKey)!.variable += amount;
-      }
+    if (filters.sucursalId) {
+      gastosConditions.push(Prisma.sql`g.sucursal_id = ${filters.sucursalId}`);
     }
 
-    const branchIds = Array.from(branchMap.keys());
-    const userIds = Array.from(userMap.keys());
-    
-    const [branches, users] = await Promise.all([
-       branchIds.length > 0 ? db.sucursal.findMany({ where: { id: { in: branchIds } } }) : [],
-       userIds.length > 0 ? db.user.findMany({ where: { id: { in: userIds } } }) : []
+    if (sDate && eDate) {
+      gastosConditions.push(Prisma.sql`g.fecha >= ${sDate} AND g.fecha <= ${eDate}`);
+    }
+
+    const gastosWhereSql = Prisma.join(gastosConditions, " AND ");
+
+    // 5. Ejecución paralela de consultas agregadas en PostgreSQL (Neon)
+    const [
+      totalsRes,
+      totalCostsRes,
+      branchSalesRes,
+      userSalesRes,
+      dateSalesRes,
+      productsRes,
+      categorySalesRes,
+      monthlySalesRes,
+      gastosRes
+    ] = await Promise.all([
+      // Totales de ventas (revenue y transacciones)
+      db.$queryRaw<{ totalRevenue: number | null; totalTransactions: number | null }[]>`
+        SELECT 
+          COALESCE(SUM(v.total), 0)::float as "totalRevenue",
+          COUNT(v.id)::int as "totalTransactions"
+        FROM "Venta" v
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+      `,
+
+      // Total costos (COGS) calculado nativamente en Postgres
+      db.$queryRaw<{ totalCosts: number | null }[]>`
+        SELECT 
+          COALESCE(SUM(d.cantidad * p.costo), 0)::float as "totalCosts"
+        FROM "Detalle_Venta" d
+        JOIN "Producto" p ON d.producto_id = p.id
+        JOIN "Venta" v ON d.venta_id = v.id
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+      `,
+
+      // Ventas por sucursal
+      db.$queryRaw<{ branchId: string; branchName: string; totalSales: number; transactionCount: number }[]>`
+        SELECT 
+          v.sucursal_id as "branchId",
+          s.nombre as "branchName",
+          COALESCE(SUM(v.total), 0)::float as "totalSales",
+          COUNT(v.id)::int as "transactionCount"
+        FROM "Venta" v
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY v.sucursal_id, s.nombre
+        ORDER BY "totalSales" DESC
+      `,
+
+      // Ventas por cajero / staff
+      db.$queryRaw<{ userId: string; userName: string; totalSales: number; transactionCount: number }[]>`
+        SELECT 
+          t.usuario_id as "userId",
+          COALESCE(u.name, 'Cajero') as "userName",
+          COALESCE(SUM(v.total), 0)::float as "totalSales",
+          COUNT(v.id)::int as "transactionCount"
+        FROM "Venta" v
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "User" u ON t.usuario_id = u.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY t.usuario_id, u.name
+        ORDER BY "totalSales" DESC
+      `,
+
+      // Ventas por fecha (Timezone America/Mexico_City)
+      db.$queryRaw<{ date: string; totalSales: number; orders: number }[]>`
+        SELECT 
+          TO_CHAR(v.fecha AT TIME ZONE 'America/Mexico_City', 'YYYY-MM-DD') as date,
+          COALESCE(SUM(v.total), 0)::float as "totalSales",
+          COUNT(v.id)::int as orders
+        FROM "Venta" v
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY 1
+        ORDER BY 1 ASC
+      `,
+
+      // Desempeño por producto y margen bruto con LIMIT 20 directo en DB
+      db.$queryRaw<{
+        productId: string;
+        productName: string;
+        category: string | null;
+        unitsSold: number;
+        revenue: number;
+        grossMargin: number;
+      }[]>`
+        SELECT 
+          p.id as "productId",
+          p.nombre as "productName",
+          p.categoria as "category",
+          COALESCE(SUM(d.cantidad), 0)::int as "unitsSold",
+          COALESCE(SUM(d.cantidad * d.precio_unitario_historico), 0)::float as revenue,
+          COALESCE(SUM(d.cantidad * (d.precio_unitario_historico - p.costo)), 0)::float as "grossMargin"
+        FROM "Detalle_Venta" d
+        JOIN "Producto" p ON d.producto_id = p.id
+        JOIN "Venta" v ON d.venta_id = v.id
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY p.id, p.nombre, p.categoria
+        ORDER BY revenue DESC
+        LIMIT 20
+      `,
+
+      // Ventas agrupadas por categoría en SQL
+      db.$queryRaw<{ name: string; value: number }[]>`
+        SELECT 
+          COALESCE(p.categoria, 'Sin Categoría') as "name",
+          COALESCE(SUM(d.cantidad * d.precio_unitario_historico), 0)::float as "value"
+        FROM "Detalle_Venta" d
+        JOIN "Producto" p ON d.producto_id = p.id
+        JOIN "Venta" v ON d.venta_id = v.id
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY p.categoria
+        ORDER BY "value" DESC
+      `,
+
+      // Ventas agrupadas por mes para balance mensual
+      db.$queryRaw<{ monthKey: string; revenue: number }[]>`
+        SELECT 
+          TO_CHAR(v.fecha AT TIME ZONE 'America/Mexico_City', 'YYYY-MM') as "monthKey",
+          COALESCE(SUM(v.total), 0)::float as revenue
+        FROM "Venta" v
+        JOIN "Turno" t ON v.turno_id = t.id
+        JOIN "Sucursal" s ON v.sucursal_id = s.id
+        WHERE ${salesWhereSql}
+        GROUP BY 1
+        ORDER BY 1 ASC
+      `,
+
+      // Gastos agrupados por mes y categoría
+      db.$queryRaw<{ monthKey: string; category: string; amount: number }[]>`
+        SELECT 
+          TO_CHAR(g.fecha AT TIME ZONE 'America/Mexico_City', 'YYYY-MM') as "monthKey",
+          g.categoria::text as category,
+          COALESCE(SUM(g.monto), 0)::float as amount
+        FROM "Gasto" g
+        JOIN "Sucursal" s ON g.sucursal_id = s.id
+        WHERE ${gastosWhereSql}
+        GROUP BY 1, 2
+        ORDER BY 1 ASC
+      `
     ]);
-    
-    const branchNameMap = new Map(branches.map((b: any) => [b.id, b.nombre]));
-    const userNameMap = new Map(users.map((u: any) => [u.id, u.name || u.email]));
 
-    const branchSales = branchIds.map(id => ({
-       branchId: id,
-       branchName: branchNameMap.get(id) || "Desconocida",
-       totalSales: branchMap.get(id)!.total,
-       transactionCount: branchMap.get(id)!.count
-    })).sort((a,b) => b.totalSales - a.totalSales);
+    // 6. Procesamiento de totales y métricas
+    const totalRevenue = Number(totalsRes[0]?.totalRevenue) || 0;
+    const totalTransactions = Number(totalsRes[0]?.totalTransactions) || 0;
+    const totalCosts = Number(totalCostsRes[0]?.totalCosts) || 0;
 
-    const userSales = userIds.map(id => ({
-       userId: id,
-       userName: userNameMap.get(id) || "Usuario",
-       totalSales: userMap.get(id)!.total,
-       transactionCount: userMap.get(id)!.count
-    })).sort((a,b) => b.totalSales - a.totalSales);
-
-    const dateSales = Array.from(dateMap.entries()).map(([date, val]) => ({
-        date,
-        totalSales: val.rev,
-        orders: val.count
-    })).sort((a,b) => a.date.localeCompare(b.date));
-
-    const topProducts = Array.from(productMap.entries()).map(([id, p]) => ({
-        productId: id,
-        productName: p.name,
-        category: p.category,
-        unitsSold: p.units,
-        revenue: p.revenue,
-        grossMargin: p.revenue - p.costs
-    })).sort((a,b) => b.revenue - a.revenue).slice(0, 15);
+    const topProducts: ProductPerformance[] = productsRes.map(p => ({
+      productId: p.productId,
+      productName: p.productName,
+      category: p.category,
+      unitsSold: Number(p.unitsSold) || 0,
+      revenue: Number(p.revenue) || 0,
+      grossMargin: Number(p.grossMargin) || 0
+    }));
 
     const catColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-    const categorySales: CategoryPerformance[] = Array.from(categoryMap.entries())
-      .map(([name, value], i) => ({
-        name,
-        value,
-        color: catColors[i % catColors.length]
-      }))
-      .sort((a,b) => b.value - a.value);
+    const categorySales: CategoryPerformance[] = categorySalesRes.map((c, i) => ({
+      name: c.name,
+      value: Number(c.value) || 0,
+      color: catColors[i % catColors.length]
+    }));
+
+    // 7. Procesamiento de Gastos y Balance Mensual
+    let totalExpenses = 0;
+    const expenseCategoryMap = new Map<string, number>();
+    const monthlyBalanceMap = new Map<string, { revenue: number; fixed: number; variable: number }>();
+
+    for (const g of gastosRes) {
+      const amt = Number(g.amount) || 0;
+      totalExpenses += amt;
+      expenseCategoryMap.set(g.category, (expenseCategoryMap.get(g.category) || 0) + amt);
+
+      if (!monthlyBalanceMap.has(g.monthKey)) {
+        monthlyBalanceMap.set(g.monthKey, { revenue: 0, fixed: 0, variable: 0 });
+      }
+
+      const isFixed = g.category === "RENTA" || g.category === "NOMINA";
+      if (isFixed) {
+        monthlyBalanceMap.get(g.monthKey)!.fixed += amt;
+      } else {
+        monthlyBalanceMap.get(g.monthKey)!.variable += amt;
+      }
+    }
+
+    for (const s of monthlySalesRes) {
+      if (!monthlyBalanceMap.has(s.monthKey)) {
+        monthlyBalanceMap.set(s.monthKey, { revenue: 0, fixed: 0, variable: 0 });
+      }
+      monthlyBalanceMap.get(s.monthKey)!.revenue += Number(s.revenue) || 0;
+    }
 
     const expensesByCategory: CategoryPerformance[] = Array.from(expenseCategoryMap.entries())
       .map(([name, value], i) => ({
@@ -260,15 +306,28 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
         value,
         color: catColors[(i + 2) % catColors.length]
       }))
-      .sort((a,b) => b.value - a.value);
+      .sort((a, b) => b.value - a.value);
 
-    const monthlyBalance = Array.from(monthlyBalanceMap.entries()).map(([month, val]) => ({
-        month,
-        revenue: val.revenue,
-        fixedExpenses: val.fixed,
-        variableExpenses: val.variable,
-        profit: val.revenue - val.fixed - val.variable
-    })).reverse();
+    // Formatear meses al formato es-MX
+    const sortedMonthKeys = Array.from(monthlyBalanceMap.keys()).sort().reverse();
+    const monthlyBalance = sortedMonthKeys.map(key => {
+      const [year, month] = key.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1, 15, 12, 0, 0));
+      const monthLabel = new Intl.DateTimeFormat('es-MX', {
+        timeZone: 'America/Mexico_City',
+        year: 'numeric',
+        month: 'long'
+      }).format(date);
+
+      const item = monthlyBalanceMap.get(key)!;
+      return {
+        month: monthLabel,
+        revenue: item.revenue,
+        fixedExpenses: item.fixed,
+        variableExpenses: item.variable,
+        profit: item.revenue - item.fixed - item.variable
+      };
+    });
 
     const averageTicket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
     const grossProfit = totalRevenue - totalCosts;
@@ -277,85 +336,67 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
 
     return {
       summary: {
-         totalRevenue,
-         totalTransactions,
-         averageTicket,
-         totalCosts,
-         totalExpenses,
-         grossProfit,
-         netProfit,
-         marginPercent
+        totalRevenue,
+        totalTransactions,
+        averageTicket,
+        totalCosts,
+        totalExpenses,
+        grossProfit,
+        netProfit,
+        marginPercent
       },
-      branchSales,
-      userSales,
-      dateSales,
+      branchSales: branchSalesRes.map(b => ({
+        branchId: b.branchId,
+        branchName: b.branchName || "Desconocida",
+        totalSales: Number(b.totalSales) || 0,
+        transactionCount: Number(b.transactionCount) || 0
+      })),
+      userSales: userSalesRes.map(u => ({
+        userId: u.userId,
+        userName: u.userName || "Usuario",
+        totalSales: Number(u.totalSales) || 0,
+        transactionCount: Number(u.transactionCount) || 0
+      })),
+      dateSales: dateSalesRes.map(d => ({
+        date: d.date,
+        totalSales: Number(d.totalSales) || 0,
+        orders: Number(d.orders) || 0
+      })),
       topProducts,
       categorySales,
       expensesByCategory,
       monthlyBalance
     };
   } catch (err) {
-    console.error("[Analytics] Error en getAnalyticsData:", err);
-    return {
-      summary: { totalRevenue: 0, totalTransactions: 0, averageTicket: 0, totalCosts: 0, totalExpenses: 0, grossProfit: 0, netProfit: 0, marginPercent: 0 },
-      branchSales: [], userSales: [], dateSales: [], topProducts: [], categorySales: [], expensesByCategory: [], monthlyBalance: []
-    };
+    console.error(`[Analytics][Error][Empresa: ${empresaId}] Error en getAnalyticsData:`, err);
+    throw new Error(err instanceof Error ? err.message : "Error al procesar la analítica");
   }
 }
 
 export async function getFilterOptions() {
-   const session = await auth();
-   if (!session?.user?.empresa_id) throw new Error("No autorizado");
-   const empresaId = session.user.empresa_id;
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar opciones de analítica");
+  }
+  const empresaId = session.user.empresa_id;
 
-   const [sucursales, usuarios] = await Promise.all([
-      db.sucursal.findMany({ 
-        where: { empresa_id: empresaId, activo: true },
-        select: { id: true, nombre: true } 
-      }),
-      db.user.findMany({ 
-        where: { empresa_id: empresaId, active: true },
-        select: { id: true, name: true, email: true } 
-      })
-   ]);
+  const [sucursales, usuarios] = await Promise.all([
+    db.sucursal.findMany({ 
+      where: { empresa_id: empresaId, activo: true },
+      select: { id: true, nombre: true } 
+    }),
+    db.user.findMany({ 
+      where: { empresa_id: empresaId, active: true },
+      select: { id: true, name: true } 
+    })
+  ]);
 
-   return { sucursales, usuarios };
-}
-
-export async function getInventoryAnalytics(): Promise<InventoryAnalytics> {
-    const session = await auth();
-    if (!session?.user?.empresa_id) throw new Error("No autorizado");
-    const empresaId = session.user.empresa_id;
-
-    const products = await db.producto.findMany({
-        where: { empresa_id: empresaId },
-        include: {
-            inventario: {
-                select: { cantidad: true }
-            }
-        }
-    });
-
-    let totalValueAtCost = 0;
-    let totalUnits = 0;
-    let criticalItems = 0;
-    let lowStockItems = 0;
-
-    for (const p of products) {
-        const units = (p as any).inventario.reduce((acc: number, inv: any) => acc + inv.cantidad, 0);
-        const cost = Number((p as any).costo) || 0;
-        
-        totalUnits += units;
-        totalValueAtCost += (units * cost);
-        
-        if ((p as any).isCritical) criticalItems++;
-        if (units < 5) lowStockItems++;
-    }
-
-    return {
-        totalValueAtCost,
-        totalUnits,
-        criticalItems,
-        lowStockItems
-    };
+  return { 
+    sucursales, 
+    usuarios: usuarios.map(u => ({
+      id: u.id,
+      name: u.name || "Cajero"
+    }))
+  };
 }

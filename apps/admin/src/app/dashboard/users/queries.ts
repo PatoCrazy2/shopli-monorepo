@@ -6,6 +6,7 @@ export type UserStatusFilter = "active" | "inactive" | "all";
 export interface GetUsersOptions {
   status?: UserStatusFilter;
   search?: string;
+  limit?: number;
 }
 
 export async function getUsers(options: GetUsersOptions = {}) {
@@ -14,7 +15,7 @@ export async function getUsers(options: GetUsersOptions = {}) {
     throw new Error("No autorizado");
   }
 
-  const { status = "active", search = "" } = options;
+  const { status = "active", search = "", limit = 100 } = options;
 
   const where: any = {
     empresa_id: session.user.empresa_id,
@@ -41,6 +42,7 @@ export async function getUsers(options: GetUsersOptions = {}) {
 
   return await db.user.findMany({
     where,
+    take: limit,
     select: {
       id: true,
       name: true,
@@ -63,11 +65,27 @@ export async function getUserCounts() {
 
   const empresa_id = session.user.empresa_id;
 
-  const [active, inactive, total] = await Promise.all([
-    db.user.count({ where: { empresa_id, active: true } }),
-    db.user.count({ where: { empresa_id, active: false } }),
-    db.user.count({ where: { empresa_id } }),
-  ]);
+  // 1 sola consulta con groupBy para reducir consumo de conexiones simultáneas en Neon
+  const counts = await db.user.groupBy({
+    by: ["active"],
+    where: { empresa_id },
+    _count: {
+      _all: true,
+    },
+  });
+
+  let active = 0;
+  let inactive = 0;
+
+  for (const group of counts) {
+    if (group.active) {
+      active = group._count._all;
+    } else {
+      inactive = group._count._all;
+    }
+  }
+
+  const total = active + inactive;
 
   return { active, inactive, total };
 }

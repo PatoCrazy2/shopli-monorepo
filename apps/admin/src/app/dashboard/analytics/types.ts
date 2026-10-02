@@ -77,9 +77,3 @@ export interface AnalyticsData {
   monthlyBalance: MonthlyBalance[];
 }
 
-export interface InventoryAnalytics {
-    totalValueAtCost: number;
-    totalUnits: number;
-    lowStockItems: number;
-    criticalItems: number;
-}
