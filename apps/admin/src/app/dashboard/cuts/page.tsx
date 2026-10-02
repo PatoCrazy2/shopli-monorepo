@@ -63,23 +63,23 @@ export default async function CutsPage({
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-20">
+    <div className="space-y-4 max-w-7xl mx-auto pb-20">
       <CutsAutoRefresh />
 
       {/* 1. Header Card (Solo título y descripción del módulo) */}
-      <div className="bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+      <div className="bg-white dark:bg-zinc-950 p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
         <div className="space-y-0.5">
-          <h1 className="text-xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
             Cortes de Caja
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-xs md:text-sm font-medium">
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">
             Auditoría de ingresos y conciliación de inventario.
           </p>
         </div>
       </div>
 
       {/* 2. Filtros Compactos: FUERA de la Card y en la misma línea */}
-      <div className="flex items-center justify-between gap-3">
+      <div>
         <CutsFilters
           sucursales={sucursales}
           currentSucursal={sucursalId}
@@ -88,9 +88,9 @@ export default async function CutsPage({
       </div>
 
       {/* 3. Listado de Turnos o Empty State Monocromático */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {turnos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 md:py-24 px-6 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl bg-zinc-50/50 dark:bg-zinc-900/20">
+          <div className="flex flex-col items-center justify-center py-12 md:py-16 px-6 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl bg-zinc-50/50 dark:bg-zinc-900/20">
             <div className="w-14 h-14 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-center mb-5 shadow-xs">
               <Wallet className="w-6 h-6 text-zinc-900 dark:text-zinc-100" strokeWidth={1.5} />
             </div>
