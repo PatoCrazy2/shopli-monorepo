@@ -60,21 +60,21 @@ export default async function SalesPage({
       </div>
 
       {sucursalId && (
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 px-1">
-          <div className="space-y-0.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-              Sucursal: {sucursales.find(s => s.id === sucursalId)?.nombre || 'Desconocida'}
+        <div className="flex items-center justify-between px-1 gap-2">
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200 truncate block">
+              {sucursales.find(s => s.id === sucursalId)?.nombre || 'Desconocida'}
             </span>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
-              {total} {total === 1 ? 'transacción registrada' : 'transacciones registradas'}
+            <p className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-medium truncate">
+              {total} {total === 1 ? 'transacción' : 'transacciones registradas'}
             </p>
           </div>
 
-          <div className="flex flex-col sm:items-end">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-              Total Acumulado (Página)
+          <div className="text-right shrink-0">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 block">
+              Total (Página)
             </span>
-            <span className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-900 dark:text-white font-mono tabular-nums">
+            <span className="text-xl sm:text-3xl font-black tracking-tight text-zinc-900 dark:text-white font-mono tabular-nums">
               ${totalVentas.toFixed(2)}
             </span>
           </div>
@@ -113,26 +113,35 @@ export default async function SalesPage({
         )}
 
         {sucursalId && total > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {total} transacciones · Página {page} de {Math.max(1, Math.ceil(total / pageSize))}
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 gap-2">
+            <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+              <span className="sm:hidden">Pág. {page}/{Math.max(1, Math.ceil(total / pageSize))}</span>
+              <span className="hidden sm:inline">{total} transacciones · Página {page} de {Math.max(1, Math.ceil(total / pageSize))}</span>
             </p>
-            <div className="flex gap-2">
-              {page > 1 && (
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {page > 1 ? (
                 <Link
                   href={`?SUCURSAL=${sucursalId}${dateStr ? `&date=${dateStr}` : ""}&page=${page - 1}`}
-                  className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-900 dark:text-white"
+                  className="px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-900 dark:text-white transition-colors"
                 >
-                  ← Anterior
+                  ← Ant.
                 </Link>
+              ) : (
+                <span className="px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-lg border border-zinc-100 dark:border-zinc-800/60 text-zinc-300 dark:text-zinc-700 cursor-not-allowed select-none">
+                  ← Ant.
+                </span>
               )}
-              {page * pageSize < total && (
+              {page * pageSize < total ? (
                 <Link
                   href={`?SUCURSAL=${sucursalId}${dateStr ? `&date=${dateStr}` : ""}&page=${page + 1}`}
-                  className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                  className="px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-lg bg-black text-white hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 transition-colors"
                 >
-                  Siguiente →
+                  Sig. →
                 </Link>
+              ) : (
+                <span className="px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-lg border border-zinc-100 dark:border-zinc-800/60 text-zinc-300 dark:text-zinc-700 cursor-not-allowed select-none">
+                  Sig. →
+                </span>
               )}
             </div>
           </div>
