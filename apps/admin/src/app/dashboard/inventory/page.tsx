@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getInventory, getBranches } from "./queries";
 import { InventoryClient } from "./InventoryClient";
+import Link from "next/link";
+import { History } from "lucide-react";
 
 export const metadata = {
   title: "Inventario de Stock - ShopLI",
@@ -42,14 +44,25 @@ export default async function InventoryPage({
           </p>
         </div>
 
-        {/* Monto Total Protagonista (Integrado sin ser card) */}
-        <div className="flex flex-col sm:items-end">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Valor de Almacén
-          </span>
-          <span className="text-xl sm:text-2xl md:text-3xl font-mono font-black tabular-nums tracking-tight text-zinc-900 dark:text-white">
-            ${totalInventoryValue.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
+        {/* Acceso a Bitácora y Monto Total */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <Link
+            href="/dashboard/inventory/history"
+            className="inline-flex items-center justify-center gap-2 h-10 px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-850 transition-colors shadow-2xs"
+          >
+            <History className="w-4 h-4 text-zinc-500" />
+            <span>Bitácora de Movimientos</span>
+          </Link>
+
+          {/* Monto Total Protagonista (Integrado sin ser card) */}
+          <div className="flex flex-col sm:items-end">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Valor de Almacén
+            </span>
+            <span className="text-xl sm:text-2xl md:text-3xl font-mono font-black tabular-nums tracking-tight text-zinc-900 dark:text-white">
+              ${totalInventoryValue.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
         </div>
       </div>
 

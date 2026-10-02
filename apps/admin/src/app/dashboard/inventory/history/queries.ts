@@ -3,12 +3,53 @@
 import { db } from "@shopli/db";
 import { auth } from "@/lib/auth";
 
-export async function getInventoryHistory(branchId?: string, limit = 50) {
+export interface InventoryHistoryFilter {
+  branchId?: string;
+  type?: "ALL" | "IN" | "OUT" | "TRANSFER";
+  period?: "TODAY" | "YESTERDAY" | "LAST_7_DAYS" | "LAST_30_DAYS" | "ALL";
+  search?: string;
+  limit?: number;
+}
+
+export type HistoryMovementItem = {
+  id: string;
+  producto_id: string;
+  sucursal_id: string;
+  cantidad: number;
+  tipo: string;
+  motivo: string | null;
+  usuario_id: string;
+  referencia_id: string | null;
+  fecha: string;
+  producto: {
+    nombre: string;
+    codigo_interno: string | null;
+  };
+  sucursal: {
+    nombre: string;
+  };
+  usuario: {
+    name: string | null;
+  };
+};
+
+export async function getInventoryHistory(
+  options?: InventoryHistoryFilter | string,
+  limitParam = 100
+): Promise<HistoryMovementItem[]> {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
 
-  // Pre-resolver IDs de todas las sucursales de la empresa (conservando historial de sucursales cerradas)
+  // Soporte para firma antigua (branchId?: string, limit?: number) y nueva (options object)
+  const opts: InventoryHistoryFilter =
+    typeof options === "string"
+      ? { branchId: options, limit: limitParam }
+      : options || { limit: limitParam };
+
+  const { branchId, type = "ALL", period = "ALL", search, limit = 100 } = opts;
+
+  // Pre-resolver IDs de todas las sucursales de la empresa
   const sucursales = await db.sucursal.findMany({
     where: { empresa_id: empresaId },
     select: { id: true },
@@ -24,7 +65,49 @@ export async function getInventoryHistory(branchId?: string, limit = 50) {
     where.sucursal_id = branchId;
   }
 
-  return await db.movimientoInventario.findMany({
+  // Filtro por Tipo de Movimiento
+  if (type === "IN") {
+    where.tipo = { in: ["INGRESO", "TRANSFERENCIA_ENTRADA"] };
+  } else if (type === "OUT") {
+    where.tipo = { in: ["EGRESO", "AJUSTE", "TRANSFERENCIA_SALIDA"] };
+  } else if (type === "TRANSFER") {
+    where.tipo = { in: ["TRANSFERENCIA_ENTRADA", "TRANSFERENCIA_SALIDA"] };
+  }
+
+  // Filtro por Período de Fecha
+  if (period && period !== "ALL") {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date | undefined;
+
+    if (period === "TODAY") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    } else if (period === "YESTERDAY") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+    } else if (period === "LAST_7_DAYS") {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (period === "LAST_30_DAYS") {
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    } else {
+      startDate = new Date(0);
+    }
+
+    where.fecha = endDate ? { gte: startDate, lte: endDate } : { gte: startDate };
+  }
+
+  // Filtro por Búsqueda de Producto o SKU
+  if (search && search.trim()) {
+    const term = search.trim();
+    where.producto = {
+      OR: [
+        { nombre: { contains: term, mode: "insensitive" } },
+        { codigo_interno: { contains: term, mode: "insensitive" } },
+      ],
+    };
+  }
+
+  const rows = await db.movimientoInventario.findMany({
     where,
     include: {
       producto: {
@@ -40,6 +123,28 @@ export async function getInventoryHistory(branchId?: string, limit = 50) {
     orderBy: { fecha: "desc" },
     take: limit,
   });
+
+  return rows.map((m) => ({
+    id: m.id,
+    producto_id: m.producto_id,
+    sucursal_id: m.sucursal_id,
+    cantidad: m.cantidad,
+    tipo: m.tipo,
+    motivo: m.motivo,
+    usuario_id: m.usuario_id,
+    referencia_id: m.referencia_id,
+    fecha: m.fecha.toISOString(),
+    producto: {
+      nombre: m.producto.nombre,
+      codigo_interno: m.producto.codigo_interno,
+    },
+    sucursal: {
+      nombre: m.sucursal.nombre,
+    },
+    usuario: {
+      name: m.usuario.name,
+    },
+  }));
 }
 
 export type KardexItem = {

@@ -11,9 +11,12 @@ export default function InventoryLoading() {
           <div className="h-4 w-72 bg-zinc-100 dark:bg-zinc-850 rounded hidden md:block" />
         </div>
 
-        <div className="flex flex-col sm:items-end space-y-1.5">
-          <div className="h-3 w-28 bg-zinc-100 dark:bg-zinc-850 rounded" />
-          <div className="h-8 w-44 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="h-10 w-48 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800" />
+          <div className="flex flex-col sm:items-end space-y-1.5">
+            <div className="h-3 w-28 bg-zinc-100 dark:bg-zinc-850 rounded" />
+            <div className="h-8 w-44 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+          </div>
         </div>
       </div>
 
