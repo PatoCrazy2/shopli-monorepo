@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, ChevronRight } from "lucide-react";
-import { resolveAuditItem } from "./actions";
+import { X, ChevronRight, Loader2 } from "lucide-react";
+import { resolveAuditItem, getAuditFullDetails } from "./actions";
 
 export interface AuditItem {
   id: string;
@@ -26,32 +26,61 @@ export interface Auditoria {
 interface AuditDetailsDrawerProps {
   auditorias: Auditoria[];
   sucursalId: string;
+  turnoId?: string;
 }
 
 export default function AuditDetailsDrawer({
   auditorias,
   sucursalId,
+  turnoId,
 }: AuditDetailsDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [fullAuditorias, setFullAuditorias] = useState<Auditoria[] | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   if (!auditorias || auditorias.length === 0) {
     return null;
   }
 
-  // Aplanar todos los ítems de las auditorías del turno
-  const allItems = auditorias.flatMap((a) => a.items);
-  if (allItems.length === 0) {
-    return null;
-  }
+  // Items para la insignia del botón (resumen ligero inicial)
+  const initialItems = auditorias.flatMap((a) => a.items);
+  const initialDiscrepant = initialItems.filter((i) => i.discrepancy !== 0);
+  const initialPending = initialDiscrepant.filter((i) => !i.resolved);
+  const hasDiscrepancy = initialDiscrepant.length > 0;
 
-  const discrepantItems = allItems.filter((i) => i.discrepancy !== 0);
-  const pendingItems = discrepantItems.filter((i) => !i.resolved);
-  const hasDiscrepancy = discrepantItems.length > 0;
+  // Items activos para renderizar dentro del Drawer
+  const activeAuditorias = fullAuditorias ?? auditorias;
+  const activeItems = activeAuditorias.flatMap((a) => a.items);
+  const activeDiscrepant = activeItems.filter((i) => i.discrepancy !== 0);
+
+  const loadDetails = async () => {
+    if (!turnoId) return;
+    setIsLoadingDetails(true);
+    setFetchError(null);
+    try {
+      const data = await getAuditFullDetails(turnoId);
+      setFullAuditorias(data as Auditoria[]);
+    } catch (err) {
+      console.error("[AuditDetailsDrawer] Error cargando detalles:", err);
+      setFetchError("No se pudieron cargar los productos de la auditoría.");
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
+  const handleToggle = () => {
+    const nextOpen = !isOpen;
+    setIsOpen(nextOpen);
+    if (nextOpen && !fullAuditorias && turnoId) {
+      loadDetails();
+    }
+  };
 
   // Lista reutilizable de productos para Móvil y Desktop
   const renderAuditList = () => (
     <div className="divide-y divide-zinc-100 dark:divide-zinc-900 my-1 pr-1 space-y-2">
-      {allItems.map((item) => {
+      {activeItems.map((item) => {
         const isDiscrepant = item.discrepancy !== 0;
         return (
           <div key={item.id} className="pt-2.5 pb-2 space-y-2">
@@ -154,12 +183,48 @@ export default function AuditDetailsDrawer({
     </div>
   );
 
+  const renderAuditBody = () => {
+    if (isLoadingDetails) {
+      return (
+        <div className="py-12 flex flex-col items-center justify-center gap-2 text-zinc-500 text-xs">
+          <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+          <span className="font-mono">Cargando productos de la auditoría...</span>
+        </div>
+      );
+    }
+
+    if (fetchError) {
+      return (
+        <div className="py-8 text-center text-xs text-rose-600 dark:text-rose-400 font-medium">
+          <p>{fetchError}</p>
+          <button
+            type="button"
+            onClick={loadDetails}
+            className="mt-2 inline-flex items-center px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold hover:bg-zinc-200 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      );
+    }
+
+    if (activeItems.length === 0) {
+      return (
+        <div className="py-8 text-center text-xs text-zinc-400 font-mono">
+          Esta auditoría no tiene productos registrados.
+        </div>
+      );
+    }
+
+    return renderAuditList();
+  };
+
   return (
     <>
       {/* Botón disparador: Toggle en Desktop y Disparador de Bottom Sheet en Mobile */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="inline-flex items-center gap-1.5 text-xs font-mono transition-colors group cursor-pointer text-left select-none"
         aria-expanded={isOpen}
         aria-label="Ver auditoría de inventario a ciegas"
@@ -168,7 +233,7 @@ export default function AuditDetailsDrawer({
           className={`w-1.5 h-1.5 rounded-full shrink-0 ${
             !hasDiscrepancy
               ? "bg-zinc-400 dark:bg-zinc-600"
-              : pendingItems.length > 0
+              : initialPending.length > 0
               ? "bg-amber-600 dark:bg-amber-500 animate-pulse"
               : "bg-zinc-900 dark:bg-zinc-100"
           }`}
@@ -178,14 +243,14 @@ export default function AuditDetailsDrawer({
           className={`font-semibold ${
             !hasDiscrepancy
               ? "text-zinc-700 dark:text-zinc-300"
-              : pendingItems.length > 0
+              : initialPending.length > 0
               ? "text-amber-800 dark:text-amber-300 font-bold"
               : "text-zinc-900 dark:text-zinc-100 font-medium"
           }`}
         >
           {!hasDiscrepancy
-            ? `Conforme (${allItems.length} ítems)`
-            : `${discrepantItems.length} con diferencia (${pendingItems.length} pendientes)`}
+            ? "Conforme"
+            : `${initialDiscrepant.length} con diferencia (${initialPending.length} pendientes)`}
         </span>
         <ChevronRight
           className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 shrink-0 ${
@@ -199,7 +264,7 @@ export default function AuditDetailsDrawer({
         <div className="hidden md:block w-full mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800/80 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-100 dark:border-zinc-800/80">
             <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
-              Auditoría de Inventario a Ciegas • {allItems.length} verificados ({discrepantItems.length} discrepancias)
+              Auditoría de Inventario a Ciegas • {activeItems.length} verificados ({activeDiscrepant.length} discrepancias)
             </span>
             <button
               type="button"
@@ -209,7 +274,7 @@ export default function AuditDetailsDrawer({
               [Cerrar]
             </button>
           </div>
-          {renderAuditList()}
+          {renderAuditBody()}
         </div>
       )}
 
@@ -237,7 +302,7 @@ export default function AuditDetailsDrawer({
                   Auditoría de Inventario a Ciegas
                 </h3>
                 <p className="text-xs text-zinc-400 font-mono mt-0.5">
-                  {allItems.length} productos verificados • {discrepantItems.length} discrepancias
+                  {activeItems.length} productos verificados • {activeDiscrepant.length} discrepancias
                 </p>
               </div>
               <button
@@ -252,7 +317,7 @@ export default function AuditDetailsDrawer({
 
             {/* Lista detallada con scroll */}
             <div className="overflow-y-auto my-2 pr-1">
-              {renderAuditList()}
+              {renderAuditBody()}
             </div>
 
             {/* Footer */}

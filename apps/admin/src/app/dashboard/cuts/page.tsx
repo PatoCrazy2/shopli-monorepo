@@ -222,6 +222,7 @@ export default async function CutsPage({
                     <AuditDetailsDrawer
                       auditorias={turno.auditorias || []}
                       sucursalId={turno.sucursal_id}
+                      turnoId={turno.id}
                     />
                   </div>
                 )}
