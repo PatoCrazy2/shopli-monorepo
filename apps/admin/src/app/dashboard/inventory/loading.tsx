@@ -56,7 +56,7 @@ export default function InventoryLoading() {
               <div className="h-5 w-12 bg-zinc-100 dark:bg-zinc-800 rounded-md justify-self-center" />
               <div className="h-3.5 w-16 bg-zinc-100 dark:bg-zinc-800 rounded justify-self-end hidden sm:block" />
               <div className="h-5 w-16 bg-zinc-100 dark:bg-zinc-800 rounded-md justify-self-center" />
-              <div className="h-7 w-16 bg-zinc-100 dark:bg-zinc-800 rounded justify-self-center" />
+              <div className="h-7 w-24 bg-zinc-100 dark:bg-zinc-800 rounded-lg justify-self-center" />
             </div>
           ))}
         </div>

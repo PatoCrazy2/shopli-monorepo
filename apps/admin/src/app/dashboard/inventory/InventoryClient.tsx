@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Search, ScanBarcode, X } from "lucide-react";
 import { BranchFilter } from "./BranchFilter";
-import { QuickAdjustModal } from "./QuickAdjustModal";
+import { QuickActions } from "./QuickActions";
 import type { getInventory, getBranches } from "./queries";
 
 const BarcodeScannerModal = dynamic(
@@ -312,7 +312,7 @@ export function InventoryClient({
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <QuickAdjustModal
+                        <QuickActions
                           productId={p.id}
                           productName={p.nombre}
                           branches={branches}
