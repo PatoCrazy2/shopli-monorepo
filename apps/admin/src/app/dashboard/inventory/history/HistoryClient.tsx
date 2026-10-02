@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, X, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Clock, User, Store, Loader2 } from "lucide-react";
+import { Search, X, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Clock, User, Store, Loader2, Calendar } from "lucide-react";
 import { getInventoryHistory, type HistoryMovementItem } from "./queries";
 import { BranchFilter } from "../BranchFilter";
 import type { BranchItem } from "../InventoryClient";
@@ -23,12 +23,62 @@ export function HistoryClient({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<"ALL" | "IN" | "OUT" | "TRANSFER">("ALL");
-  const [selectedPeriod, setSelectedPeriod] = useState<"ALL" | "TODAY" | "YESTERDAY" | "LAST_7_DAYS">("ALL");
+  const [selectedPeriod, setSelectedPeriod] = useState<"ALL" | "TODAY" | "YESTERDAY" | "LAST_7_DAYS" | "CUSTOM">("ALL");
+  const [exactDate, setExactDate] = useState<string>("");
 
   useEffect(() => {
-    setMovements(initialMovements);
-    setHasMore(initialMovements.length >= 100);
-  }, [initialMovements]);
+    if (selectedPeriod === "CUSTOM" && exactDate) {
+      let isCancelled = false;
+      setIsLoadingMore(true);
+      getInventoryHistory({
+        branchId: selectedBranchId,
+        exactDate,
+        limit: 100,
+      })
+        .then((data) => {
+          if (!isCancelled) {
+            setMovements(data);
+            setHasMore(data.length >= 100);
+          }
+        })
+        .catch((err) => console.error("Error cargando fecha específica:", err))
+        .finally(() => {
+          if (!isCancelled) setIsLoadingMore(false);
+        });
+
+      return () => {
+        isCancelled = true;
+      };
+    } else if (selectedPeriod !== "CUSTOM") {
+      if (exactDate) setExactDate("");
+      if (selectedPeriod === "ALL") {
+        setMovements(initialMovements);
+        setHasMore(initialMovements.length >= 100);
+      } else {
+        let isCancelled = false;
+        setIsLoadingMore(true);
+        getInventoryHistory({
+          branchId: selectedBranchId,
+          period: selectedPeriod,
+          limit: 100,
+        })
+          .then((data) => {
+            if (!isCancelled) {
+              setMovements(data);
+              setHasMore(data.length >= 100);
+            }
+          })
+          .catch((err) => console.error("Error cargando período:", err))
+          .finally(() => {
+            if (!isCancelled) setIsLoadingMore(false);
+          });
+
+        return () => {
+          isCancelled = true;
+        };
+      }
+    }
+  }, [selectedPeriod, exactDate, selectedBranchId, initialMovements]);
 
   const handleLoadMore = async () => {
     if (isLoadingMore || movements.length === 0) return;
@@ -37,6 +87,8 @@ export function HistoryClient({
       const lastMovement = movements[movements.length - 1];
       const nextBatch = await getInventoryHistory({
         branchId: selectedBranchId,
+        exactDate: selectedPeriod === "CUSTOM" ? exactDate : undefined,
+        period: selectedPeriod !== "CUSTOM" ? selectedPeriod : undefined,
         cursor: lastMovement.id,
         limit: 100,
       });
@@ -90,6 +142,13 @@ export function HistoryClient({
         } else if (selectedPeriod === "LAST_7_DAYS") {
           const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           if (moveDate < sevenDaysAgo) return false;
+        } else if (selectedPeriod === "CUSTOM" && exactDate) {
+          const [y, mon, d] = exactDate.split("-").map(Number);
+          const isSameDay =
+            moveDate.getFullYear() === y &&
+            moveDate.getMonth() === mon - 1 &&
+            moveDate.getDate() === d;
+          if (!isSameDay) return false;
         }
       }
 
@@ -108,7 +167,7 @@ export function HistoryClient({
 
       return true;
     });
-  }, [movements, selectedBranchId, selectedType, selectedPeriod, searchQuery]);
+  }, [movements, selectedBranchId, selectedType, selectedPeriod, exactDate, searchQuery]);
 
   // Resumen métrico del período filtrado
   const stats = useMemo(() => {
@@ -130,7 +189,7 @@ export function HistoryClient({
     return { totalIn, totalOut, transferCount, totalMovements: filteredMovements.length };
   }, [filteredMovements]);
 
-  const isFiltering = searchQuery.trim() !== "" || selectedType !== "ALL" || selectedPeriod !== "ALL";
+  const isFiltering = searchQuery.trim() !== "" || selectedType !== "ALL" || selectedPeriod !== "ALL" || exactDate !== "";
 
   return (
     <div className="space-y-4">
@@ -164,38 +223,59 @@ export function HistoryClient({
         </div>
 
         {/* Vista Móvil: Filtros como Selects (sm:hidden) */}
-        <div className="grid grid-cols-2 gap-2 sm:hidden pt-2 border-t border-zinc-100 dark:border-zinc-850 text-xs">
-          <div className="space-y-1">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
-              Período
-            </label>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
-            >
-              <option value="ALL">Todo el tiempo</option>
-              <option value="TODAY">Hoy</option>
-              <option value="YESTERDAY">Ayer</option>
-              <option value="LAST_7_DAYS">Últimos 7 días</option>
-            </select>
+        <div className="space-y-2 sm:hidden pt-2 border-t border-zinc-100 dark:border-zinc-850 text-xs">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+                Período
+              </label>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => {
+                  const val = e.target.value as any;
+                  setSelectedPeriod(val);
+                  if (val !== "CUSTOM") setExactDate("");
+                }}
+                className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
+              >
+                <option value="ALL">Todo el tiempo</option>
+                <option value="TODAY">Hoy</option>
+                <option value="YESTERDAY">Ayer</option>
+                <option value="LAST_7_DAYS">Últimos 7 días</option>
+                <option value="CUSTOM">Día específico...</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+                Tipo
+              </label>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value as any)}
+                className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
+              >
+                <option value="ALL">Todos los tipos</option>
+                <option value="IN">+ Entradas</option>
+                <option value="OUT">- Salidas</option>
+                <option value="TRANSFER">⇄ Transferencias</option>
+              </select>
+            </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
-              Tipo
-            </label>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as any)}
-              className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
-            >
-              <option value="ALL">Todos los tipos</option>
-              <option value="IN">+ Entradas</option>
-              <option value="OUT">- Salidas</option>
-              <option value="TRANSFER">⇄ Transferencias</option>
-            </select>
-          </div>
+          {selectedPeriod === "CUSTOM" && (
+            <div className="space-y-1 pt-1">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+                Seleccionar Fecha
+              </label>
+              <input
+                type="date"
+                value={exactDate}
+                onChange={(e) => setExactDate(e.target.value)}
+                className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+              />
+            </div>
+          )}
         </div>
 
         {/* Vista Desktop: Píldoras de Filtro (hidden sm:flex) */}
@@ -207,7 +287,10 @@ export function HistoryClient({
             </span>
             <button
               type="button"
-              onClick={() => setSelectedPeriod("ALL")}
+              onClick={() => {
+                setSelectedPeriod("ALL");
+                setExactDate("");
+              }}
               className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${
                 selectedPeriod === "ALL"
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
@@ -218,7 +301,10 @@ export function HistoryClient({
             </button>
             <button
               type="button"
-              onClick={() => setSelectedPeriod("TODAY")}
+              onClick={() => {
+                setSelectedPeriod("TODAY");
+                setExactDate("");
+              }}
               className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${
                 selectedPeriod === "TODAY"
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
@@ -229,7 +315,10 @@ export function HistoryClient({
             </button>
             <button
               type="button"
-              onClick={() => setSelectedPeriod("YESTERDAY")}
+              onClick={() => {
+                setSelectedPeriod("YESTERDAY");
+                setExactDate("");
+              }}
               className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${
                 selectedPeriod === "YESTERDAY"
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
@@ -240,7 +329,10 @@ export function HistoryClient({
             </button>
             <button
               type="button"
-              onClick={() => setSelectedPeriod("LAST_7_DAYS")}
+              onClick={() => {
+                setSelectedPeriod("LAST_7_DAYS");
+                setExactDate("");
+              }}
               className={`h-7 px-2.5 rounded-lg text-xs font-medium transition-all ${
                 selectedPeriod === "LAST_7_DAYS"
                   ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
@@ -249,6 +341,44 @@ export function HistoryClient({
             >
               Últimos 7 días
             </button>
+
+            {/* Selector de Fecha Específica con Calendario */}
+            <div className="relative flex items-center ml-1">
+              <div
+                className={`flex items-center h-7 px-2 rounded-lg border text-xs transition-all ${
+                  selectedPeriod === "CUSTOM"
+                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-2xs"
+                    : "border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 mr-1.5 shrink-0 opacity-70" />
+                <input
+                  type="date"
+                  value={exactDate}
+                  onChange={(e) => {
+                    setExactDate(e.target.value);
+                    if (e.target.value) {
+                      setSelectedPeriod("CUSTOM");
+                    }
+                  }}
+                  className="bg-transparent text-xs font-mono tabular-nums tracking-tight focus:outline-hidden cursor-pointer"
+                  title="Elegir fecha específica"
+                />
+                {selectedPeriod === "CUSTOM" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPeriod("ALL");
+                      setExactDate("");
+                    }}
+                    className="ml-1 p-0.5 rounded hover:opacity-75 cursor-pointer"
+                    title="Quitar filtro de fecha"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Selector de Tipo (Entradas / Salidas / Transferencias) */}
@@ -360,6 +490,7 @@ export function HistoryClient({
                   setSearchQuery("");
                   setSelectedType("ALL");
                   setSelectedPeriod("ALL");
+                  setExactDate("");
                 }}
                 className="mt-3 inline-flex items-center px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors shadow-xs"
               >
@@ -506,6 +637,7 @@ export function HistoryClient({
                             setSearchQuery("");
                             setSelectedType("ALL");
                             setSelectedPeriod("ALL");
+                            setExactDate("");
                           }}
                           className="mt-2 inline-flex items-center px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors shadow-xs"
                         >

@@ -7,6 +7,7 @@ export interface InventoryHistoryFilter {
   branchId?: string;
   type?: "ALL" | "IN" | "OUT" | "TRANSFER";
   period?: "TODAY" | "YESTERDAY" | "LAST_7_DAYS" | "LAST_30_DAYS" | "ALL";
+  exactDate?: string; // Formato YYYY-MM-DD
   search?: string;
   limit?: number;
   cursor?: string;
@@ -48,7 +49,7 @@ export async function getInventoryHistory(
       ? { branchId: options, limit: limitParam }
       : options || { limit: limitParam };
 
-  const { branchId, type = "ALL", period = "ALL", search, limit = 100, cursor } = opts;
+  const { branchId, type = "ALL", period = "ALL", exactDate, search, limit = 100, cursor } = opts;
 
   // Pre-resolver IDs de todas las sucursales de la empresa
   const sucursales = await db.sucursal.findMany({
@@ -75,8 +76,16 @@ export async function getInventoryHistory(
     where.tipo = { in: ["TRANSFERENCIA_ENTRADA", "TRANSFERENCIA_SALIDA"] };
   }
 
-  // Filtro por Período de Fecha
-  if (period && period !== "ALL") {
+  // Filtro por Fecha Específica o Período
+  if (exactDate) {
+    // Parsea YYYY-MM-DD considerando inicio y fin del día local
+    const [year, month, day] = exactDate.split("-").map(Number);
+    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      const startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+      where.fecha = { gte: startDate, lte: endDate };
+    }
+  } else if (period && period !== "ALL") {
     const now = new Date();
     let startDate: Date;
     let endDate: Date | undefined;
