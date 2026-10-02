@@ -1,5 +1,5 @@
 import { db, Prisma } from "@shopli/db";
-import { AnalyticsFilters, AnalyticsData, InventoryAnalytics, CategoryPerformance, ProductPerformance } from "./types";
+import { AnalyticsFilters, AnalyticsData, CategoryPerformance, ProductPerformance } from "./types";
 import { auth } from "@/lib/auth";
 
 export async function getAnalyticsData(filters: AnalyticsFilters): Promise<AnalyticsData> {
@@ -360,50 +360,3 @@ export async function getFilterOptions() {
   return { sucursales, usuarios };
 }
 
-export async function getInventoryAnalytics(): Promise<InventoryAnalytics> {
-  const session = await auth();
-  if (!session?.user?.empresa_id) throw new Error("No autorizado");
-  const empresaId = session.user.empresa_id;
-
-  try {
-    const invRes = await db.$queryRaw<{
-      totalValueAtCost: number | null;
-      totalUnits: number | null;
-      criticalItems: number | null;
-      lowStockItems: number | null;
-    }[]>`
-      WITH ProductStock AS (
-        SELECT 
-          p.id,
-          p.costo,
-          p."isCritical",
-          COALESCE(SUM(i.cantidad), 0)::int as total_stock
-        FROM "Producto" p
-        LEFT JOIN "Inventario_Sucursal" i ON p.id = i.producto_id
-        WHERE p.empresa_id = ${empresaId}
-        GROUP BY p.id, p.costo, p."isCritical"
-      )
-      SELECT 
-        COALESCE(SUM(total_stock * costo), 0)::float as "totalValueAtCost",
-        COALESCE(SUM(total_stock), 0)::int as "totalUnits",
-        COALESCE(SUM(CASE WHEN "isCritical" = true THEN 1 ELSE 0 END), 0)::int as "criticalItems",
-        COALESCE(SUM(CASE WHEN total_stock < 5 THEN 1 ELSE 0 END), 0)::int as "lowStockItems"
-      FROM ProductStock
-    `;
-
-    return {
-      totalValueAtCost: Number(invRes[0]?.totalValueAtCost) || 0,
-      totalUnits: Number(invRes[0]?.totalUnits) || 0,
-      criticalItems: Number(invRes[0]?.criticalItems) || 0,
-      lowStockItems: Number(invRes[0]?.lowStockItems) || 0
-    };
-  } catch (err) {
-    console.error("[Analytics] Error en getInventoryAnalytics:", err);
-    return {
-      totalValueAtCost: 0,
-      totalUnits: 0,
-      criticalItems: 0,
-      lowStockItems: 0
-    };
-  }
-}
