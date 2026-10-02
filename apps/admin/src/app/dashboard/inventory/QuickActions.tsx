@@ -5,11 +5,13 @@ import { Plus, Minus, ArrowLeftRight, X, Loader2 } from "lucide-react";
 import {
   adjustStock,
   transferStock,
+} from "./actions";
+import {
   STOCK_IN_REASONS,
   STOCK_OUT_REASONS,
   type StockInReason,
   type StockOutReason,
-} from "./actions";
+} from "./constants";
 
 interface QuickActionsProps {
   productId: string;

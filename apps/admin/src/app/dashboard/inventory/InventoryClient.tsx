@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Search, ScanBarcode, X } from "lucide-react";
 import { BranchFilter } from "./BranchFilter";
 import { QuickActions } from "./QuickActions";
+import { ProductDrawer } from "./ProductDrawer";
 import type { getInventory, getBranches } from "./queries";
 
 const BarcodeScannerModal = dynamic(
@@ -32,6 +33,8 @@ export function InventoryClient({
   const [filterPill, setFilterPill] = useState<"ALL" | "NEGATIVE" | "LOW_STOCK">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [selectedProductForKardex, setSelectedProductForKardex] =
+    useState<InventoryProductItem | null>(null);
 
   const MIN_STOCK = 5;
 
@@ -263,7 +266,9 @@ export function InventoryClient({
                   return (
                     <tr
                       key={p.id}
-                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/50 transition-colors"
+                      onClick={() => setSelectedProductForKardex(p)}
+                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer group"
+                      title="Haz clic para abrir el Kárdex detallado de este producto"
                     >
                       <td
                         className="px-4 py-3 font-mono tabular-nums tracking-tight text-zinc-500 dark:text-zinc-400 truncate max-w-[110px]"
@@ -351,6 +356,15 @@ export function InventoryClient({
           </p>
         </div>
       </div>
+
+      {/* Panel Lateral / Drawer (Kárdex de Producto) */}
+      <ProductDrawer
+        product={selectedProductForKardex}
+        isOpen={Boolean(selectedProductForKardex)}
+        onClose={() => setSelectedProductForKardex(null)}
+        selectedBranchId={selectedBranchId}
+        branches={branches}
+      />
     </div>
   );
 }

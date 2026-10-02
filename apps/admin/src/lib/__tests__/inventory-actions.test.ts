@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { adjustStock } from "../../app/dashboard/inventory/actions";
 import {
-  adjustStock,
   STOCK_IN_REASONS,
   STOCK_OUT_REASONS,
-} from "../../app/dashboard/inventory/actions";
+} from "../../app/dashboard/inventory/constants";
+import { getProductKardex } from "../../app/dashboard/inventory/history/queries";
 import { auth } from "@/lib/auth";
 import { db } from "@shopli/db";
 
@@ -25,6 +26,7 @@ vi.mock("@shopli/db", async (importOriginal) => {
     db: {
       sucursal: {
         findUnique: vi.fn(),
+        findMany: vi.fn(),
       },
       producto: {
         findUnique: vi.fn(),
@@ -36,6 +38,7 @@ vi.mock("@shopli/db", async (importOriginal) => {
       },
       movimientoInventario: {
         create: vi.fn(),
+        findMany: vi.fn(),
       },
       $transaction: vi.fn(async (callback: any) => {
         return callback({
@@ -271,6 +274,83 @@ describe("Fase 3: Estandarización de Motivos en Acciones de Inventario (adjustS
           motivo: "COMPRA - Nota posicional",
         }),
       });
+    });
+  });
+
+  describe("6. Consulta de Kárdex de Producto (getProductKardex)", () => {
+    it("debe rechazar si la sesión no está activa", async () => {
+      (auth as any).mockResolvedValue(null);
+      await expect(getProductKardex(mockProductId)).rejects.toThrow("No autorizado");
+    });
+
+    it("debe rechazar si el producto pertenece a otra empresa", async () => {
+      (db.producto.findUnique as any).mockResolvedValue({
+        id: mockProductId,
+        empresa_id: "otra-empresa",
+      });
+      await expect(getProductKardex(mockProductId)).rejects.toThrow("No autorizado");
+    });
+
+    it("debe obtener los movimientos con take: 20 y fecha serializada", async () => {
+      (db.sucursal.findMany as any).mockResolvedValue([
+        { id: mockSucursalId },
+      ]);
+
+      const mockDate = new Date("2026-10-02T12:00:00.000Z");
+      (db.movimientoInventario.findMany as any).mockResolvedValue([
+        {
+          id: "mov-1",
+          producto_id: mockProductId,
+          sucursal_id: mockSucursalId,
+          cantidad: 10,
+          tipo: "INGRESO",
+          motivo: "COMPRA",
+          usuario_id: mockUserId,
+          referencia_id: null,
+          fecha: mockDate,
+          sucursal: { nombre: "Sucursal Matriz" },
+          usuario: { name: "Cajero Principal" },
+        },
+      ]);
+
+      const kardex = await getProductKardex(mockProductId);
+
+      expect(kardex).toHaveLength(1);
+      expect(kardex[0].fecha).toBe(mockDate.toISOString());
+      expect(kardex[0].cantidad).toBe(10);
+      expect(kardex[0].tipo).toBe("INGRESO");
+      expect(kardex[0].sucursal.nombre).toBe("Sucursal Matriz");
+      expect(kardex[0].usuario.name).toBe("Cajero Principal");
+
+      expect(db.movimientoInventario.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            producto_id: mockProductId,
+          }),
+          take: 20,
+          orderBy: { fecha: "desc" },
+        })
+      );
+    });
+
+    it("debe filtrar por sucursal específica si branchId es proporcionado", async () => {
+      (db.sucursal.findMany as any).mockResolvedValue([
+        { id: mockSucursalId },
+        { id: "sucursal-otra" },
+      ]);
+
+      (db.movimientoInventario.findMany as any).mockResolvedValue([]);
+
+      await getProductKardex(mockProductId, mockSucursalId);
+
+      expect(db.movimientoInventario.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            producto_id: mockProductId,
+            sucursal_id: mockSucursalId,
+          }),
+        })
+      );
     });
   });
 });
