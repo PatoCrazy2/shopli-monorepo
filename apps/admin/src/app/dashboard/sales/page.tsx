@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getSales, getSucursales } from "./queries";
+import { SaleRow } from "./_components/sale-row";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -137,79 +138,13 @@ export default async function SalesPage({
             <p className="text-zinc-500 max-w-xs mt-1 text-sm font-medium">No se encontraron ventas con los filtros actuales. Intenta con otra fecha.</p>
           </div>
         ) : (
-          <div className="divide-y divide-zinc-200">
+          <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
             {ventas.map(venta => (
-              <details key={venta.id} className="group transition-colors list-none">
-                <summary className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-zinc-50 outline-none focus-visible:bg-zinc-50 transition-colors [&::-webkit-details-marker]:hidden gap-4">
-                  <div className="flex flex-1 items-center gap-6 flex-wrap">
-                    <div className="w-full sm:w-48 text-sm font-semibold text-zinc-700">
-                      {formatDate(venta.fecha)}
-                    </div>
-                    
-                    <div className="flex items-center gap-2.5 min-w-[200px]">
-                       <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold uppercase ring-1 ring-indigo-200">
-                         {(venta.turno.usuario.name || "U")[0]}
-                       </span>
-                       <span className="text-sm font-medium text-zinc-900">{venta.turno.usuario.name || 'Desconocido'}</span>
-                    </div>
-
-                    <div className="text-zinc-500 text-sm flex items-center gap-2">
-                      <span className="bg-zinc-100 px-3 py-1 rounded-full text-xs font-bold text-zinc-600 border border-zinc-200">
-                        {venta.detalles.length} ITEMS
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-auto w-full border-t border-zinc-100 sm:border-0 pt-3 sm:pt-0 mt-1 sm:mt-0">
-                    <span className={`text-xs font-bold uppercase px-2.5 py-1 rounded-full border ${
-                      venta.estado === 'COMPLETADA' 
-                        ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
-                        : 'text-rose-700 bg-rose-50 border-rose-200'
-                    }`}>
-                      {venta.estado}
-                    </span>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="font-bold text-lg text-zinc-900 min-w-[80px] text-right">
-                        ${Number(venta.total).toFixed(2)}
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-200 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500 group-open:rotate-180 transition-transform"><path d="m6 9 6 6 6-6"/></svg>
-                      </div>
-                    </div>
-                  </div>
-                </summary>
-                
-                {/* Contenido expandible usando details */}
-                <div className="p-4 bg-zinc-50/80 border-t border-zinc-100 text-sm shadow-inner group-open:animate-in group-open:fade-in group-open:slide-in-from-top-2">
-                  <div className="max-w-4xl mx-auto bg-white rounded-lg border border-zinc-200 overflow-hidden">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-zinc-100 text-left text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                          <th className="py-3 px-4 w-1/2">Producto</th>
-                          <th className="py-3 px-4 text-center">Cant.</th>
-                          <th className="py-3 px-4 text-right">Precio unitario</th>
-                          <th className="py-3 px-4 text-right">Subtotal</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-100">
-                        {venta.detalles.map(d => (
-                          <tr key={d.id} className="hover:bg-zinc-50/50 transition-colors">
-                            <td className="py-3 px-4 font-medium text-zinc-800">{d.producto.nombre}</td>
-                            <td className="py-3 px-4 text-center text-zinc-600 font-medium">x{d.cantidad}</td>
-                            <td className="py-3 px-4 text-right text-zinc-600">${Number(d.precio_unitario_historico).toFixed(2)}</td>
-                            <td className="py-3 px-4 text-right font-semibold text-zinc-900">${(Number(d.precio_unitario_historico) * d.cantidad).toFixed(2)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  <div className="mt-4 flex justify-end px-2">
-                    <span className="text-[10px] text-zinc-400 font-mono tracking-wider uppercase">Venta ID: {venta.id}</span>
-                  </div>
-                </div>
-              </details>
+              <SaleRow
+                key={venta.id}
+                venta={venta}
+                formattedDate={formatDate(venta.fecha)}
+              />
             ))}
           </div>
         )}

@@ -48,17 +48,65 @@ export async function getSales(filters: {
             },
           },
         },
-        detalles: {
-          include: {
-            producto: { select: { nombre: true } },
-          },
+        _count: {
+          select: { detalles: true },
         },
       },
     }),
     db.venta.count({ where }),
   ]);
 
-  return { ventas, total, page, pageSize: PAGE_SIZE };
+  return {
+    ventas: ventas.map((v) => ({
+      id: v.id,
+      fecha: v.fecha,
+      estado: v.estado,
+      total: Number(v.total),
+      itemsCount: v._count.detalles,
+      usuarioName: v.turno?.usuario?.name || "Desconocido",
+    })),
+    total,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+}
+
+export async function getSaleDetails(ventaId: string) {
+  const session = await auth();
+  if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar ventas");
+  }
+  const empresaId = session.user.empresa_id;
+
+  const venta = await db.venta.findFirst({
+    where: {
+      id: ventaId,
+      sucursal: { empresa_id: empresaId },
+    },
+    select: {
+      detalles: {
+        select: {
+          id: true,
+          cantidad: true,
+          precio_unitario_historico: true,
+          producto: {
+            select: { nombre: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!venta) throw new Error("Venta no encontrada");
+
+  return venta.detalles.map((d) => ({
+    id: d.id,
+    nombre: d.producto.nombre,
+    cantidad: d.cantidad,
+    precioUnitario: Number(d.precio_unitario_historico),
+    subtotal: Number(d.precio_unitario_historico) * d.cantidad,
+  }));
 }
 
 export async function getSucursales() {
