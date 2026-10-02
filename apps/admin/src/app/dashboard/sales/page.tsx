@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getSales, getSucursales } from "./queries";
 import { SaleRow } from "./_components/sale-row";
+import { SalesCommandBar } from "./_components/sales-command-bar";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -41,79 +42,41 @@ export default async function SalesPage({
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-20">
-      {/* Header & Filters (Unified as in Cuts) */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto pb-20">
+      {/* Header & CommandBar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Ventas</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Ventas</h1>
+          <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-medium">
             Historial detallado de todas las transacciones generadas en los turnos.
           </p>
         </div>
-        
-        <form method="GET" className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="SUCURSAL" className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Sucursal</label>
-            <select 
-              name="SUCURSAL" 
-              id="SUCURSAL"
-              defaultValue={sucursalId || ""}
-              required
-              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black transition-all appearance-none pr-10 relative"
-              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23a1a1aa\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
-            >
-              <option value="" disabled>Seleccionar sucursal...</option>
-              {sucursales.map(s => (
-                <option key={s.id} value={s.id}>{s.nombre}</option>
-              ))}
-            </select>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="date" className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Fecha</label>
-            <input 
-              type="date" 
-              name="date" 
-              id="date"
-              defaultValue={dateStr || ""}
-              className="h-11 px-4 rounded-xl border border-zinc-200 bg-zinc-50 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-black dark:border-zinc-800 dark:bg-zinc-900 transition-all font-mono"
-            />
-          </div>
-
-          <button 
-            type="submit"
-            className="h-11 mt-auto px-8 bg-black text-white rounded-xl font-bold text-sm hover:bg-zinc-800 transition-all shadow-lg active:scale-95"
-          >
-            Filtrar
-          </button>
-          
-          {(dateStr || sucursalId) && (
-            <Link 
-              href="/dashboard/sales" 
-              className="h-11 mt-auto px-5 bg-zinc-100 text-zinc-600 flex items-center justify-center rounded-xl font-bold text-sm hover:bg-zinc-200 transition-all"
-            >
-              Limpiar
-            </Link>
-          )}
-        </form>
+        <SalesCommandBar
+          sucursales={sucursales}
+          currentSucursalId={sucursalId}
+          currentDate={dateStr}
+        />
       </div>
 
       {sucursalId && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-            <span className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 px-1">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
               Sucursal: {sucursales.find(s => s.id === sucursalId)?.nombre || 'Desconocida'}
             </span>
-            <span className="text-zinc-300">|</span>
-            <span className="text-sm font-bold text-zinc-500">
-               {total} transacciones registradas
-            </span>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
+              {total} {total === 1 ? 'transacción registrada' : 'transacciones registradas'}
+            </p>
           </div>
 
-          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900 px-6 py-3 rounded-2xl flex items-center gap-6 shadow-sm">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">Total Acumulado (Página)</span>
-            <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">${totalVentas.toFixed(2)}</span>
+          <div className="flex flex-col sm:items-end">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+              Total Acumulado (Página)
+            </span>
+            <span className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-900 dark:text-white font-mono tabular-nums">
+              ${totalVentas.toFixed(2)}
+            </span>
           </div>
         </div>
       )}
