@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Search, ScanBarcode, X } from "lucide-react";
+import { Search, ScanBarcode, X, History, ChevronRight } from "lucide-react";
 import { BranchFilter } from "./BranchFilter";
 import { QuickActions } from "./QuickActions";
 import { ProductDrawer } from "./ProductDrawer";
@@ -290,6 +290,15 @@ export function InventoryClient({
                     </div>
                   </div>
 
+                  {/* Indicador visual de Kárdex / Historial */}
+                  <div className="flex items-center justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pt-0.5 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors">
+                    <span className="inline-flex items-center gap-1.5 font-medium">
+                      <History className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
+                      <span>Ver historial de movimientos</span>
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+
                   {/* Fila de Métricas: Stock y Costo */}
                   <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-850 text-xs">
                     <div>
@@ -420,7 +429,15 @@ export function InventoryClient({
                         {p.codigo_interno || "—"}
                       </td>
                       <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
-                        {p.nombre}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                            {p.nombre}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-normal text-zinc-400 opacity-60 group-hover:opacity-100 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-all shrink-0">
+                            <History className="w-3 h-3" />
+                            <span className="hidden lg:inline">Historial</span>
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400 hidden md:table-cell">
                         {p.categoria || "—"}
