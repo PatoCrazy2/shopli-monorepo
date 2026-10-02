@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, X, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Clock, User, Store, Loader2, Calendar } from "lucide-react";
+import { Search, X, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Clock, User, Store, Loader2, Calendar, ChevronDown } from "lucide-react";
 import { getInventoryHistory, type HistoryMovementItem } from "./queries";
 import { BranchFilter } from "../BranchFilter";
 import type { BranchItem } from "../InventoryClient";
@@ -222,44 +222,50 @@ export function HistoryClient({
           </div>
         </div>
 
-        {/* Vista Móvil: Filtros como Selects (sm:hidden) */}
+        {/* Vista Móvil: Filtros como Selects Estilizados (sm:hidden) */}
         <div className="space-y-2 sm:hidden pt-2 border-t border-zinc-100 dark:border-zinc-850 text-xs">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
                 Período
               </label>
-              <select
-                value={selectedPeriod}
-                onChange={(e) => {
-                  const val = e.target.value as any;
-                  setSelectedPeriod(val);
-                  if (val !== "CUSTOM") setExactDate("");
-                }}
-                className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
-              >
-                <option value="ALL">Todo el tiempo</option>
-                <option value="TODAY">Hoy</option>
-                <option value="YESTERDAY">Ayer</option>
-                <option value="LAST_7_DAYS">Últimos 7 días</option>
-                <option value="CUSTOM">Día específico...</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => {
+                    const val = e.target.value as any;
+                    setSelectedPeriod(val);
+                    if (val !== "CUSTOM") setExactDate("");
+                  }}
+                  className="w-full h-9 pl-3 pr-8 appearance-none bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <option value="ALL">Todo el tiempo</option>
+                  <option value="TODAY">Hoy</option>
+                  <option value="YESTERDAY">Ayer</option>
+                  <option value="LAST_7_DAYS">Últimos 7 días</option>
+                  <option value="CUSTOM">Día específico...</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+              </div>
             </div>
 
             <div className="space-y-1">
               <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
                 Tipo
               </label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value as any)}
-                className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
-              >
-                <option value="ALL">Todos los tipos</option>
-                <option value="IN">+ Entradas</option>
-                <option value="OUT">- Salidas</option>
-                <option value="TRANSFER">⇄ Transferencias</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value as any)}
+                  className="w-full h-9 pl-3 pr-8 appearance-none bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <option value="ALL">Todos los tipos</option>
+                  <option value="IN">+ Entradas</option>
+                  <option value="OUT">- Salidas</option>
+                  <option value="TRANSFER">⇄ Transferencias</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+              </div>
             </div>
           </div>
 
@@ -268,12 +274,14 @@ export function HistoryClient({
               <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
                 Seleccionar Fecha
               </label>
-              <input
-                type="date"
-                value={exactDate}
-                onChange={(e) => setExactDate(e.target.value)}
-                className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-mono tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={exactDate}
+                  onChange={(e) => setExactDate(e.target.value)}
+                  className="w-full h-9 pl-3 pr-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-mono tabular-nums tracking-tight text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 shadow-2xs"
+                />
+              </div>
             </div>
           )}
         </div>
