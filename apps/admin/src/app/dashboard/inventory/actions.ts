@@ -14,19 +14,21 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
   const userId = session.user.id;
 
   try {
-    // Validar pertenencia de la sucursal y del producto
-    const sucursal = await db.sucursal.findUnique({
-      where: { id: sucursalId },
-      select: { empresa_id: true }
-    });
+    // Validar pertenencia de la sucursal y del producto en paralelo
+    const [sucursal, producto] = await Promise.all([
+      db.sucursal.findUnique({
+        where: { id: sucursalId },
+        select: { empresa_id: true }
+      }),
+      db.producto.findUnique({
+        where: { id: productId },
+        select: { empresa_id: true }
+      })
+    ]);
+
     if (!sucursal || sucursal.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
-
-    const producto = await db.producto.findUnique({
-      where: { id: productId },
-      select: { empresa_id: true }
-    });
     if (!producto || producto.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
@@ -79,33 +81,36 @@ export async function transferStock(data: { type: 'TRANSFER' | 'INGRESS', produc
   const empresaId = session.user.empresa_id;
 
   try {
-    // Validar propiedad del producto
-    const producto = await db.producto.findUnique({
-      where: { id: data.productId },
-      select: { empresa_id: true }
-    });
+    const isTransfer = data.type === 'TRANSFER' && Boolean(data.fromBranchId);
+
+    // Validar propiedad de producto y sucursales en paralelo
+    const [producto, destSucursal, originSucursal] = await Promise.all([
+      db.producto.findUnique({
+        where: { id: data.productId },
+        select: { empresa_id: true }
+      }),
+      db.sucursal.findUnique({
+        where: { id: data.toBranchId },
+        select: { empresa_id: true }
+      }),
+      isTransfer && data.fromBranchId
+        ? db.sucursal.findUnique({
+            where: { id: data.fromBranchId },
+            select: { empresa_id: true }
+          })
+        : Promise.resolve(null)
+    ]);
+
     if (!producto || producto.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
 
-    // Validar propiedad de la sucursal destino
-    const destSucursal = await db.sucursal.findUnique({
-      where: { id: data.toBranchId },
-      select: { empresa_id: true }
-    });
     if (!destSucursal || destSucursal.empresa_id !== empresaId) {
       return { error: "No autorizado" };
     }
 
-    // Validar sucursal origen si aplica
-    if (data.type === 'TRANSFER' && data.fromBranchId) {
-      const originSucursal = await db.sucursal.findUnique({
-        where: { id: data.fromBranchId },
-        select: { empresa_id: true }
-      });
-      if (!originSucursal || originSucursal.empresa_id !== empresaId) {
-        return { error: "No autorizado" };
-      }
+    if (isTransfer && (!originSucursal || originSucursal.empresa_id !== empresaId)) {
+      return { error: "No autorizado" };
     }
     await db.$transaction(async (tx) => {
       // Ensure destination inventory exists
