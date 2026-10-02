@@ -141,7 +141,7 @@ export function AnalyticsClient({
       <div className="min-h-[500px] transition-all duration-300">
           {activeTab === "finanzas" && (
              <div className="space-y-6 animate-in fade-in duration-500">
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                   <MetricCard 
                     title="Ingreso Bruto" 
                     value={`$${data.summary.totalRevenue.toLocaleString()}`} 
@@ -222,10 +222,12 @@ export function AnalyticsClient({
 
           {activeTab === "operaciones" && (
              <div className="space-y-6 animate-in fade-in duration-500">
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-4">
                   <MetricCard title="Transacciones" value={data.summary.totalTransactions.toLocaleString()} />
                   <MetricCard title="Ticket Promedio" value={`$${data.summary.averageTicket.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`} />
-                  <MetricCard title="Sucursales Activas" value={data.branchSales.length.toString()} />
+                  <div className="col-span-2 sm:col-span-1">
+                    <MetricCard title="Sucursales Activas" value={data.branchSales.length.toString()} />
+                  </div>
                </div>
 
                <div className="grid gap-6 lg:grid-cols-2">
@@ -328,27 +330,27 @@ function TabButton({ active, onClick, children, icon }: { active: boolean, onCli
 
 function MetricCard({ title, desc, value, polarity, delta }: { title: string, desc?: string, value: string, polarity?: "positive" | "negative", delta?: { value: string, text: string } }) {
   return (
-    <div className="bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between h-24">
+    <div className="bg-white dark:bg-zinc-950 p-3 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between min-h-[5.5rem] sm:h-24">
        <div className="flex justify-between items-start mb-1">
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none">{title}</p>
+          <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest leading-none truncate">{title}</p>
        </div>
        <div>
-         <h3 className="text-2xl font-mono tabular-nums tracking-tight leading-none mb-1 text-zinc-900 dark:text-white">
+         <h3 className="text-lg sm:text-2xl font-mono tabular-nums tracking-tight leading-none mb-1 text-zinc-900 dark:text-white truncate">
            {value}
          </h3>
          
          {delta ? (
-           <div className="flex items-center gap-1.5 mt-1">
+           <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 sm:mt-1 flex-wrap">
              <span className={cn(
-               "px-1.5 py-0.5 rounded text-[10px] font-mono tracking-tight",
+               "px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-mono tracking-tight shrink-0",
                delta.value.startsWith("+") || polarity === "positive" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
                delta.value.startsWith("-") || polarity === "negative" ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" :
                "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
              )}>{delta.value}</span>
-             <span className="text-[10px] text-zinc-400 font-mono tracking-tight">{delta.text}</span>
+             <span className="text-[9px] sm:text-[10px] text-zinc-400 font-mono tracking-tight truncate">{delta.text}</span>
            </div>
          ) : desc ? (
-           <p className="mt-1 text-[10px] font-mono text-zinc-400 uppercase tracking-widest">{desc}</p>
+           <p className="mt-0.5 sm:mt-1 text-[9px] sm:text-[10px] font-mono text-zinc-400 uppercase tracking-widest truncate">{desc}</p>
          ) : null}
        </div>
     </div>

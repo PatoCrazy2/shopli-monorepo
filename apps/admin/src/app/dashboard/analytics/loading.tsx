@@ -37,11 +37,11 @@ export default function AnalyticsLoading() {
 
         {/* Financial View Skeleton */}
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
              {[1, 2, 3, 4].map(i => (
-               <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 h-24 flex flex-col justify-between">
-                 <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
-                 <div className="h-8 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
+               <div key={i} className="bg-white dark:bg-zinc-950 p-3 sm:p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 min-h-[5.5rem] sm:h-24 flex flex-col justify-between">
+                 <div className="h-2.5 sm:h-3 w-16 sm:w-20 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+                 <div className="h-6 sm:h-8 w-20 sm:w-28 bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
                </div>
              ))}
           </div>
