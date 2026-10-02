@@ -9,6 +9,30 @@ import CutsFilters from "./CutsFilters";
 import ExpensesDetailsDrawer from "./ExpensesDetailsDrawer";
 import AuditDetailsDrawer from "./AuditDetailsDrawer";
 
+function getTodayMexicoCity(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  if (year && month && day) {
+    return `${year}-${month}-${day}`;
+  }
+
+  const now = new Date();
+  const cdmxDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const y = cdmxDate.getUTCFullYear();
+  const m = String(cdmxDate.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(cdmxDate.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default async function CutsPage({
   searchParams,
 }: {
@@ -19,7 +43,7 @@ export default async function CutsPage({
 
   const params = await searchParams;
   const sucursalId = params.sucursal;
-  const date = params.date; // Remove default to today
+  const date = params.date?.trim() || getTodayMexicoCity();
 
   const [turnos, sucursales] = await Promise.all([
     getCuts(sucursalId, date),
