@@ -7,6 +7,30 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+function getTodayMexicoCity(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  if (year && month && day) {
+    return `${year}-${month}-${day}`;
+  }
+
+  const now = new Date();
+  const cdmxDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const y = cdmxDate.getUTCFullYear();
+  const m = String(cdmxDate.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(cdmxDate.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export default async function SalesPage({
   searchParams,
 }: {
@@ -20,7 +44,7 @@ export default async function SalesPage({
 
   const sp = await searchParams;
   const rawSucursalId = sp.SUCURSAL;
-  const dateStr = sp.date;
+  const dateStr = sp.date?.trim() || getTodayMexicoCity();
   const page = Math.max(1, sp.page ? parseInt(sp.page, 10) || 1 : 1);
 
   const sucursales = await getSucursales();
