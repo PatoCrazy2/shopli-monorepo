@@ -2,12 +2,11 @@ export default function AnalyticsLoading() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20 animate-pulse">
       {/* Header Skeleton */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="space-y-3 w-full max-w-md">
           <div className="h-10 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
           <div className="h-4 w-full bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
         </div>
-        <div className="h-12 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-xl"></div>
       </div>
 
       {/* Analytics Client Skeleton */}
