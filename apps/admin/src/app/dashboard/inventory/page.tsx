@@ -17,7 +17,8 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
   const { branch: branchId } = await searchParams;
   const branches = await getBranches();
-  const products = await getInventory(branchId);
+  const rawProducts = await getInventory(branchId);
+  const products = rawProducts.sort((a, b) => a.totalStock - b.totalStock);
 
   // KPIs calculation
   const totalSkus = products.length;
