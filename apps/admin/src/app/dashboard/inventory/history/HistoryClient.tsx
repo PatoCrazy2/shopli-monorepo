@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search, X, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Clock, User, Store } from "lucide-react";
-import type { HistoryMovementItem } from "./queries";
+import { useState, useMemo, useEffect } from "react";
+import { Search, X, ArrowDownRight, ArrowUpRight, ArrowLeftRight, Clock, User, Store, Loader2 } from "lucide-react";
+import { getInventoryHistory, type HistoryMovementItem } from "./queries";
 import { BranchFilter } from "../BranchFilter";
 import type { BranchItem } from "../InventoryClient";
 
@@ -17,13 +17,44 @@ export function HistoryClient({
   branches,
   selectedBranchId,
 }: HistoryClientProps) {
+  const [movements, setMovements] = useState<HistoryMovementItem[]>(initialMovements);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialMovements.length >= 100);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<"ALL" | "IN" | "OUT" | "TRANSFER">("ALL");
   const [selectedPeriod, setSelectedPeriod] = useState<"ALL" | "TODAY" | "YESTERDAY" | "LAST_7_DAYS">("ALL");
 
+  useEffect(() => {
+    setMovements(initialMovements);
+    setHasMore(initialMovements.length >= 100);
+  }, [initialMovements]);
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || movements.length === 0) return;
+    setIsLoadingMore(true);
+    try {
+      const lastMovement = movements[movements.length - 1];
+      const nextBatch = await getInventoryHistory({
+        branchId: selectedBranchId,
+        cursor: lastMovement.id,
+        limit: 100,
+      });
+
+      if (nextBatch.length < 100) {
+        setHasMore(false);
+      }
+      setMovements((prev) => [...prev, ...nextBatch]);
+    } catch (error) {
+      console.error("Error al cargar más movimientos:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   // Filtrado instantáneo en memoria
   const filteredMovements = useMemo(() => {
-    return initialMovements.filter((m) => {
+    return movements.filter((m) => {
       // 1. Filtro por Sucursal (si está seleccionada en URL/props)
       if (selectedBranchId && m.sucursal_id !== selectedBranchId) {
         return false;
@@ -77,7 +108,7 @@ export function HistoryClient({
 
       return true;
     });
-  }, [initialMovements, selectedBranchId, selectedType, selectedPeriod, searchQuery]);
+  }, [movements, selectedBranchId, selectedType, selectedPeriod, searchQuery]);
 
   // Resumen métrico del período filtrado
   const stats = useMemo(() => {
@@ -132,8 +163,43 @@ export function HistoryClient({
           </div>
         </div>
 
-        {/* Fila Inferior: Píldoras de Filtro (Período y Tipo) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-850 text-xs">
+        {/* Vista Móvil: Filtros como Selects (sm:hidden) */}
+        <div className="grid grid-cols-2 gap-2 sm:hidden pt-2 border-t border-zinc-100 dark:border-zinc-850 text-xs">
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+              Período
+            </label>
+            <select
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value as any)}
+              className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
+            >
+              <option value="ALL">Todo el tiempo</option>
+              <option value="TODAY">Hoy</option>
+              <option value="YESTERDAY">Ayer</option>
+              <option value="LAST_7_DAYS">Últimos 7 días</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 block">
+              Tipo
+            </label>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value as any)}
+              className="w-full h-8 px-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs font-medium text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-colors"
+            >
+              <option value="ALL">Todos los tipos</option>
+              <option value="IN">+ Entradas</option>
+              <option value="OUT">- Salidas</option>
+              <option value="TRANSFER">⇄ Transferencias</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Vista Desktop: Píldoras de Filtro (hidden sm:flex) */}
+        <div className="hidden sm:flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-850 text-xs">
           {/* Selector de Período (Día / Rango) */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mr-1">
@@ -382,6 +448,27 @@ export function HistoryClient({
             );
           })
         )}
+
+        {/* Botón Cargar Más en Móvil */}
+        {hasMore && (
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="w-full h-10 inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-850 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
+                  <span>Cargando movimientos antiguos...</span>
+                </>
+              ) : (
+                <span>Cargar más movimientos antiguos</span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 4. Vista Desktop: Tabla Monocromática de Movimientos (hidden md:block) */}
@@ -518,8 +605,26 @@ export function HistoryClient({
             <span className="font-mono tabular-nums tracking-tight font-semibold text-zinc-700 dark:text-zinc-300">
               {filteredMovements.length}
             </span>{" "}
-            movimientos
+            movimientos cargados
           </p>
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="inline-flex items-center justify-center gap-2 h-8 px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-850 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-500" />
+                  <span>Cargando...</span>
+                </>
+              ) : (
+                <span>Cargar más antiguos</span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

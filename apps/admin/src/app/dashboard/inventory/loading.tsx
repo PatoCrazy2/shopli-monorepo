@@ -11,12 +11,10 @@ export default function InventoryLoading() {
           <div className="h-4 w-72 bg-zinc-100 dark:bg-zinc-850 rounded hidden md:block" />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="h-10 w-48 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800" />
-          <div className="flex flex-col sm:items-end space-y-1.5">
-            <div className="h-3 w-28 bg-zinc-100 dark:bg-zinc-850 rounded" />
-            <div className="h-8 w-44 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
-          </div>
+        {/* Monto Total Skeleton */}
+        <div className="flex flex-col sm:items-end space-y-1.5">
+          <div className="h-3 w-28 bg-zinc-100 dark:bg-zinc-850 rounded" />
+          <div className="h-8 w-44 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
         </div>
       </div>
 
@@ -28,11 +26,14 @@ export default function InventoryLoading() {
           <div className="h-10 w-full sm:w-[280px] bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0" />
         </div>
 
-        {/* Píldoras de Filtro Skeleton */}
-        <div className="flex items-center gap-2 py-0.5">
-          <div className="h-8 w-20 bg-zinc-900/10 dark:bg-zinc-800 rounded-lg" />
-          <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800" />
-          <div className="h-8 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800" />
+        {/* Fila Inferior: Píldoras y Botón Bitácora Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 py-0.5">
+            <div className="h-8 w-20 bg-zinc-900/10 dark:bg-zinc-800 rounded-lg" />
+            <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800" />
+            <div className="h-8 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800" />
+          </div>
+          <div className="h-8 w-44 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0 self-start sm:self-auto" />
         </div>
       </div>
 

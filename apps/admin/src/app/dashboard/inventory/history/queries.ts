@@ -9,6 +9,7 @@ export interface InventoryHistoryFilter {
   period?: "TODAY" | "YESTERDAY" | "LAST_7_DAYS" | "LAST_30_DAYS" | "ALL";
   search?: string;
   limit?: number;
+  cursor?: string;
 }
 
 export type HistoryMovementItem = {
@@ -47,7 +48,7 @@ export async function getInventoryHistory(
       ? { branchId: options, limit: limitParam }
       : options || { limit: limitParam };
 
-  const { branchId, type = "ALL", period = "ALL", search, limit = 100 } = opts;
+  const { branchId, type = "ALL", period = "ALL", search, limit = 100, cursor } = opts;
 
   // Pre-resolver IDs de todas las sucursales de la empresa
   const sucursales = await db.sucursal.findMany({
@@ -122,6 +123,14 @@ export async function getInventoryHistory(
     },
     orderBy: { fecha: "desc" },
     take: limit,
+    ...(cursor
+      ? {
+          skip: 1,
+          cursor: {
+            id: cursor,
+          },
+        }
+      : {}),
   });
 
   return rows.map((m) => ({
