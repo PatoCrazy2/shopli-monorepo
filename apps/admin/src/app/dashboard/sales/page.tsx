@@ -25,17 +25,11 @@ export default async function SalesPage({
 
   const sucursales = await getSucursales();
 
-  // Opción C: Auto-seleccionar si solo existe una sucursal registrada
-  if (sucursales.length === 1 && !rawSucursalId) {
-    const params = new URLSearchParams();
-    params.set("SUCURSAL", sucursales[0].id);
-    if (dateStr) params.set("date", dateStr);
-    if (page > 1) params.set("page", page.toString());
-    redirect(`/dashboard/sales?${params.toString()}`);
-  }
-
   const validSucursal = sucursales.find(s => s.id === rawSucursalId);
-  const sucursalId = validSucursal ? validSucursal.id : undefined;
+  // Opción C sin redirect: Si solo existe 1 sucursal, se usa directamente como fallback
+  const sucursalId = validSucursal
+    ? validSucursal.id
+    : (!rawSucursalId && sucursales.length === 1 ? sucursales[0].id : undefined);
 
   const { ventas, total, pageSize } = sucursalId
     ? await getSales({ sucursalId, dateStr, page })
