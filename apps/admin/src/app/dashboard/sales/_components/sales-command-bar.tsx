@@ -108,6 +108,13 @@ function CustomSelect({
   );
 }
 
+function getSafeDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function SalesCommandBar({
   sucursales,
   currentSucursalId,
@@ -149,15 +156,11 @@ export function SalesCommandBar({
   };
 
   const handlePreset = (preset: "today" | "yesterday") => {
-    const now = new Date();
+    const targetDate = new Date();
     if (preset === "yesterday") {
-      now.setDate(now.getDate() - 1);
+      targetDate.setDate(targetDate.getDate() - 1);
     }
-    const dateFormatted = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Mexico_City",
-    }).format(now);
-
-    handleDateChange(dateFormatted);
+    handleDateChange(getSafeDateString(targetDate));
   };
 
   const handleClear = () => {
@@ -166,15 +169,11 @@ export function SalesCommandBar({
     });
   };
 
-  const todayStr = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Mexico_City",
-  }).format(new Date());
+  const todayStr = getSafeDateString(new Date());
 
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Mexico_City",
-  }).format(yesterdayDate);
+  const yesterdayStr = getSafeDateString(yesterdayDate);
 
   const isTodayActive = currentDate === todayStr;
   const isYesterdayActive = currentDate === yesterdayStr;
