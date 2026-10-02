@@ -11,43 +11,50 @@ export default function AnalyticsLoading() {
       </div>
 
       {/* Analytics Client Skeleton */}
-      <div className="space-y-8 pb-10">
-        {/* Filters Header */}
-        <div className="bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-end">
-            <div className="space-y-2"><div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded"></div><div className="h-9 w-full bg-zinc-100 dark:bg-zinc-900 rounded-xl"></div></div>
-            <div className="space-y-2"><div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded"></div><div className="h-9 w-full bg-zinc-100 dark:bg-zinc-900 rounded-xl"></div></div>
-            <div className="space-y-2"><div className="h-3 w-28 bg-zinc-200 dark:bg-zinc-800 rounded"></div><div className="h-9 w-full bg-zinc-100 dark:bg-zinc-900 rounded-xl"></div></div>
-            <div className="h-9 w-full bg-zinc-200 dark:bg-zinc-800 rounded-xl"></div>
+      <div className="space-y-6 pb-10">
+        
+        {/* Vercel-style Command Bar */}
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          {/* Tabs */}
+          <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg w-fit border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+            <div className="h-7 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
+            <div className="h-7 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
+            <div className="h-7 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-md"></div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full xl:w-auto">
+            <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800">
+               <div className="h-6 w-10 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-6 w-8 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-6 w-10 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-6 w-10 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+               <div className="h-6 w-12 bg-zinc-300 dark:bg-zinc-700 rounded"></div>
+            </div>
+            <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
+            <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 p-1.5 bg-white dark:bg-zinc-950 rounded-2xl w-fit border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-          <div className="h-10 w-28 bg-zinc-200 dark:bg-zinc-800 rounded-xl"></div>
-          <div className="h-10 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-xl"></div>
-          <div className="h-10 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-xl"></div>
-        </div>
-
         {/* Financial View Skeleton */}
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
              {[1, 2, 3, 4].map(i => (
-               <div key={i} className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 h-32 flex flex-col justify-between">
-                 <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
-                 <div className="h-8 w-32 bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
+               <div key={i} className="bg-white dark:bg-zinc-950 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 h-24 flex flex-col justify-between">
+                 <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+                 <div className="h-8 w-28 bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
                </div>
              ))}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 h-[400px]">
-               <div className="h-6 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-md mb-6"></div>
-               <div className="h-full w-full bg-zinc-50 dark:bg-zinc-900/50 rounded-xl"></div>
+            <div className="lg:col-span-2 bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 h-[360px] flex flex-col">
+               <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md mb-6"></div>
+               <div className="flex-1 w-full bg-zinc-50 dark:bg-zinc-900/50 rounded-xl"></div>
             </div>
-            <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 h-[400px]">
-               <div className="h-6 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md mb-6"></div>
-               <div className="h-full w-full bg-zinc-50 dark:bg-zinc-900/50 rounded-xl rounded-full scale-75"></div>
+            <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 h-[360px] flex flex-col">
+               <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-md mb-6"></div>
+               <div className="flex-1 w-full bg-zinc-50 dark:bg-zinc-900/50 rounded-full scale-[0.80]"></div>
             </div>
           </div>
         </div>
