@@ -104,10 +104,10 @@ export async function resetPin(id: string, newPin: string) {
   try {
     const targetUser = await db.user.findUnique({
       where: { id },
-      select: { empresa_id: true }
+      select: { empresa_id: true, role: true }
     });
-    if (!targetUser || targetUser.empresa_id !== session.user.empresa_id) {
-      return { error: "No autorizado" };
+    if (!targetUser || targetUser.empresa_id !== session.user.empresa_id || targetUser.role === "DUENO") {
+      return { error: "No autorizado para cambiar el PIN de este usuario" };
     }
 
     // Validar que el nuevo PIN no colisione con otro usuario activo de la misma empresa (excluyendo a este usuario)

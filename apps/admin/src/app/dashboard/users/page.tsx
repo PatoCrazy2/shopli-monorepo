@@ -154,10 +154,12 @@ export default async function UsersPage({
                     {role === "DUENO" && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <ResetPinButton
-                            userId={user.id}
-                            userName={user.name || user.email}
-                          />
+                          {user.role !== "DUENO" && (
+                            <ResetPinButton
+                              userId={user.id}
+                              userName={user.name || user.email}
+                            />
+                          )}
 
                           {!isCurrentUser && (
                             <ToggleUserButton
