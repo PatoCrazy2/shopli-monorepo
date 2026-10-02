@@ -6,13 +6,19 @@ export async function getInventoryHistory(branchId?: string, limit = 50) {
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
 
+  // Pre-resolver IDs de todas las sucursales de la empresa (conservando historial de sucursales cerradas)
+  const sucursales = await db.sucursal.findMany({
+    where: { empresa_id: empresaId },
+    select: { id: true }
+  });
+  const sucursalIds = sucursales.map(s => s.id);
+
   const where: any = {
-    sucursal: {
-      empresa_id: empresaId
-    }
+    sucursal_id: { in: sucursalIds }
   };
 
   if (branchId) {
+    if (!sucursalIds.includes(branchId)) throw new Error("No autorizado");
     where.sucursal_id = branchId;
   }
 
