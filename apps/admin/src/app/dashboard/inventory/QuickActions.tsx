@@ -131,6 +131,7 @@ interface QuickActionsProps {
   branches: { id: string; nombre: string }[];
   selectedBranchId?: string;
   productShares: { sucursal_id: string; cantidad: number }[];
+  variant?: "table" | "card";
 }
 
 export function QuickActions({
@@ -139,6 +140,7 @@ export function QuickActions({
   branches,
   selectedBranchId,
   productShares,
+  variant = "table",
 }: QuickActionsProps) {
   const [modalType, setModalType] = useState<"IN" | "OUT" | "TRANSFER" | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -274,60 +276,121 @@ export function QuickActions({
 
   return (
     <>
-      {/* Botones de Acción Rápida (Solo Íconos) */}
-      <div
-        className="inline-flex items-center gap-1"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={() => {
-            setTargetBranchId(defaultBranch);
-            setModalType("IN");
-          }}
-          title="Ingreso de Stock (+)"
-          aria-label="Registrar ingreso de stock"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs active:scale-95"
+      {/* Botones de Acción Rápida (Adaptativo: Card Móvil vs Tabla Desktop) */}
+      {variant === "card" ? (
+        <div
+          className="flex items-center gap-2 w-full pt-1"
+          onClick={(e) => e.stopPropagation()}
         >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
+          {/* Botón Ingreso [+] - Protagonista */}
+          <button
+            type="button"
+            onClick={() => {
+              setTargetBranchId(defaultBranch);
+              setModalType("IN");
+            }}
+            title="Ingreso de Stock (+)"
+            aria-label="Registrar ingreso de stock"
+            className="flex-1 h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold text-xs hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-xs active:scale-[0.98] cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Ingreso</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            setTargetBranchId(defaultBranch);
-            setModalType("OUT");
-          }}
-          title="Salida de Stock (-)"
-          aria-label="Registrar salida de stock"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs active:scale-95"
-        >
-          <Minus className="w-3.5 h-3.5" />
-        </button>
+          {/* Botón Salida [-] */}
+          <button
+            type="button"
+            onClick={() => {
+              setTargetBranchId(defaultBranch);
+              setModalType("OUT");
+            }}
+            title="Salida de Stock (-)"
+            aria-label="Registrar salida de stock"
+            className="flex-1 h-10 inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 font-semibold text-xs hover:bg-zinc-100 dark:hover:bg-zinc-850 transition-colors shadow-2xs active:scale-[0.98] cursor-pointer"
+          >
+            <Minus className="w-4 h-4" />
+            <span>Salida</span>
+          </button>
 
-        <button
-          type="button"
-          disabled={!hasMultipleBranches}
-          onClick={() => {
-            setTargetBranchId(defaultBranch);
-            setDestBranchId(branches.find((b) => b.id !== defaultBranch)?.id || "");
-            setModalType("TRANSFER");
-          }}
-          title={
-            hasMultipleBranches
-              ? "Transferencia entre sucursales (⇄)"
-              : "Se requieren al menos 2 sucursales para transferir"
-          }
-          aria-label="Transferir stock entre sucursales"
-          className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors shadow-2xs active:scale-95 ${
-            hasMultipleBranches
-              ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              : "border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
-          }`}
+          {/* Botón Transferencia [⇄] */}
+          <button
+            type="button"
+            disabled={!hasMultipleBranches}
+            onClick={() => {
+              setTargetBranchId(defaultBranch);
+              setDestBranchId(branches.find((b) => b.id !== defaultBranch)?.id || "");
+              setModalType("TRANSFER");
+            }}
+            title={
+              hasMultipleBranches
+                ? "Transferencia entre sucursales (⇄)"
+                : "Se requieren al menos 2 sucursales para transferir"
+            }
+            aria-label="Transferir stock entre sucursales"
+            className={`h-10 px-3.5 inline-flex items-center justify-center rounded-xl border transition-colors shadow-2xs active:scale-[0.98] ${
+              hasMultipleBranches
+                ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-850 cursor-pointer"
+                : "border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
+            }`}
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+          </button>
+        </div>
+      ) : (
+        <div
+          className="inline-flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
         >
-          <ArrowLeftRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => {
+              setTargetBranchId(defaultBranch);
+              setModalType("IN");
+            }}
+            title="Ingreso de Stock (+)"
+            aria-label="Registrar ingreso de stock"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs active:scale-95"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTargetBranchId(defaultBranch);
+              setModalType("OUT");
+            }}
+            title="Salida de Stock (-)"
+            aria-label="Registrar salida de stock"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-2xs active:scale-95"
+          >
+            <Minus className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            disabled={!hasMultipleBranches}
+            onClick={() => {
+              setTargetBranchId(defaultBranch);
+              setDestBranchId(branches.find((b) => b.id !== defaultBranch)?.id || "");
+              setModalType("TRANSFER");
+            }}
+            title={
+              hasMultipleBranches
+                ? "Transferencia entre sucursales (⇄)"
+                : "Se requieren al menos 2 sucursales para transferir"
+            }
+            aria-label="Transferir stock entre sucursales"
+            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors shadow-2xs active:scale-95 ${
+              hasMultipleBranches
+                ? "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                : "border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
+            }`}
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Modal de Ingreso [+] */}
       {modalType === "IN" && (

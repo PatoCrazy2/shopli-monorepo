@@ -33,8 +33,38 @@ export default function InventoryLoading() {
         </div>
       </div>
 
-      {/* 3. Tabla Skeleton Cero-CLS */}
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
+      {/* 3. Skeleton Adaptativo: Cards Móvil vs Tabla Desktop */}
+      {/* Vista Móvil Skeleton (md:hidden) */}
+      <div className="md:hidden space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xs space-y-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1.5 flex-1">
+                <div className="h-4 w-40 bg-zinc-200 dark:bg-zinc-800 rounded" />
+                <div className="h-3 w-24 bg-zinc-100 dark:bg-zinc-850 rounded" />
+              </div>
+              <div className="h-5 w-16 bg-zinc-100 dark:bg-zinc-800 rounded" />
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-850">
+              <div className="h-4 w-28 bg-zinc-100 dark:bg-zinc-850 rounded" />
+              <div className="h-4 w-20 bg-zinc-100 dark:bg-zinc-850 rounded" />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <div className="flex-1 h-10 bg-zinc-900/10 dark:bg-zinc-800 rounded-xl" />
+              <div className="flex-1 h-10 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800" />
+              <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Vista Desktop Skeleton (hidden md:block) */}
+      <div className="hidden md:block bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
         {/* Thead Skeleton */}
         <div className="h-10 bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 grid grid-cols-8 items-center px-4">
           <div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded" />

@@ -207,8 +207,150 @@ export function InventoryClient({
         title="Escanear Código para Búsqueda en Inventario"
       />
 
-      {/* Tabla de Datos Monocromática */}
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
+      {/* 1. Vista Móvil: Cards Alargadas Táctiles (md:hidden) */}
+      <div className="md:hidden space-y-3">
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 text-center text-zinc-500 shadow-xs">
+            {isFiltering ? (
+              <div className="space-y-3">
+                <p className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">
+                  No se encontraron productos coincidentes
+                </p>
+                <p className="text-xs text-zinc-400 max-w-xs mx-auto">
+                  No hay productos para el criterio de búsqueda o filtro seleccionado.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterPill("ALL");
+                  }}
+                  className="inline-flex items-center px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors shadow-xs"
+                >
+                  Limpiar búsqueda y filtros
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="font-medium text-sm text-zinc-700 dark:text-zinc-300">
+                  No hay productos
+                </p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Registra productos para visualizar su inventario aquí.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          filteredProducts.map((p) => {
+            const isNegative = p.totalStock < 0;
+            const isLow = p.totalStock >= 0 && p.totalStock < MIN_STOCK;
+            const branchStock = selectedBranchId
+              ? p.inventario.find((inv) => inv.sucursal_id === selectedBranchId)?.cantidad ?? 0
+              : null;
+
+            return (
+              <div
+                key={p.id}
+                className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-xs space-y-3 transition-colors"
+              >
+                {/* Zona superior: Clickeable para abrir Kárdex */}
+                <div
+                  onClick={() => setSelectedProductForKardex(p)}
+                  className="cursor-pointer space-y-2 group"
+                  title="Toca para ver el Kárdex de este producto"
+                >
+                  {/* Nombre y Estado */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors leading-tight">
+                        {p.nombre}
+                      </h3>
+                      <p className="font-mono tabular-nums tracking-tight text-[11px] text-zinc-400">
+                        {p.codigo_interno ? `SKU: ${p.codigo_interno}` : "Sin SKU"}
+                        {p.categoria ? ` • ${p.categoria}` : ""}
+                      </p>
+                    </div>
+
+                    {/* Badge de Estado */}
+                    <div className="shrink-0">
+                      {isNegative ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
+                          Revisar
+                        </span>
+                      ) : isLow ? (
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-zinc-100 text-zinc-700 border border-zinc-300 dark:bg-zinc-850 dark:text-zinc-300 dark:border-zinc-700">
+                          Reabastecer
+                        </span>
+                      ) : (
+                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-zinc-50 text-zinc-600 border border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800">
+                          Óptimo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Fila de Métricas: Stock y Costo */}
+                  <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-850 text-xs">
+                    <div>
+                      <span className="text-zinc-400 text-[11px]">Stock Total: </span>
+                      <span
+                        className={`font-mono tabular-nums tracking-tight font-black text-sm ${
+                          isNegative
+                            ? "text-red-600 dark:text-red-400"
+                            : isLow
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-zinc-900 dark:text-zinc-100"
+                        }`}
+                      >
+                        {p.totalStock} u.
+                      </span>
+                      {branchStock !== null && (
+                        <span className="text-[11px] text-zinc-400 font-mono tabular-nums tracking-tight ml-1.5">
+                          (Sucursal: <strong className="text-zinc-700 dark:text-zinc-300">{branchStock}</strong>)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-zinc-400 text-[11px]">Costo: </span>
+                      <span className="font-mono tabular-nums tracking-tight font-semibold text-zinc-700 dark:text-zinc-300">
+                        ${Number(p.costo).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acciones Rápidas Táctiles Protagonistas para Móvil */}
+                <QuickActions
+                  productId={p.id}
+                  productName={p.nombre}
+                  branches={branches}
+                  selectedBranchId={selectedBranchId}
+                  variant="card"
+                  productShares={p.inventario.map((inv) => ({
+                    sucursal_id: inv.sucursal_id,
+                    cantidad: inv.cantidad,
+                  }))}
+                />
+              </div>
+            );
+          })
+        )}
+
+        {filteredProducts.length > 0 && (
+          <p className="text-center text-xs text-zinc-400 dark:text-zinc-500 pt-1">
+            Mostrando{" "}
+            <span className="font-mono tabular-nums tracking-tight font-semibold text-zinc-700 dark:text-zinc-300">
+              {filteredProducts.length}
+            </span>
+            {isFiltering ? ` de ${products.length}` : ""} productos
+          </p>
+        )}
+      </div>
+
+      {/* 2. Vista Desktop: Tabla Tradicional de Datos Monocromática (hidden md:block) */}
+      <div className="hidden md:block bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-zinc-50 dark:bg-zinc-900/80 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[11px] font-semibold">
