@@ -5,7 +5,43 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { canAccessDynamicAudits } from "@/lib/check-plan-limits";
 
-export async function adjustStock(productId: string, amountToAdd: number, reason: string, sucursalId: string) {
+export type StockOperation = "IN" | "OUT";
+
+export const STOCK_IN_REASONS = [
+  "COMPRA",
+  "DEVOLUCION",
+  "AJUSTE_POSITIVO",
+] as const;
+export type StockInReason = (typeof STOCK_IN_REASONS)[number];
+
+export const STOCK_OUT_REASONS = [
+  "MERMA",
+  "DANO",
+  "ROBO",
+  "CONSUMO_INTERNO",
+  "AJUSTE_NEGATIVO",
+] as const;
+export type StockOutReason = (typeof STOCK_OUT_REASONS)[number];
+
+export type StockReason = StockInReason | StockOutReason;
+
+export interface AdjustStockInput {
+  productId: string;
+  amount: number;
+  operation: StockOperation;
+  reason: StockReason;
+  sucursalId: string;
+  notes?: string;
+}
+
+export async function adjustStock(
+  productIdOrData: string | AdjustStockInput,
+  amountArg?: number,
+  operationArg?: StockOperation,
+  reasonArg?: StockReason,
+  sucursalIdArg?: string,
+  notesArg?: string
+): Promise<{ success?: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.id || !session.user.empresa_id) {
     return { error: "No autorizado. Su sesión puede haber expirado." };
@@ -13,17 +49,64 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
   const empresaId = session.user.empresa_id;
   const userId = session.user.id;
 
+  let productId: string;
+  let amount: number;
+  let operation: StockOperation;
+  let reason: StockReason;
+  let sucursalId: string;
+  let notes: string | undefined;
+
+  if (typeof productIdOrData === "object" && productIdOrData !== null) {
+    productId = productIdOrData.productId;
+    amount = productIdOrData.amount;
+    operation = productIdOrData.operation;
+    reason = productIdOrData.reason;
+    sucursalId = productIdOrData.sucursalId;
+    notes = productIdOrData.notes;
+  } else {
+    productId = productIdOrData;
+    amount = amountArg!;
+    operation = operationArg!;
+    reason = reasonArg!;
+    sucursalId = sucursalIdArg!;
+    notes = notesArg;
+  }
+
+  if (!productId || !sucursalId) {
+    return { error: "Producto y sucursal son requeridos." };
+  }
+
+  const numericAmount = Number(amount);
+  if (isNaN(numericAmount) || numericAmount <= 0) {
+    return { error: "La cantidad debe ser un número mayor a 0." };
+  }
+
+  if (operation === "IN") {
+    if (!STOCK_IN_REASONS.includes(reason as StockInReason)) {
+      return {
+        error: `Motivo inválido para ingreso. Permitidos: ${STOCK_IN_REASONS.join(", ")}`,
+      };
+    }
+  } else if (operation === "OUT") {
+    if (!STOCK_OUT_REASONS.includes(reason as StockOutReason)) {
+      return {
+        error: `Motivo inválido para salida. Permitidos: ${STOCK_OUT_REASONS.join(", ")}`,
+      };
+    }
+  } else {
+    return { error: "Tipo de operación no válida (debe ser IN u OUT)." };
+  }
+
   try {
-    // Validar pertenencia de la sucursal y del producto en paralelo
     const [sucursal, producto] = await Promise.all([
       db.sucursal.findUnique({
         where: { id: sucursalId },
-        select: { empresa_id: true }
+        select: { empresa_id: true },
       }),
       db.producto.findUnique({
         where: { id: productId },
-        select: { empresa_id: true }
-      })
+        select: { empresa_id: true },
+      }),
     ]);
 
     if (!sucursal || sucursal.empresa_id !== empresaId) {
@@ -34,40 +117,50 @@ export async function adjustStock(productId: string, amountToAdd: number, reason
     }
 
     let inv = await db.inventario_Sucursal.findUnique({
-      where: { sucursal_id_producto_id: { sucursal_id: sucursalId, producto_id: productId } }
+      where: { sucursal_id_producto_id: { sucursal_id: sucursalId, producto_id: productId } },
     });
 
     if (!inv) {
-      // Si no existe, inicializarlo en 0
       inv = await db.inventario_Sucursal.create({
-        data: { sucursal_id: sucursalId, producto_id: productId, cantidad: 0 }
+        data: { sucursal_id: sucursalId, producto_id: productId, cantidad: 0 },
       });
     }
 
+    const delta = operation === "IN" ? numericAmount : -numericAmount;
+    const tipoMovimiento =
+      operation === "IN"
+        ? reason === "AJUSTE_POSITIVO"
+          ? "AJUSTE"
+          : "INGRESO"
+        : reason === "AJUSTE_NEGATIVO"
+          ? "AJUSTE"
+          : "EGRESO";
+
+    const motivoLog =
+      notes && notes.trim().length > 0 ? `${reason} - ${notes.trim()}` : reason;
+
     await db.$transaction(async (tx) => {
-      // a) Actualizar el stock del producto usando $increment para seguridad
       await tx.inventario_Sucursal.update({
         where: { id: inv.id },
         data: {
-          cantidad: { increment: amountToAdd },
+          cantidad: { increment: delta },
           updatedAt: new Date(),
-        }
+        },
       });
 
-      // b) Log en MovimientoInventario (Historial Centralizado)
       await tx.movimientoInventario.create({
         data: {
           producto_id: productId,
           sucursal_id: sucursalId,
-          cantidad: amountToAdd,
-          tipo: "AJUSTE",
-          motivo: reason,
+          cantidad: delta,
+          tipo: tipoMovimiento,
+          motivo: motivoLog,
           usuario_id: userId,
-        }
+        },
       });
     });
 
-    revalidatePath('/dashboard/inventory');
+    revalidatePath("/dashboard/inventory");
     return { success: true };
   } catch (error: any) {
     console.error("Error adjustStock:", error);
