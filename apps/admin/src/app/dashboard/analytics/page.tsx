@@ -51,11 +51,11 @@ export default async function AnalyticsPage() {
     ]);
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto pb-20">
-            <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto pb-20">
+            <div className="bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
                 <div className="space-y-1">
-                    <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Inteligencia Operativa</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+                    <h1 className="text-2xl md:text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Inteligencia Operativa</h1>
+                    <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-medium">
                         Visualización avanzada de rentabilidad y desempeño global.
                     </p>
                 </div>

@@ -1,11 +1,11 @@
 export default function AnalyticsLoading() {
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-20 animate-pulse">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto pb-20 animate-pulse">
       {/* Header Skeleton */}
-      <div className="bg-white dark:bg-zinc-950 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="space-y-3 w-full max-w-md">
-          <div className="h-10 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
-          <div className="h-4 w-full bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
+      <div className="bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-2 md:space-y-3 w-full max-w-md">
+          <div className="h-7 md:h-10 w-3/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+          <div className="h-3 md:h-4 w-full bg-zinc-100 dark:bg-zinc-900 rounded-md"></div>
         </div>
       </div>
 
