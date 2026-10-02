@@ -4,6 +4,7 @@ import { getSales, getSucursales } from "./queries";
 import { SaleRow } from "./_components/sale-row";
 import { SalesCommandBar } from "./_components/sales-command-bar";
 import Link from "next/link";
+import { Receipt, Store } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -111,22 +112,28 @@ export default async function SalesPage({
 
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-zinc-950 shadow-sm overflow-hidden flex flex-col">
         {!sucursalId ? (
-          <div className="px-6 py-16 sm:p-24 md:p-32 flex flex-col items-center justify-center text-center bg-zinc-50/30 dark:bg-zinc-900/10">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-zinc-900 rounded-3xl flex items-center justify-center mb-5 sm:mb-6 ring-1 ring-zinc-100 dark:ring-zinc-800 shadow-xs">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div className="flex flex-col items-center justify-center py-16 md:py-24 px-6 text-center">
+            <div className="w-14 h-14 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-center mb-4 shadow-xs">
+              <Store className="w-6 h-6 text-zinc-900 dark:text-zinc-100" strokeWidth={1.5} />
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight">Selecciona una sucursal</h2>
-            <p className="text-zinc-500 dark:text-zinc-400 max-w-xs sm:max-w-sm mt-2 text-xs sm:text-sm font-medium leading-relaxed">
+            <h2 className="text-lg md:text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
+              Selecciona una sucursal
+            </h2>
+            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mt-1.5 font-medium leading-relaxed">
               Para visualizar el historial de ventas y métricas acumuladas, primero debes elegir una sucursal operativa.
             </p>
           </div>
         ) : ventas.length === 0 ? (
-          <div className="px-6 py-16 sm:p-24 text-center bg-zinc-50/30 dark:bg-zinc-900/10 flex flex-col items-center">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-amber-50 dark:bg-amber-900/10 rounded-full flex items-center justify-center mb-5 sm:mb-6 ring-1 ring-amber-100 dark:ring-amber-900/30">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          <div className="flex flex-col items-center justify-center py-16 md:py-24 px-6 text-center">
+            <div className="w-14 h-14 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-center mb-4 shadow-xs">
+              <Receipt className="w-6 h-6 text-zinc-900 dark:text-zinc-100" strokeWidth={1.5} />
             </div>
-            <h3 className="text-base sm:text-lg font-black text-zinc-900 dark:text-white tracking-tight">Sin registros para esta búsqueda</h3>
-            <p className="text-zinc-500 dark:text-zinc-400 max-w-xs mt-1 text-xs sm:text-sm font-medium">No se encontraron ventas con los filtros actuales. Intenta con otra fecha.</p>
+            <h3 className="text-lg md:text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
+              No hay ventas en esta fecha
+            </h3>
+            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mt-1.5 font-medium">
+              No se encontraron transacciones para la sucursal y fecha seleccionadas.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
