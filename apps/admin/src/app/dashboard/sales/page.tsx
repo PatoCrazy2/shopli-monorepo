@@ -3,23 +3,31 @@ import { redirect } from "next/navigation";
 import { getSales, getSucursales } from "./queries";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function SalesPage({
   searchParams,
 }: {
   searchParams: Promise<{ SUCURSAL?: string; date?: string; page?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user?.empresa_id) redirect("/login");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    redirect("/dashboard");
+  }
 
   const sp = await searchParams;
-  const sucursalId = sp.SUCURSAL;
+  const rawSucursalId = sp.SUCURSAL;
   const dateStr = sp.date;
   const page = Math.max(1, sp.page ? parseInt(sp.page, 10) || 1 : 1);
 
-  const [{ ventas, total, pageSize }, sucursales] = await Promise.all([
-    getSales({ sucursalId, dateStr, page }),
-    getSucursales(),
-  ]);
+  const sucursales = await getSucursales();
+  const validSucursal = sucursales.find(s => s.id === rawSucursalId);
+  const sucursalId = validSucursal ? validSucursal.id : undefined;
+
+  const { ventas, total, pageSize } = sucursalId
+    ? await getSales({ sucursalId, dateStr, page })
+    : { ventas: [], total: 0, pageSize: 50 };
 
   const totalVentas = ventas.reduce((acc, v) => acc + Number(v.total), 0);
 

@@ -10,6 +10,9 @@ export async function getSales(filters: {
 }) {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar ventas");
+  }
   const empresaId = session.user.empresa_id;
 
   if (!filters.sucursalId) {
@@ -61,6 +64,9 @@ export async function getSales(filters: {
 export async function getSucursales() {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    throw new Error("No tienes permisos para consultar sucursales");
+  }
 
   return await db.sucursal.findMany({
     where: { 
