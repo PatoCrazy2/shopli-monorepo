@@ -31,6 +31,11 @@ export async function getSales(filters: {
     // usando el offset explícito para que Prisma consulte correctamente en UTC.
     const start = new Date(`${filters.dateStr}T00:00:00.000-06:00`);
     const end = new Date(`${filters.dateStr}T23:59:59.999-06:00`);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return { ventas: [], total: 0, page: 1, pageSize: PAGE_SIZE };
+    }
+
     where.fecha = { gte: start, lte: end };
   }
 
