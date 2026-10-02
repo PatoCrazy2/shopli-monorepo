@@ -273,10 +273,23 @@ export async function applyAuditAdjustments(auditId: string) {
 
     const audit = await db.dynamicAudit.findUnique({
       where: { id: auditId },
-      include: { 
-        items: true,
-        sucursal: { select: { empresa_id: true } }
-      }
+      select: {
+        id: true,
+        sucursalId: true,
+        status: true,
+        isApplied: true,
+        sucursal: { select: { empresa_id: true } },
+        items: {
+          where: {
+            difference: { not: null },
+            countedQuantity: { not: null },
+          },
+          select: {
+            productId: true,
+            difference: true,
+          },
+        },
+      },
     });
 
     if (!audit) throw new Error("Auditoría no encontrada");
@@ -286,27 +299,31 @@ export async function applyAuditAdjustments(auditId: string) {
     if (audit.isApplied) throw new Error("Los ajustes de esta auditoría ya fueron aplicados.");
 
     await db.$transaction(async (tx) => {
-      // Aplicar cada diferencia al inventario
-      for (const item of audit.items) {
-        if (item.difference && item.difference !== 0) {
-          await tx.inventario_Sucursal.update({
+      // JS Filter de seguridad adicional y Promise.all para evitar Transaction Timeout
+      const itemsToUpdate = audit.items.filter(
+        (item) => item.difference != null && item.difference !== 0
+      );
+
+      await Promise.all(
+        itemsToUpdate.map((item) =>
+          tx.inventario_Sucursal.update({
             where: {
               sucursal_id_producto_id: {
                 sucursal_id: audit.sucursalId,
                 producto_id: item.productId,
-              }
+              },
             },
             data: {
-              cantidad: { increment: item.difference }
-            }
-          });
-        }
-      }
+              cantidad: { increment: item.difference! },
+            },
+          })
+        )
+      );
 
       // Marcar como aplicada
       await tx.dynamicAudit.update({
         where: { id: auditId },
-        data: { isApplied: true }
+        data: { isApplied: true },
       });
     });
 
