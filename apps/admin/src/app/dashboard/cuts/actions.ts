@@ -141,3 +141,38 @@ export async function forceCloseTurno(turnoId: string) {
     return { error: "Error interno al forzar el cierre del turno" };
   }
 }
+
+export async function getAuditFullDetails(turnoId: string) {
+  const session = await auth();
+  if (!session?.user?.empresa_id) {
+    throw new Error("No autorizado");
+  }
+  const empresaId = session.user.empresa_id;
+
+  const turno = await db.turno.findFirst({
+    where: {
+      id: turnoId,
+      sucursal: { empresa_id: empresaId },
+    },
+    select: {
+      auditorias: {
+        include: {
+          items: {
+            include: {
+              producto: {
+                select: {
+                  nombre: true,
+                  codigo_interno: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!turno) return [];
+
+  return turno.auditorias;
+}

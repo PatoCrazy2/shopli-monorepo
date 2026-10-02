@@ -4,21 +4,21 @@ import { useState } from "react";
 import { X, ChevronRight } from "lucide-react";
 import { resolveAuditItem } from "./actions";
 
-interface AuditItem {
+export interface AuditItem {
   id: string;
-  expectedStock: number;
-  countedStock: number;
   discrepancy: number;
   resolved: boolean;
+  expectedStock?: number;
+  countedStock?: number;
   reason?: string | null;
   comments?: string | null;
-  producto: {
+  producto?: {
     nombre: string;
     codigo_interno: string | null;
   };
 }
 
-interface Auditoria {
+export interface Auditoria {
   id: string;
   items: AuditItem[];
 }
@@ -59,10 +59,10 @@ export default function AuditDetailsDrawer({
             <div className="flex items-start justify-between gap-3 text-xs">
               <div>
                 <span className="font-bold text-zinc-900 dark:text-white">
-                  {item.producto.nombre}
+                  {item.producto?.nombre ?? "Producto"}
                 </span>
                 <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
-                  SKU: {item.producto.codigo_interno || "N/A"}
+                  SKU: {item.producto?.codigo_interno || "N/A"}
                 </div>
               </div>
 
@@ -71,13 +71,13 @@ export default function AuditDetailsDrawer({
                 <div className="text-[11px] text-zinc-400">
                   Sistema:{" "}
                   <span className="font-bold text-zinc-700 dark:text-zinc-300">
-                    {item.expectedStock}
+                    {item.expectedStock ?? 0}
                   </span>
                 </div>
                 <div className="text-[11px] text-zinc-400">
                   Conteo:{" "}
                   <span className="font-bold text-zinc-900 dark:text-white">
-                    {item.countedStock}
+                    {item.countedStock ?? 0}
                   </span>
                 </div>
                 <div
