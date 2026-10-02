@@ -292,9 +292,9 @@ export default function CutsFilters({
   );
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
       {/* 1. Select de Sucursal */}
-      <div className="w-44 sm:w-48">
+      <div className="flex-1 sm:w-48 sm:flex-initial min-w-0">
         <CustomSelect
           value={effectiveSucursal}
           onChange={handleBranchChange}
@@ -305,7 +305,7 @@ export default function CutsFilters({
       </div>
 
       {/* 2. Select de Fecha (Misma línea que sucursal) */}
-      <div className="w-36 sm:w-40">
+      <div className="flex-1 sm:w-40 sm:flex-initial min-w-0">
         <DateSelect
           value={currentDate || todayStr}
           onChange={handleDateChange}
@@ -319,16 +319,16 @@ export default function CutsFilters({
           type="button"
           onClick={handleClear}
           title="Restablecer filtros"
-          className="h-8 px-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1 text-xs transition-colors cursor-pointer shrink-0"
+          className="h-8 w-8 sm:w-auto sm:px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center justify-center gap-1 text-xs transition-colors cursor-pointer shrink-0"
         >
-          <X size={12} />
+          <X size={13} />
           <span className="hidden sm:inline font-mono">Limpiar</span>
         </button>
       )}
 
       {/* 4. Spinner de Transición / Carga */}
       {isPending && (
-        <div className="flex items-center pl-0.5">
+        <div className="flex items-center pl-0.5 shrink-0">
           <Loader2 size={13} className="animate-spin text-zinc-400" />
         </div>
       )}
