@@ -17,10 +17,13 @@ export async function getCuts(sucursalId?: string, date?: string) {
   }
 
   if (date) {
-    // Para filtrar por el día completo sin problemas de zona horaria,
-    // creamos el rango gte y lte para el string YYYY-MM-DD
-    const startDate = new Date(`${date}T00:00:00`);
-    const endDate = new Date(`${date}T23:59:59`);
+    // CDMX es UTC-6. Definimos el inicio y fin del día con offset explícito
+    const startDate = new Date(`${date}T00:00:00.000-06:00`);
+    const endDate = new Date(`${date}T23:59:59.999-06:00`);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return [];
+    }
 
     where.fecha_apertura = {
       gte: startDate,
@@ -41,14 +44,18 @@ export async function getCuts(sucursalId?: string, date?: string) {
       },
       gastos: true,
       auditorias: {
-        include: {
+        select: {
+          id: true,
           items: {
-            include: {
-              producto: { select: { nombre: true, codigo_interno: true } }
-            }
-          }
-        }
-      }
+            where: { discrepancy: { not: 0 } },
+            select: {
+              id: true,
+              discrepancy: true,
+              resolved: true,
+            },
+          },
+        },
+      },
     },
   });
 }

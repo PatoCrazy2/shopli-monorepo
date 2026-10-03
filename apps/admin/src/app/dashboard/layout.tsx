@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { SubscriptionPlan, SubscriptionStatus } from "@shopli/db";
+import { Suspense } from "react";
+import { getSession } from "@/lib/get-session";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileHeader } from "@/components/navigation/MobileHeader";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
-import { SubscriptionBanner } from "@/components/SubscriptionBanner";
-import { getEffectiveSubscription } from "@/lib/subscription-plans";
-import { getEmpresaSubscription } from "@/lib/queries/get-empresa-subscription";
+import { SubscriptionBannerServer } from "@/components/subscription/SubscriptionBannerServer";
+import { PlanBadgeServer } from "@/components/subscription/PlanBadgeServer";
+import { NetworkBanner } from "@/components/NetworkBanner";
 
 export const viewport: Viewport = {
   themeColor: "#09090b",
@@ -26,82 +26,76 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    const session = await auth();
+  const session = await getSession();
 
-    // 1. Si no hay sesión → redirect
-    if (!session?.user) {
-        redirect("/login");
-    }
+  // 1. Si no hay sesión → redirect
+  if (!session?.user) {
+    redirect("/login");
+  }
 
-    // 2. Si el rol no es DUEÑO (OWNER) ni ENCARGADO (MANAGER) → redirect
-    if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
-        redirect("/login");
-    }
+  // 2. Si el rol no es DUEÑO (OWNER) ni ENCARGADO (MANAGER) → redirect
+  if (session.user.role !== "DUENO" && session.user.role !== "ENCARGADO") {
+    redirect("/login");
+  }
 
-    // 3. Guardián de Onboarding: Si el usuario no ha configurado su empresa → /onboarding
-    if (!session.user.empresa_id) {
-        redirect("/onboarding");
-    }
+  // 3. Guardián de Onboarding: Si el usuario no ha configurado su empresa → /onboarding
+  if (!session.user.empresa_id) {
+    redirect("/onboarding");
+  }
 
-    // 3. Consultar suscripción efectiva
-    let planBadge: string | null = null;
-    let effectiveSubscription = null;
+  const userData = {
+    name: session.user.name,
+    role: session.user.role,
+  };
 
-    if (session.user.empresa_id) {
-        const empresa = await getEmpresaSubscription(session.user.empresa_id);
+  const empresaId = session.user.empresa_id;
 
-        if (empresa) {
-            effectiveSubscription = getEffectiveSubscription(empresa);
+  // 4. Renderiza MobileHeader + Sidebar (Desktop) + Main Content + MobileBottomNav
+  // Cero bloqueos de DB en el layout raíz: las consultas de suscripción y banners corren en streaming paralelo
+  return (
+    <div className="flex h-screen w-full bg-white dark:bg-zinc-950 overflow-hidden text-gray-900 dark:text-gray-100 font-sans selection:bg-black selection:text-white">
+      {/* Banner de estado de red (offline / restored) */}
+      <NetworkBanner />
 
-            if (effectiveSubscription.effectiveStatus === SubscriptionStatus.TRIALING) {
-                planBadge = `Trial ${effectiveSubscription.daysRemaining ?? 0}d`;
-            } else if (effectiveSubscription.effectiveStatus === SubscriptionStatus.GRACE_PERIOD) {
-                planBadge = `Gracia ${effectiveSubscription.graceDaysRemaining ?? 0}d`;
-            } else if (effectiveSubscription.effectiveStatus === SubscriptionStatus.ACTIVE) {
-                planBadge =
-                    effectiveSubscription.plan === SubscriptionPlan.ARRANQUE
-                        ? "Arranque"
-                        : effectiveSubscription.plan === SubscriptionPlan.CRECIMIENTO
-                        ? "Crecimiento"
-                        : "Multi-Sucursal";
-            } else {
-                planBadge = "Vencido";
-            }
+      {/* Header móvil minimalista (sin hamburguesa) */}
+      <MobileHeader user={userData} />
+
+      {/* Sidebar exclusivo para Desktop con streaming no bloqueante de planBadge */}
+      <Sidebar
+        user={userData}
+        planBadgeSlot={
+          <Suspense fallback={null}>
+            <PlanBadgeServer empresaId={empresaId} />
+          </Suspense>
         }
-    }
+      />
 
-    const userData = {
-        name: session.user.name,
-        role: session.user.role,
-        planBadge,
-    };
-
-    // 4. Renderiza MobileHeader + Sidebar (Desktop) + Main Content + MobileBottomNav
-    return (
-        <div className="flex h-screen w-full bg-white dark:bg-zinc-950 overflow-hidden text-gray-900 dark:text-gray-100 font-sans selection:bg-black selection:text-white">
-            {/* Header móvil minimalista (sin hamburguesa) */}
-            <MobileHeader user={userData} />
-
-            {/* Sidebar exclusivo para Desktop */}
-            <Sidebar user={userData} />
-
-            {/* Contenido principal */}
-            <main id="dashboard-scroll-container" className="flex-1 w-full overflow-y-auto bg-gray-50/50 dark:bg-black">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-18 pb-32 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)] md:py-8 md:pt-8 animate-in fade-in duration-300">
-                    <SubscriptionBanner
-                        effectiveSub={effectiveSubscription}
-                        userRole={session.user.role}
-                    />
-                    {children}
-                </div>
-            </main>
-
-            {/* Floating Bottom Dock móvil + Action Drawer */}
-            <MobileBottomNav user={userData} />
+      {/* Contenido principal con streaming no bloqueante de banner */}
+      <main id="dashboard-scroll-container" className="flex-1 w-full overflow-y-auto bg-gray-50/50 dark:bg-black">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-18 pb-32 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)] md:py-8 md:pt-8 animate-in fade-in duration-300">
+          <Suspense fallback={null}>
+            <SubscriptionBannerServer
+              empresaId={empresaId}
+              userRole={session.user.role}
+            />
+          </Suspense>
+          {children}
         </div>
-    );
+      </main>
+
+      {/* Floating Bottom Dock móvil + Action Drawer con streaming no bloqueante */}
+      <MobileBottomNav
+        user={userData}
+        planBadgeSlot={
+          <Suspense fallback={null}>
+            <PlanBadgeServer empresaId={empresaId} isDrawer />
+          </Suspense>
+        }
+      />
+    </div>
+  );
 }

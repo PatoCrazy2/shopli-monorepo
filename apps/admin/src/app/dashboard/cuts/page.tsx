@@ -3,11 +3,36 @@ import { redirect } from "next/navigation";
 import { getCuts } from "./queries";
 import { getSucursales } from "../branches/queries";
 import Link from "next/link";
+import { Wallet } from "lucide-react";
 import CutsAutoRefresh from "./CutsAutoRefresh";
 import ForceCloseButton from "./ForceCloseButton";
 import CutsFilters from "./CutsFilters";
 import ExpensesDetailsDrawer from "./ExpensesDetailsDrawer";
 import AuditDetailsDrawer from "./AuditDetailsDrawer";
+
+function getTodayMexicoCity(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  if (year && month && day) {
+    return `${year}-${month}-${day}`;
+  }
+
+  const now = new Date();
+  const cdmxDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const y = cdmxDate.getUTCFullYear();
+  const m = String(cdmxDate.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(cdmxDate.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 export default async function CutsPage({
   searchParams,
@@ -18,13 +43,16 @@ export default async function CutsPage({
   if (!session?.user) redirect("/login");
 
   const params = await searchParams;
-  const sucursalId = params.sucursal;
-  const date = params.date; // Remove default to today
+  const sucursales = await getSucursales();
 
-  const [turnos, sucursales] = await Promise.all([
-    getCuts(sucursalId, date),
-    getSucursales()
-  ]);
+  // Si solo existe 1 sucursal, se selecciona automáticamente por defecto
+  const validSucursal = sucursales.find((s) => s.id === params.sucursal);
+  const sucursalId = validSucursal
+    ? validSucursal.id
+    : (!params.sucursal && sucursales.length === 1 ? sucursales[0].id : undefined);
+
+  const date = params.date?.trim() || getTodayMexicoCity();
+  const turnos = await getCuts(sucursalId, date);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("es-MX", {
@@ -35,19 +63,23 @@ export default async function CutsPage({
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-20">
+    <div className="space-y-4 max-w-7xl mx-auto pb-20">
       <CutsAutoRefresh />
-      {/* Header & Filters */}
-      <div className="flex flex-row items-center justify-between gap-4 bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+
+      {/* 1. Header Card (Solo título y descripción del módulo) */}
+      <div className="bg-white dark:bg-zinc-950 p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
         <div className="space-y-0.5">
-          <h1 className="text-xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
             Cortes de Caja
           </h1>
-          <p className="hidden md:block text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+          <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">
             Auditoría de ingresos y conciliación de inventario.
           </p>
         </div>
+      </div>
 
+      {/* 2. Filtros Compactos: FUERA de la Card y en la misma línea */}
+      <div>
         <CutsFilters
           sucursales={sucursales}
           currentSucursal={sucursalId}
@@ -55,19 +87,20 @@ export default async function CutsPage({
         />
       </div>
 
-      <div className="flex flex-col gap-4">
+      {/* 3. Listado de Turnos o Empty State Monocromático */}
+      <div className="flex flex-col gap-3">
         {turnos.length === 0 ? (
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-24 flex flex-col items-center justify-center text-center shadow-sm">
-            <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/10 rounded-full flex items-center justify-center mb-6 ring-1 ring-amber-100 dark:ring-amber-900/30">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          <div className="flex flex-col items-center justify-center py-12 md:py-16 px-6 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl bg-zinc-50/50 dark:bg-zinc-900/20">
+            <div className="w-14 h-14 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex items-center justify-center mb-5 shadow-xs">
+              <Wallet className="w-6 h-6 text-zinc-900 dark:text-zinc-100" strokeWidth={1.5} />
             </div>
-            <h2 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
-              {date ? "Sin registros para esta fecha" : "Sin cortes registrados"}
+            <h2 className="text-lg md:text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
+              {date ? "No hay cortes en esta fecha" : "Aún no hay cortes registrados"}
             </h2>
-            <p className="text-zinc-500 max-w-xs mt-2 font-medium">
+            <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mt-1.5 font-medium">
               {date 
-                ? "No se encontraron turnos abiertos o cerrados para el día indicado."
-                : "Aún no se han generado cortes de caja en el sistema."}
+                ? "Las cajas no han sido abiertas o no hay movimientos para los filtros seleccionados."
+                : "No se han generado cortes de caja en el sistema para esta sucursal."}
             </p>
           </div>
         ) : (
@@ -222,6 +255,7 @@ export default async function CutsPage({
                     <AuditDetailsDrawer
                       auditorias={turno.auditorias || []}
                       sucursalId={turno.sucursal_id}
+                      turnoId={turno.id}
                     />
                   </div>
                 )}

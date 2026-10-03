@@ -1,10 +1,27 @@
 import { db } from "@shopli/db";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 
 function getTodayBounds() {
-  const cdmxDateStr = new Date().toLocaleDateString("en-CA", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Mexico_City",
-  });
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  const cdmxDateStr =
+    year && month && day
+      ? `${year}-${month}-${day}`
+      : (() => {
+          const now = new Date();
+          const cdmx = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+          return `${cdmx.getUTCFullYear()}-${String(cdmx.getUTCMonth() + 1).padStart(2, "0")}-${String(cdmx.getUTCDate()).padStart(2, "0")}`;
+        })();
+
   const start = new Date(`${cdmxDateStr}T00:00:00.000-06:00`);
   const end = new Date(`${cdmxDateStr}T23:59:59.999-06:00`);
   return { start, end, cdmxDateStr };
@@ -12,15 +29,15 @@ function getTodayBounds() {
 
 /**
  * Query rápida: suma de ventas, ganancia y total de tickets del día.
- * 2 queries en paralelo. Primera en renderizar (Suspense stream).
+ * 2 queries agregadas en paralelo ejecutadas directamente en Postgres.
  */
 export async function getKPIData() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
   const { start, end } = getTodayBounds();
 
-  const [agg, detallesHoy] = await Promise.all([
+  const [agg, costosQuery] = await Promise.all([
     // Aggregate: total de ventas + count de tickets en una sola query
     db.venta.aggregate({
       _sum: { total: true },
@@ -32,25 +49,24 @@ export async function getKPIData() {
       },
     }),
 
-    // Detalles con costo para calcular ganancia bruta
-    db.detalle_Venta.findMany({
-      where: {
-        venta: {
-          fecha: { gte: start, lte: end },
-          estado: "COMPLETADA",
-          sucursal: { empresa_id: empresaId },
-        },
-      },
-      include: { producto: { select: { costo: true } } },
-    }),
+    // Total de costos (COGS) calculado nativamente en Postgres (sin traer miles de filas a memoria)
+    db.$queryRaw<{ totalCosts: number | null }[]>`
+      SELECT 
+        COALESCE(SUM(d.cantidad * p.costo), 0)::float as "totalCosts"
+      FROM "Detalle_Venta" d
+      JOIN "Producto" p ON d.producto_id = p.id
+      JOIN "Venta" v ON d.venta_id = v.id
+      JOIN "Sucursal" s ON v.sucursal_id = s.id
+      WHERE v.fecha >= ${start}
+        AND v.fecha <= ${end}
+        AND v.estado = 'COMPLETADA'::"EstadoVenta"
+        AND s.empresa_id = ${empresaId}
+    `,
   ]);
 
   const ventasHoy = Number(agg._sum.total || 0);
   const ticketsTotales = agg._count._all;
-  const costosHoy = detallesHoy.reduce(
-    (acc, curr) => acc + curr.cantidad * Number(curr.producto.costo),
-    0
-  );
+  const costosHoy = Number(costosQuery[0]?.totalCosts || 0);
   const gananciaHoy = ventasHoy - costosHoy;
 
   return { ventasHoy, gananciaHoy, ticketsTotales };
@@ -61,7 +77,7 @@ export async function getKPIData() {
  * 3 queries en paralelo. Segunda en renderizar (Suspense stream).
  */
 export async function getChartsData() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
   const { start, end, cdmxDateStr } = getTodayBounds();
