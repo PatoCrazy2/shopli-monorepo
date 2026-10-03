@@ -7,6 +7,7 @@ import { MobileHeader } from "@/components/navigation/MobileHeader";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
 import { SubscriptionBannerServer } from "@/components/subscription/SubscriptionBannerServer";
 import { PlanBadgeServer } from "@/components/subscription/PlanBadgeServer";
+import { NetworkBanner } from "@/components/NetworkBanner";
 
 export const viewport: Viewport = {
   themeColor: "#09090b",
@@ -57,6 +58,9 @@ export default async function DashboardLayout({
   // Cero bloqueos de DB en el layout raíz: las consultas de suscripción y banners corren en streaming paralelo
   return (
     <div className="flex h-screen w-full bg-white dark:bg-zinc-950 overflow-hidden text-gray-900 dark:text-gray-100 font-sans selection:bg-black selection:text-white">
+      {/* Banner de estado de red (offline / restored) */}
+      <NetworkBanner />
+
       {/* Header móvil minimalista (sin hamburguesa) */}
       <MobileHeader user={userData} />
 
