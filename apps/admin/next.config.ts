@@ -58,6 +58,10 @@ const nextConfig: NextConfig = {
         source: "/shopli_snbg.svg",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
+      {
+        source: "/offline.html",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400" }],
+      },
     ];
   },
 };

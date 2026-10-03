@@ -1,5 +1,5 @@
 // ShopLI Admin PWA Service Worker (Production-Ready)
-const CACHE_NAME = "shopli-admin-v2";
+const CACHE_NAME = "shopli-admin-v3";
 
 const PRECACHE_ASSETS = [
   "/manifest.webmanifest",
@@ -10,6 +10,7 @@ const PRECACHE_ASSETS = [
   "/icons/maskable-icon-512x512.png",
   "/icons/apple-touch-icon.png",
   "/shopli_snbg.svg",
+  "/offline.html",
 ];
 
 // 1. Instalación: Cachear assets estáticos iniciales
@@ -95,12 +96,26 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            return caches.match("/dashboard");
+        .catch(async () => {
+          // 1. Intentar servir la ruta exacta desde la caché si ya fue visitada
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // 2. Si no existe, intentar servir la página de inicio del dashboard
+          const dashboardResponse = await caches.match("/dashboard/inicio");
+          if (dashboardResponse) {
+            return dashboardResponse;
+          }
+          // 3. Fallback controlado contra el logo gigante: servir la pantalla offline amigable
+          const offlineFallback = await caches.match("/offline.html");
+          if (offlineFallback) {
+            return offlineFallback;
+          }
+          return new Response("Sin conexión", {
+            status: 503,
+            statusText: "Service Unavailable",
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
           });
         })
     );
