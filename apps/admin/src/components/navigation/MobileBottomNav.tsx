@@ -13,9 +13,10 @@ interface MobileBottomNavProps {
     role?: string;
     planBadge?: string | null;
   };
+  planBadgeSlot?: React.ReactNode;
 }
 
-export function MobileBottomNav({ user }: MobileBottomNavProps) {
+export function MobileBottomNav({ user, planBadgeSlot }: MobileBottomNavProps) {
   const pathname = usePathname();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -177,6 +178,7 @@ export function MobileBottomNav({ user }: MobileBottomNavProps) {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         user={user}
+        planBadgeSlot={planBadgeSlot}
       />
     </>
   );

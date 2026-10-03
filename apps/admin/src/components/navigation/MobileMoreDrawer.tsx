@@ -25,9 +25,10 @@ interface MobileMoreDrawerProps {
     role?: string;
     planBadge?: string | null;
   };
+  planBadgeSlot?: React.ReactNode;
 }
 
-export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProps) {
+export function MobileMoreDrawer({ isOpen, onClose, user, planBadgeSlot }: MobileMoreDrawerProps) {
   const pathname = usePathname();
   const [navigatingHref, setNavigatingHref] = useState<string | null>(null);
 
@@ -249,7 +250,9 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
                       </span>
                     </div>
 
-                    {user.planBadge && !isLoading && (
+                    {!isLoading && (planBadgeSlot !== undefined ? (
+                      planBadgeSlot
+                    ) : user.planBadge ? (
                       <span
                         className={`shrink-0 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                           isBilling
@@ -265,7 +268,7 @@ export function MobileMoreDrawer({ isOpen, onClose, user }: MobileMoreDrawerProp
                       >
                         {user.planBadge}
                       </span>
-                    )}
+                    ) : null)}
                   </Link>
                 );
               })()}

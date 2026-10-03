@@ -31,7 +31,13 @@ const NAV_LINKS = [
     { name: "Suscripción", href: "/dashboard/billing", icon: CreditCardIcon, ownerOnly: true },
 ];
 
-export function Sidebar({ user }: { user: { name?: string | null; role?: string; planBadge?: string | null } }) {
+export function Sidebar({
+    user,
+    planBadgeSlot,
+}: {
+    user: { name?: string | null; role?: string; planBadge?: string | null };
+    planBadgeSlot?: React.ReactNode;
+}) {
     const pathname = usePathname();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -124,7 +130,9 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                                 <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-zinc-800 py-0.5 px-2 rounded-full w-max">
                                     {user.role}
                                 </span>
-                                {user.planBadge && (
+                                {planBadgeSlot !== undefined ? (
+                                    planBadgeSlot
+                                ) : user.planBadge ? (
                                     <span className={`text-xs font-black uppercase tracking-wider ${
                                         user.planBadge.toLowerCase().includes("arranque")
                                             ? "bg-gradient-to-r from-slate-700 via-gray-500 to-zinc-800 dark:from-zinc-100 dark:via-gray-300 dark:to-slate-400 bg-clip-text text-transparent drop-shadow-sm font-extrabold"
@@ -136,7 +144,7 @@ export function Sidebar({ user }: { user: { name?: string | null; role?: string;
                                     }`}>
                                         {user.planBadge}
                                     </span>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                         <button
