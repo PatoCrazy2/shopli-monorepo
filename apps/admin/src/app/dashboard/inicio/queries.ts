@@ -1,5 +1,5 @@
 import { db } from "@shopli/db";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 
 function getTodayBounds() {
   const cdmxDateStr = new Date().toLocaleDateString("en-CA", {
@@ -15,7 +15,7 @@ function getTodayBounds() {
  * 2 queries en paralelo. Primera en renderizar (Suspense stream).
  */
 export async function getKPIData() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
   const { start, end } = getTodayBounds();
@@ -61,7 +61,7 @@ export async function getKPIData() {
  * 3 queries en paralelo. Segunda en renderizar (Suspense stream).
  */
 export async function getChartsData() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
   const empresaId = session.user.empresa_id;
   const { start, end, cdmxDateStr } = getTodayBounds();

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/get-session";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileHeader } from "@/components/navigation/MobileHeader";
 import { MobileBottomNav } from "@/components/navigation/MobileBottomNav";
@@ -29,7 +29,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const session = await getSession();
 
   // 1. Si no hay sesión → redirect
   if (!session?.user) {
