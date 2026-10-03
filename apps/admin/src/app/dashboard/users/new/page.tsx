@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUser } from "../actions";
 import Link from "next/link";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 export default function NewUserPage() {
   const router = useRouter();
@@ -180,13 +181,15 @@ export default function NewUserPage() {
             >
               Cancelar
             </Link>
-            <button
-              type="submit"
-              disabled={!isFormValid || isPending}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed ring-offset-background bg-zinc-900 text-white hover:bg-zinc-900/90 h-10 py-2 px-4 shadow-sm"
+            <SubmitButton
+              disabled={!isFormValid}
+              isPending={isPending}
+              loadingText="Guardando..."
+              slowText="Conexión inestable, procesando..."
+              className="bg-zinc-900 text-white hover:bg-zinc-900/90 shadow-sm"
             >
-              {isPending ? "Guardando..." : "Guardar Usuario"}
-            </button>
+              Guardar Usuario
+            </SubmitButton>
           </div>
         </form>
       </div>
