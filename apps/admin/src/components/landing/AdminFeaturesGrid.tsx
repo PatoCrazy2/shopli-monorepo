@@ -24,10 +24,10 @@ export default function AdminFeaturesGrid() {
             </span>
           </div>
 
-          {/* Derecha: Dashboard y Analíticas (Muy Grande - Pantalla con aire top/left) */}
-          <div className="md:col-span-7 bg-[#050507] h-[500px] md:h-[650px] relative overflow-hidden group pt-8 pl-8 sm:pt-12 sm:pl-12 flex flex-col justify-end">
-            {/* Marco de Pantalla Flotante */}
-            <div className="relative w-full h-full rounded-tl-2xl overflow-hidden border-t border-l border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] bg-zinc-950">
+          {/* Derecha: Dashboard y Analíticas (Muy Grande - Pantalla flotante recortada con texto libre) */}
+          <div className="md:col-span-7 bg-[#050507] h-[520px] md:h-[650px] relative overflow-hidden group pt-8 pl-8 sm:pt-12 sm:pl-12 pb-6 sm:pb-8 flex flex-col justify-between">
+            {/* Marco de Pantalla Nítida con Recorte Geométrico (Sin degradados) */}
+            <div className="relative w-full flex-1 rounded-l-2xl overflow-hidden border-t border-b border-l border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.8)] bg-white">
               <Image
                 src="/features/analitycs.webp"
                 alt="Dashboard y Analíticas de ShopLI"
@@ -35,16 +35,10 @@ export default function AdminFeaturesGrid() {
                 sizes="(max-width: 768px) 100vw, 60vw"
                 className="object-cover object-left-top"
               />
-
-              {/* Fase 2: Difuminado derecho hacia el color de fondo #050507 */}
-              <div className="absolute inset-y-0 right-0 w-24 sm:w-44 bg-gradient-to-l from-[#050507] via-[#050507]/60 to-transparent pointer-events-none" />
-
-              {/* Fase 2: Difuminado inferior hacia el color de fondo #050507 */}
-              <div className="absolute inset-x-0 bottom-0 h-32 sm:h-44 bg-gradient-to-t from-[#050507] via-[#050507]/80 to-transparent pointer-events-none" />
             </div>
 
-            {/* Fase 3: Enlace e info detallada en esquina inferior izquierda */}
-            <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8 z-20">
+            {/* Enlace e info detallada en franja inferior 100% libre de la imagen */}
+            <div className="pt-6 sm:pt-7 pr-6">
               <Link
                 href="#analytics"
                 className="inline-flex items-center gap-2.5 group/link text-neutral-200 hover:text-white transition-colors"
