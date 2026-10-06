@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 export default function AdminFeaturesGrid() {
   return (
@@ -21,13 +22,18 @@ export default function AdminFeaturesGrid() {
             </span>
           </div>
 
-          {/* Derecha: Dashboard y Analíticas (Muy Grande - Protagonista) */}
-          <div className="md:col-span-7 bg-[#050507] h-[500px] md:h-[650px] relative overflow-hidden group flex items-center justify-center">
-            {/* Placeholder Visual - Reemplazar con <Image> del screenshot */}
-            <div className="absolute inset-0 bg-gradient-to-bl from-indigo-950/20 via-zinc-900/20 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
-            <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
-              Placeholder: Dashboard & Analíticas
-            </span>
+          {/* Derecha: Dashboard y Analíticas (Muy Grande - Pantalla con aire top/left) */}
+          <div className="md:col-span-7 bg-[#050507] h-[500px] md:h-[650px] relative overflow-hidden group pt-8 pl-8 sm:pt-12 sm:pl-12 flex flex-col justify-end">
+            {/* Marco de Pantalla Flotante */}
+            <div className="relative w-full h-full rounded-tl-2xl overflow-hidden border-t border-l border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] bg-zinc-950">
+              <Image
+                src="/features/analitycs.webp"
+                alt="Dashboard y Analíticas de ShopLI"
+                fill
+                sizes="(max-width: 768px) 100vw, 60vw"
+                className="object-cover object-left-top transition-transform duration-700 ease-out group-hover:scale-[1.015]"
+              />
+            </div>
           </div>
 
           {/* ================= FILA 2 ================= */}
