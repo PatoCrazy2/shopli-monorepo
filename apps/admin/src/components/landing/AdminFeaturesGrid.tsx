@@ -31,8 +31,14 @@ export default function AdminFeaturesGrid() {
                 alt="Dashboard y Analíticas de ShopLI"
                 fill
                 sizes="(max-width: 768px) 100vw, 60vw"
-                className="object-cover object-left-top transition-transform duration-700 ease-out group-hover:scale-[1.015]"
+                className="object-cover object-left-top"
               />
+
+              {/* Fase 2: Difuminado derecho hacia el color de fondo #050507 */}
+              <div className="absolute inset-y-0 right-0 w-24 sm:w-44 bg-gradient-to-l from-[#050507] via-[#050507]/60 to-transparent pointer-events-none" />
+
+              {/* Fase 2: Difuminado inferior hacia el color de fondo #050507 */}
+              <div className="absolute inset-x-0 bottom-0 h-32 sm:h-44 bg-gradient-to-t from-[#050507] via-[#050507]/80 to-transparent pointer-events-none" />
             </div>
           </div>
 
