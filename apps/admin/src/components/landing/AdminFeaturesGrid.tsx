@@ -1,5 +1,7 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 export default function AdminFeaturesGrid() {
   return (
@@ -39,6 +41,21 @@ export default function AdminFeaturesGrid() {
 
               {/* Fase 2: Difuminado inferior hacia el color de fondo #050507 */}
               <div className="absolute inset-x-0 bottom-0 h-32 sm:h-44 bg-gradient-to-t from-[#050507] via-[#050507]/80 to-transparent pointer-events-none" />
+            </div>
+
+            {/* Fase 3: Enlace e info detallada en esquina inferior izquierda */}
+            <div className="absolute bottom-6 left-6 sm:bottom-8 sm:left-8 z-20">
+              <Link
+                href="#analytics"
+                className="inline-flex items-center gap-2.5 group/link text-neutral-200 hover:text-white transition-colors"
+              >
+                <span className="text-sm sm:text-base font-medium tracking-tight">
+                  Dashboard & Analíticas
+                </span>
+                <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center transition-all duration-300 group-hover/link:bg-white group-hover/link:text-black group-hover/link:border-white">
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                </div>
+              </Link>
             </div>
           </div>
 
