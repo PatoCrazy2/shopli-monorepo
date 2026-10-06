@@ -4,6 +4,7 @@ import LandingScrollRestoration from "@/components/landing/LandingScrollRestorat
 import HeroSection from "@/components/landing/HeroSection";
 import EcosystemIntroSection from "@/components/landing/EcosystemIntroSection";
 import PhoneShowcaseSection from "@/components/landing/PhoneShowcaseSection";
+import AdminFeaturesGrid from "@/components/landing/AdminFeaturesGrid";
 import PricingSection from "@/components/landing/PricingSection";
 import LandingFooter from "@/components/landing/LandingFooter";
 
@@ -60,6 +61,9 @@ export default function HomePage() {
           <div className="absolute w-48 h-8 -top-4 bg-white/[0.02] blur-xl rounded-full" />
         </div>
       </div>
+
+      {/* Grid Asimétrico de Features del Admin */}
+      <AdminFeaturesGrid />
 
       {/* Sección de Precios, ROI, Comparativa y FAQ */}
       <PricingSection />
