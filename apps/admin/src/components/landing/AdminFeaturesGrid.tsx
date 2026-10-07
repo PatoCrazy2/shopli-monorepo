@@ -16,7 +16,7 @@ export default function AdminFeaturesGrid() {
           
           {/* ================= FILA 1 ================= */}
           {/* Izquierda: Catálogo (Mediano) */}
-          <div className="md:col-span-5 bg-[#050507] h-[400px] md:h-[650px] relative overflow-hidden group flex items-center justify-center">
+          <div className="md:col-span-5 bg-[#050507] h-[360px] md:h-[480px] relative overflow-hidden group flex items-center justify-center">
             {/* Placeholder Visual - Reemplazar con <Image> del screenshot */}
             <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/50 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
             <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
@@ -24,12 +24,12 @@ export default function AdminFeaturesGrid() {
             </span>
           </div>
 
-          {/* Derecha: Dashboard y Analíticas (Muy Grande - Pantalla flotante recortada con texto libre) */}
-          <div className="md:col-span-7 bg-[#050507] h-[520px] md:h-[650px] relative overflow-hidden group pt-8 pl-8 sm:pt-12 sm:pl-12 pb-6 sm:pb-8 flex flex-col justify-between">
+          {/* Derecha: Dashboard y Analíticas (Muy Grande - Proporción equilibrada sin zoom excesivo) */}
+          <div className="md:col-span-7 bg-[#050507] h-[420px] sm:h-[450px] md:h-[480px] relative overflow-hidden group pt-6 pl-6 sm:pt-8 sm:pl-8 md:pt-10 md:pl-10 pb-5 sm:pb-6 flex flex-col justify-between">
             {/* Marco de Pantalla Nítida con Recorte Geométrico (Sin degradados) */}
             <div className="relative w-full flex-1 rounded-l-2xl overflow-hidden border-t border-b border-l border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.8)] bg-white">
               <Image
-                src="/features/analitycs.webp"
+                src="/features/analytics-v2.webp"
                 alt="Dashboard y Analíticas de ShopLI"
                 fill
                 sizes="(max-width: 768px) 100vw, 60vw"
