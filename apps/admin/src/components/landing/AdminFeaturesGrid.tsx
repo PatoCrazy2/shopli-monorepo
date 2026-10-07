@@ -129,12 +129,42 @@ export default function AdminFeaturesGrid() {
             </div>
           </div>
 
-          {/* Col 2: Gastos & Auditoría */}
-          <div className="md:col-span-4 bg-[#050507] h-[300px] md:h-[450px] relative overflow-hidden group flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/40 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
-            <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
-              Placeholder: Gastos & Auditoría
-            </span>
+          {/* Col 2: Gastos & Auditoría (Bloque Tipográfico Editorial con Luz Curva) */}
+          <div className="md:col-span-4 bg-[#050507] h-[380px] sm:h-[420px] md:h-[450px] relative overflow-hidden group pt-5 px-5 sm:pt-6 sm:px-6 pb-5 sm:pb-6 flex flex-col justify-between">
+            {/* Iluminación ambiental y curvas de luz estilo referencia */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+              {/* Resplandor ambiental superior */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-white/[0.025] rounded-full blur-3xl" />
+              
+              {/* Arco / onda de luz diagonal inferior */}
+              <div className="absolute -bottom-24 -right-16 w-96 h-96 rounded-[100%] border-t border-white/[0.14] bg-gradient-to-b from-white/[0.04] to-transparent blur-[0.5px] pointer-events-none transform -rotate-12 shadow-[inset_0_4px_20px_rgba(255,255,255,0.03)]" />
+              <div className="absolute -bottom-28 -right-20 w-[420px] h-[420px] rounded-[100%] border-t border-white/[0.06] bg-transparent pointer-events-none transform -rotate-12" />
+            </div>
+
+            {/* Tipografía Central de Alto Impacto */}
+            <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center text-center select-none px-2">
+              <span className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight text-white leading-none">
+                0% fugas
+              </span>
+              <span className="text-4xl sm:text-5xl lg:text-[54px] font-bold tracking-tight bg-gradient-to-b from-neutral-300 via-neutral-500 to-neutral-700/25 bg-clip-text text-transparent leading-[1.08] mt-1 sm:mt-1.5">
+                de capital
+              </span>
+            </div>
+
+            {/* Enlace e info detallada en franja inferior */}
+            <div className="relative z-10 pt-4 sm:pt-5">
+              <Link
+                href="#audits"
+                className="inline-flex items-center gap-2.5 group/link text-neutral-200 hover:text-white transition-colors"
+              >
+                <span className="text-sm sm:text-base font-medium tracking-tight">
+                  Gastos & Auditoría
+                </span>
+                <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center transition-all duration-300 group-hover/link:bg-white group-hover/link:text-black group-hover/link:border-white">
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                </div>
+              </Link>
+            </div>
           </div>
 
           {/* Col 3: Multi-Sucursal */}
