@@ -17,9 +17,9 @@ export default function AdminFeaturesGrid() {
           {/* ================= FILA 1 ================= */}
           {/* Izquierda: Catálogo (Mediano - iPhone 16 Showcase) */}
           <div className="md:col-span-5 bg-[#050507] h-[420px] sm:h-[450px] md:h-[480px] relative overflow-hidden group pt-6 px-6 sm:pt-8 sm:px-8 md:pt-10 md:px-10 pb-5 sm:pb-6 flex flex-col justify-between">
-            {/* Contenedor Superior con el iPhone 16 */}
-            <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden">
-              <div className="relative w-[200px] sm:w-[230px] md:w-[240px] aspect-[2620/5416] drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)]">
+            {/* Contenedor Superior con el iPhone 16 alineado al inicio */}
+            <div className="relative w-full flex-1 flex items-start justify-center overflow-hidden pt-2 sm:pt-3">
+              <div className="relative w-[210px] sm:w-[230px] md:w-[240px] aspect-[2620/5416] drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)]">
                 {/* Pantalla Calibrada */}
                 <div
                   className="absolute overflow-hidden bg-black z-10"
@@ -100,12 +100,33 @@ export default function AdminFeaturesGrid() {
 
           {/* ================= FILA 2 ================= */}
           {/* 3 Columnas para features secundarias pero críticas */}
-          {/* Col 1: Cortes de Caja */}
-          <div className="md:col-span-4 bg-[#050507] h-[300px] md:h-[450px] relative overflow-hidden group flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/40 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
-            <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
-              Placeholder: Cortes de Caja
-            </span>
+          {/* Col 1: Cortes de Caja (Idéntico a Analytics: poco aire top/left y recorte a la derecha) */}
+          <div className="md:col-span-4 bg-[#050507] h-[380px] sm:h-[420px] md:h-[450px] relative overflow-hidden group pt-5 pl-5 sm:pt-6 sm:pl-6 pb-5 sm:pb-6 flex flex-col justify-between">
+            {/* Marco de Pantalla Nítida con Recorte Geométrico al ras derecho */}
+            <div className="relative w-full flex-1 rounded-l-2xl overflow-hidden border-t border-b border-l border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.8)] bg-white">
+              <Image
+                src="/features/cortes-v2.webp"
+                alt="Cortes de Caja de ShopLI"
+                fill
+                sizes="(max-width: 768px) 100vw, 33vw"
+                className="object-cover object-left-top select-none pointer-events-none"
+              />
+            </div>
+
+            {/* Enlace e info detallada en franja inferior 100% libre */}
+            <div className="pt-4 sm:pt-5 pr-5">
+              <Link
+                href="#cuts"
+                className="inline-flex items-center gap-2.5 group/link text-neutral-200 hover:text-white transition-colors"
+              >
+                <span className="text-sm sm:text-base font-medium tracking-tight">
+                  Cortes de Caja
+                </span>
+                <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center transition-all duration-300 group-hover/link:bg-white group-hover/link:text-black group-hover/link:border-white">
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                </div>
+              </Link>
+            </div>
           </div>
 
           {/* Col 2: Gastos & Auditoría */}
