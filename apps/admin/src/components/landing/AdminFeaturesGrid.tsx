@@ -15,13 +15,58 @@ export default function AdminFeaturesGrid() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-[1px]">
           
           {/* ================= FILA 1 ================= */}
-          {/* Izquierda: Catálogo (Mediano) */}
-          <div className="md:col-span-5 bg-[#050507] h-[360px] md:h-[480px] relative overflow-hidden group flex items-center justify-center">
-            {/* Placeholder Visual - Reemplazar con <Image> del screenshot */}
-            <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/50 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
-            <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
-              Placeholder: Catálogo
-            </span>
+          {/* Izquierda: Catálogo (Mediano - iPhone 16 Showcase) */}
+          <div className="md:col-span-5 bg-[#050507] h-[420px] sm:h-[450px] md:h-[480px] relative overflow-hidden group pt-6 px-6 sm:pt-8 sm:px-8 md:pt-10 md:px-10 pb-5 sm:pb-6 flex flex-col justify-between">
+            {/* Contenedor Superior con el iPhone 16 */}
+            <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden">
+              <div className="relative w-[200px] sm:w-[230px] md:w-[240px] aspect-[2620/5416] drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)]">
+                {/* Pantalla Calibrada */}
+                <div
+                  className="absolute overflow-hidden bg-black z-10"
+                  style={{
+                    top: "1.64%",
+                    bottom: "1.61%",
+                    left: "4.08%",
+                    right: "4.08%",
+                    borderRadius: "7.6%",
+                  }}
+                >
+                  <Image
+                    src="/features/catalog-v2.webp"
+                    alt="Catálogo en móvil de ShopLI"
+                    fill
+                    sizes="(max-width: 768px) 230px, 260px"
+                    className="object-cover object-top select-none pointer-events-none"
+                  />
+                  {/* Reflejo cerámico sutil */}
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent z-20" />
+                </div>
+
+                {/* Chasis Frontal iPhone 16 con Dynamic Island */}
+                <Image
+                  src="/mockup.webp"
+                  alt="ShopLI iPhone 16 Front Frame"
+                  fill
+                  priority
+                  className="pointer-events-none select-none z-30 object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Enlace e info detallada en franja inferior */}
+            <div className="pt-4 sm:pt-6">
+              <Link
+                href="#catalog"
+                className="inline-flex items-center gap-2.5 group/link text-neutral-200 hover:text-white transition-colors"
+              >
+                <span className="text-sm sm:text-base font-medium tracking-tight">
+                  Catálogo
+                </span>
+                <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center transition-all duration-300 group-hover/link:bg-white group-hover/link:text-black group-hover/link:border-white">
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                </div>
+              </Link>
+            </div>
           </div>
 
           {/* Derecha: Dashboard y Analíticas (Muy Grande - Proporción equilibrada sin zoom excesivo) */}
