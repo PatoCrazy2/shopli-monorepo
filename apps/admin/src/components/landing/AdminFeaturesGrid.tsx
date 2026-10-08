@@ -167,12 +167,33 @@ export default function AdminFeaturesGrid() {
             </div>
           </div>
 
-          {/* Col 3: Multi-Sucursal */}
-          <div className="md:col-span-4 bg-[#050507] h-[300px] md:h-[450px] relative overflow-hidden group flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-tl from-zinc-900/40 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
-            <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
-              Placeholder: Multi-Sucursal
-            </span>
+          {/* Col 3: Multi-Sucursal (Video Autoplay ocupando todo el cuadro) */}
+          <div className="md:col-span-4 bg-white h-[380px] sm:h-[420px] md:h-[450px] relative overflow-hidden group">
+            {/* Video en loop continuo ocupando todo el cuadro */}
+            <video
+              src="/features/multisucursal-v2.webm"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
+            />
+
+            {/* Enlace e info detallada en esquina inferior izquierda */}
+            <div className="absolute bottom-5 left-5 sm:bottom-6 sm:left-6 z-20">
+              <Link
+                href="#branches"
+                className="inline-flex items-center gap-2.5 group/link text-neutral-900 hover:text-black transition-colors"
+              >
+                <span className="text-sm sm:text-base font-medium tracking-tight">
+                  Multi-Sucursal
+                </span>
+                <div className="w-6 h-6 rounded-full bg-black/[0.08] border border-black/[0.12] flex items-center justify-center transition-all duration-300 group-hover/link:bg-black group-hover/link:text-white group-hover/link:border-black">
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                </div>
+              </Link>
+            </div>
           </div>
 
           {/* ================= FILA 3 ================= */}
