@@ -197,12 +197,61 @@ export default function AdminFeaturesGrid() {
           </div>
 
           {/* ================= FILA 3 ================= */}
-          {/* Izquierda: Historial de Ventas / Reportes detallados (Ancho) */}
-          <div className="md:col-span-8 bg-[#050507] h-[400px] md:h-[550px] relative overflow-hidden group flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-r from-zinc-900/30 to-[#050507] transition-transform duration-700 group-hover:scale-105" />
-            <span className="relative z-10 text-white/20 font-light tracking-wide text-sm uppercase">
-              Placeholder: Historial & Reportes
-            </span>
+          {/* Izquierda: Historial de Ventas / Reportes detallados (Ancho con Laptop al centro) */}
+          <div className="md:col-span-8 bg-[#050507] h-[440px] sm:h-[480px] md:h-[530px] relative overflow-hidden group pt-6 px-6 sm:pt-8 sm:px-8 md:pt-10 md:px-10 pb-5 sm:pb-6 flex flex-col justify-between">
+            {/* Resplandor ambiental de fondo */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] bg-white/[0.025] blur-3xl rounded-full pointer-events-none" />
+
+            {/* Contenedor central con la laptop centrada */}
+            <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden">
+              <div className="relative w-[330px] sm:w-[480px] md:w-[540px] lg:w-[620px] aspect-[2000/1165] drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)] transition-transform duration-500 group-hover:scale-[1.015]">
+                {/* Pantalla Calibrada */}
+                <div
+                  className="absolute overflow-hidden bg-black z-10"
+                  style={{
+                    top: "7.35%",
+                    bottom: "11.64%",
+                    left: "12.14%",
+                    right: "12.14%",
+                    borderRadius: "2px",
+                  }}
+                >
+                  <Image
+                    src="/features/hist.webp"
+                    alt="Historial y Reportes de ShopLI"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 65vw"
+                    className="object-cover object-[60%_top] select-none pointer-events-none"
+                  />
+                  {/* Reflejo de cristal sutil */}
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent z-20" />
+                </div>
+
+                {/* Chasis Frontal de la Laptop */}
+                <Image
+                  src="/features/laptop_chassis.webp"
+                  alt="ShopLI Laptop Mockup"
+                  fill
+                  priority
+                  className="pointer-events-none select-none z-30 object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Enlace e info detallada en franja inferior */}
+            <div className="pt-4 sm:pt-6">
+              <Link
+                href="#history"
+                className="inline-flex items-center gap-2.5 group/link text-neutral-200 hover:text-white transition-colors"
+              >
+                <span className="text-sm sm:text-base font-medium tracking-tight">
+                  Historial & Reportes
+                </span>
+                <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center transition-all duration-300 group-hover/link:bg-white group-hover/link:text-black group-hover/link:border-white">
+                  <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                </div>
+              </Link>
+            </div>
           </div>
 
           {/* Derecha: Inventario (Restante) */}
