@@ -137,17 +137,6 @@ export default function AuditReportClient({ audit }: { audit: TAudit }) {
               )}
             </div>
           </div>
-
-          {/* Botón Volver al Listado */}
-          <div className="shrink-0">
-            <Link
-              href="/dashboard/audits"
-              className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors shadow-2xs"
-            >
-              <ChevronLeft className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Volver a auditorías</span>
-            </Link>
-          </div>
         </div>
       </div>
 
