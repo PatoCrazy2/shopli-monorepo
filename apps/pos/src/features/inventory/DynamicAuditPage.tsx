@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { db } from "../../lib/db";
 import { useAuth } from "../../contexts/AuthContext";
 import type { LocalProduct } from "../../lib/db";
@@ -13,6 +13,7 @@ export default function DynamicAuditPage() {
     const [countedAmount, setCountedAmount] = useState<string>("");
     const [auditId, setAuditId] = useState<string>("");
     const [isStarted, setIsStarted] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -26,15 +27,21 @@ export default function DynamicAuditPage() {
         return allProds.filter(p => !parentIds.has(p.id));
     };
 
-    // Check if an audit is already in progress when mounting
+    // Check if an audit is already in progress and pre-load auditable product count
     useEffect(() => {
         const checkExisting = async () => {
-            const activeId = await db.meta.get('active_audit_id');
-            if (activeId) {
-                setAuditId(activeId.value);
-                setIsStarted(true);
-                const allProducts = await db.products.toArray();
+            try {
+                const [activeId, allProducts] = await Promise.all([
+                    db.meta.get('active_audit_id'),
+                    db.products.toArray()
+                ]);
                 setProducts(filterParentProducts(allProducts));
+                if (activeId) {
+                    setAuditId(activeId.value);
+                    setIsStarted(true);
+                }
+            } finally {
+                setIsLoading(false);
             }
         };
         checkExisting();
@@ -47,7 +54,10 @@ export default function DynamicAuditPage() {
         }
 
         const allProducts = await db.products.toArray();
-        setProducts(filterParentProducts(allProducts));
+        const auditableProducts = filterParentProducts(allProducts);
+        if (auditableProducts.length === 0) return;
+
+        setProducts(auditableProducts);
 
         const newAuditId = crypto.randomUUID();
         setAuditId(newAuditId);
@@ -67,7 +77,7 @@ export default function DynamicAuditPage() {
     // Fetch existing count if we navigate back
     useEffect(() => {
         const fetchCurrentCount = async () => {
-            if (products.length === 0) return;
+            if (products.length === 0 || !auditId) return;
             const currentProduct = products[currentIndex];
             const existing = await db.dynamicAuditItems
                 .filter(item => item.auditId === auditId && item.productId === currentProduct.id)
@@ -133,24 +143,42 @@ export default function DynamicAuditPage() {
 
     if (!isStarted) {
         return (
-            <div className="flex flex-col w-full h-full bg-gray-50 items-center justify-center p-6 text-center">
-                <div className="max-w-md bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
-                    <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Package className="w-10 h-10 text-white" />
-                    </div>
-                    <h1 className="text-3xl font-black text-gray-900 mb-4">Auditoría Dinámica</h1>
-                    <p className="text-gray-600 text-lg mb-8 leading-relaxed">
-                        Estás por iniciar un proceso de **conteo ciego**. Una vez que inicies, el acceso al inventario quedará bloqueado hasta que finalices.
-                    </p>
-                    <button
-                        onClick={handleStartAudit}
-                        className="flex items-center justify-center w-full h-16 bg-black text-white rounded-xl font-bold text-xl hover:bg-zinc-800 transition-all shadow-lg active:scale-95"
-                    >
-                        Iniciar Auditoría
-                    </button>
-                    <p className="mt-4 text-sm text-gray-400 font-medium italic">
-                        * Asegúrate de tener tiempo para completar el conteo.
-                    </p>
+            <div className="flex flex-col w-full h-full bg-zinc-50 px-4 py-8 items-center justify-center text-center select-none font-sans">
+                {/* Ícono Coherente con el Menú */}
+                <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200/80 shadow-2xs flex items-center justify-center mb-4 text-zinc-900">
+                    <ClipboardCheck className="w-5 h-5" />
+                </div>
+
+                {/* Título y Conteo de Productos */}
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 mb-1.5">
+                    Auditoría Dinámica
+                </h1>
+                <p className="text-xs sm:text-sm text-zinc-500 max-w-xs mb-7 tabular-nums">
+                    Conteo físico a ciegas de{" "}
+                    <strong className="font-semibold text-zinc-900">
+                        {isLoading ? "—" : products.length}{" "}
+                        {products.length === 1 ? "producto" : "productos"}
+                    </strong>
+                    .
+                </p>
+
+                {/* Botón Protagonista */}
+                <button
+                    type="button"
+                    onClick={handleStartAudit}
+                    disabled={isLoading || products.length === 0}
+                    className="flex items-center justify-center gap-2 w-full max-w-[240px] h-12 px-6 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 active:scale-95 transition-all shadow-sm shrink-0 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer"
+                >
+                    <ClipboardCheck className="w-4 h-4 shrink-0" />
+                    <span>
+                        {!isLoading && products.length === 0 ? "Sin productos" : "Iniciar auditoría"}
+                    </span>
+                </button>
+
+                {/* Notas Secundarias Discretas (Monocromáticas) */}
+                <div className="mt-8 space-y-1 text-[11px] sm:text-xs text-zinc-400 max-w-xs">
+                    <p>Puedes seguir vendiendo en caja sin afectar el conteo.</p>
+                    <p>La consulta de inventario se pausará hasta finalizar.</p>
                 </div>
             </div>
         );
