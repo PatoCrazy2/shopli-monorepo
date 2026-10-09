@@ -29,8 +29,15 @@ trigger: always_on
   - Se prioriza el primer registro sincronizado.
 - La sincronización debe ser idempotente.
 
-##Arquitectura POS
+## Arquitectura POS
 - UI renderiza
 - Hooks manejan estado
 - Lógica compleja se abstrae
- -Nada de lógica de negocio dentro de JSX
+- Nada de lógica de negocio dentro de JSX
+
+## Estándares de PWA y Service Worker (Admin & POS)
+- **Start URL Limpio:** Debe apuntar directamente a una ruta renderizable final (ej. `/dashboard/inicio`), evitando rutas intermedias con redirecciones HTTP 307.
+- **Identificador de App Inmutable:** El `id` del manifest debe conservarse intacto (`/dashboard`) para no fragmentar o desinstalar la PWA existente en dispositivos móviles/desktop.
+- **Resiliencia de Navegación:** Toda petición de navegación interceptada por el Service Worker debe contar con un timeout controlado (5-6s mediante `AbortController`) y fallback fluido a caché o `/offline.html` para evitar congelamiento de WebView (especialmente en iOS WebKit tras suspensión nocturna o cold start de BD).
+- **Aislamiento de Redirecciones:** Respuestas con `redirected === true` jamás deben almacenarse en `CacheStorage` para evitar servir pantallas de auth o redirección bajo rutas protegidas.
+- **Registro y Ciclo de Vida:** Utilizar `updateViaCache: "none"` en el registro del Service Worker y disparar `registration.update()` en eventos `visibilitychange` para forzar actualizaciones inmediatas al volver a primer plano.
