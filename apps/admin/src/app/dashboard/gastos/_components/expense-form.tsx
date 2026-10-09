@@ -56,9 +56,10 @@ export function ExpenseForm({ sucursales }: { sucursales: { id: string, nombre: 
         <>
             <button 
                 onClick={() => setOpen(true)}
-                className="bg-black text-white hover:bg-zinc-800 font-bold uppercase text-[10px] tracking-widest px-6 h-11 rounded-xl shadow-sm active:scale-95 transition-all flex items-center justify-center border border-transparent"
+                className="h-10 px-4 bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 font-semibold text-xs rounded-xl shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
             >
-                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Gasto
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span>Registrar Gasto</span>
             </button>
 
             {open && (
@@ -88,40 +89,40 @@ export function ExpenseForm({ sucursales }: { sucursales: { id: string, nombre: 
 
                             {/* Body (scrollable) */}
                             <div className="p-8 space-y-6 overflow-y-auto flex-1 bg-white dark:bg-zinc-950">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2 text-zinc-900 dark:text-zinc-100">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Fecha</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5 text-zinc-900 dark:text-zinc-100">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Fecha</label>
                                         <div className="relative">
-                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
                                             <input 
                                                 type="date" 
                                                 {...register("fecha", { required: true })}
-                                                className="w-full pl-10 h-11 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl font-medium focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-zinc-400"
+                                                className="w-full pl-9 h-10 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl text-xs font-mono outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-all"
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-2 text-zinc-900 dark:text-zinc-100">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Monto (MXN)</label>
+                                    <div className="space-y-1.5 text-zinc-900 dark:text-zinc-100">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Monto (MXN)</label>
                                         <div className="relative">
-                                            <Receipt className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                                            <Receipt className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
                                             <input 
                                                 type="number" 
                                                 step="0.01"
                                                 placeholder="0.00"
                                                 {...register("monto", { required: true })}
-                                                className="w-full pl-10 h-11 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl font-bold text-lg focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-zinc-400"
+                                                className="w-full pl-9 h-10 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl font-mono text-sm font-semibold outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-all placeholder:text-zinc-400"
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 text-zinc-900 dark:text-zinc-100">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Sucursal de Origen</label>
+                                <div className="space-y-1.5 text-zinc-900 dark:text-zinc-100">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Sucursal de Origen</label>
                                     <div className="relative">
-                                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 z-10" />
+                                        <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 z-10 pointer-events-none" />
                                         <select 
                                             {...register("sucursal_id", { required: true })}
-                                            className="w-full pl-10 h-11 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl font-medium focus:ring-1 focus:ring-black outline-none transition-all appearance-none"
+                                            className="w-full pl-9 pr-8 h-10 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl text-xs font-medium outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-all appearance-none cursor-pointer"
                                         >
                                             <option value="" disabled>Seleccionar Sucursal...</option>
                                             {sucursales.map(s => (
@@ -131,56 +132,56 @@ export function ExpenseForm({ sucursales }: { sucursales: { id: string, nombre: 
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 text-zinc-900 dark:text-zinc-100">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Categoría</label>
+                                <div className="space-y-1.5 text-zinc-900 dark:text-zinc-100">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Categoría</label>
                                     <select 
                                         {...register("categoria", { required: true })}
-                                        className="w-full h-11 px-4 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl font-bold text-xs uppercase tracking-tight focus:ring-1 focus:ring-black outline-none transition-all appearance-none"
+                                        className="w-full px-3 h-10 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl text-xs font-semibold outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-all appearance-none cursor-pointer"
                                     >
-                                        <option value="NOMINA">NÓMINA & STAFF</option>
-                                        <option value="RENTA">RENTA & LOCAL</option>
-                                        <option value="MERCANCIA">COMPRA MERCANCÍA</option>
-                                        <option value="CAJA_CHICA">GASTOS MENORES / CAJA CHICA</option>
-                                        <option value="VARIABLE">OTROS VARIABLES</option>
+                                        <option value="NOMINA">Nómina & Staff</option>
+                                        <option value="RENTA">Renta & Local</option>
+                                        <option value="MERCANCIA">Compra Mercancía</option>
+                                        <option value="CAJA_CHICA">Gastos Menores / Caja Chica</option>
+                                        <option value="VARIABLE">Otros Variables</option>
                                     </select>
                                 </div>
 
-                                <div className="space-y-2 text-zinc-900 dark:text-zinc-100">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Motivo detallado</label>
+                                <div className="space-y-1.5 text-zinc-900 dark:text-zinc-100">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Motivo detallado</label>
                                     <div className="relative">
-                                        <FileText className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
+                                        <FileText className="absolute left-3 top-3 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
                                         <textarea 
                                             {...register("descripcion", { required: true })}
-                                            className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl font-medium text-sm focus:ring-1 focus:ring-black outline-none transition-all min-h-[100px] placeholder:text-zinc-400"
+                                            className="w-full pl-9 pr-3 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl text-xs font-medium outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-all min-h-[80px] placeholder:text-zinc-400"
                                             placeholder="Describa el motivo del egreso..."
                                         />
                                     </div>
                                 </div>
 
-                                <div className="p-4 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/10 flex items-center justify-center gap-4 group cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900/30 transition-colors">
-                                    <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center shadow-sm text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors">
-                                        <ImageIcon size={20} />
+                                <div className="p-3.5 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/10 flex items-center justify-center gap-3 group cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900/30 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-xs text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                                        <ImageIcon size={16} />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-[11px] font-bold uppercase tracking-tight text-zinc-500">Adjuntar Comprobante</span>
-                                        <span className="text-[9px] font-medium text-zinc-400 mt-1">Próximamente disponible</span>
+                                        <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300">Adjuntar Comprobante</span>
+                                        <span className="text-[9px] font-mono text-zinc-400">Próximamente disponible</span>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Footer */}
-                            <div className="px-8 py-6 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 mt-auto shrink-0 flex gap-4">
+                            <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-850 mt-auto shrink-0 flex items-center justify-end gap-2">
                                 <button 
                                     type="button" 
                                     onClick={() => setOpen(false)}
-                                    className="flex-1 py-3 text-zinc-500 font-bold text-xs uppercase tracking-widest hover:text-black dark:hover:text-white transition-all shadow-sm rounded-xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700"
+                                    className="px-4 h-10 text-zinc-600 dark:text-zinc-400 font-semibold text-xs rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                                 >
                                     Cancelar
                                 </button>
                                 <button 
                                     type="submit" 
                                     disabled={isPending}
-                                    className="flex-[2] h-12 bg-black text-white dark:bg-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-100 rounded-xl font-bold text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
+                                    className="px-5 h-10 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-xl font-semibold text-xs shadow-xs active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 cursor-pointer"
                                 >
                                     {isPending ? "Procesando..." : "Confirmar Egreso"}
                                 </button>

@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { pullFromCloud } from "../../../lib/sync";
 import VariantSelectorModal from "./VariantSelectorModal";
+import { Search, Scan } from "lucide-react";
 
 interface ProductGridProps {
     onAddToCart: (id: string) => void;
+    onOpenScanner?: () => void;
 }
 
-export default function ProductGrid({ onAddToCart }: ProductGridProps) {
+export default function ProductGrid({ onAddToCart, onOpenScanner }: ProductGridProps) {
     const { user } = useAuth();
     const [isSyncing, setIsSyncing] = useState(false);
     const [selectedParent, setSelectedParent] = useState<any | null>(null);
@@ -92,29 +94,42 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
 
     return (
         <>
-            <div className="mb-4 sm:mb-6 shrink-0 flex gap-2">
-                <input
-                    type="text"
-                    placeholder="Buscar producto por nombre o código..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 h-12 sm:h-14 px-3 sm:px-4 text-base sm:text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400 bg-white"
-                    autoFocus
-                />
+            <div className="mb-4 sm:mb-6 shrink-0">
+                <div className="relative flex items-center w-full bg-white border border-zinc-200/90 rounded-full h-13 sm:h-14 shadow-xs focus-within:ring-2 focus-within:ring-black/10 focus-within:border-zinc-400 transition-all select-none">
+                    <Search className="w-5 h-5 text-zinc-400 absolute left-4.5 pointer-events-none" />
+                    <input
+                        type="text"
+                        placeholder="Buscar producto por nombre o código..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full h-full bg-transparent pl-12 pr-14 text-sm sm:text-base font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none rounded-full"
+                        autoFocus
+                    />
+                    {onOpenScanner && (
+                        <button
+                            type="button"
+                            onClick={onOpenScanner}
+                            aria-label="Escanear código con cámara"
+                            className="absolute right-1.5 w-10 h-10 sm:w-11 sm:h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-full flex items-center justify-center shadow-xs transition-transform cursor-pointer"
+                        >
+                            <Scan className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-24">
                 {filteredProducts.length === 0 && (
-                    <div className="col-span-full flex flex-col items-center justify-center p-12 text-gray-500">
+                    <div className="col-span-full flex flex-col items-center justify-center p-12 text-zinc-500">
                         {isSyncing ? (
                             <>
-                                <p className="font-medium">Sincronizando datos desde el servidor...</p>
-                                <p className="text-sm mt-1 text-gray-400">Esto solo ocurre la primera vez.</p>
+                                <p className="font-medium text-zinc-700">Sincronizando datos desde el servidor...</p>
+                                <p className="text-sm mt-1 text-zinc-400">Esto solo ocurre la primera vez.</p>
                             </>
                         ) : (
                             <>
-                                <p>No se encontraron productos.</p>
-                                <p className="text-sm mt-1 text-gray-400">Intenta buscar con otros términos.</p>
+                                <p className="font-medium text-zinc-700">No se encontraron productos.</p>
+                                <p className="text-sm mt-1 text-zinc-400">Intenta buscar con otros términos.</p>
                             </>
                         )}
                     </div>
@@ -126,10 +141,12 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
                     const totalStock = hasVariants 
                         ? product.variants.reduce((acc: number, v: any) => acc + v.stock, 0)
                         : product.stock;
+                    const hasBadge = totalStock <= 0 || hasVariants;
 
                     return (
                         <button
                             key={product.id}
+                            type="button"
                             onClick={() => {
                                 if (hasVariants) {
                                     setSelectedParent(product);
@@ -137,20 +154,33 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
                                     onAddToCart(product.id);
                                 }
                             }}
-                            className={`h-32 relative border rounded-lg flex flex-col items-center justify-center p-4 transition-colors text-center shadow-sm hover:bg-gray-50 active:scale-95
-                                ${totalStock <= 0 ? 'bg-red-50/20 border-red-200' : 'bg-white border-gray-200'}`}
+                            className={`h-32 relative border rounded-2xl flex flex-col items-center justify-center text-center shadow-xs active:scale-[0.98] select-none cursor-pointer ${
+                                hasBadge ? 'pt-6 pb-3 px-3.5' : 'p-4'
+                            } ${
+                                totalStock <= 0
+                                    ? 'bg-red-50/15 border-red-200/80 hover:bg-red-50/30'
+                                    : 'bg-white border-zinc-200/80 hover:border-zinc-300 hover:bg-zinc-50/40'
+                            }`}
                         >
                             {totalStock <= 0 ? (
-                                <span className="absolute top-2 right-2 flex items-center justify-center bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                <span className="absolute top-2.5 right-2.5 flex items-center justify-center bg-red-50 border border-red-200/70 text-red-600 text-[10px] font-semibold px-2.5 py-0.5 rounded-full tracking-wide">
                                     Stock: {totalStock}
                                 </span>
                             ) : hasVariants ? (
-                                <span className="absolute top-2 right-2 flex items-center justify-center bg-indigo-50 border border-indigo-200 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                <span className="absolute top-2.5 right-2.5 flex items-center justify-center bg-zinc-100 border border-zinc-200/80 text-zinc-700 text-[10px] font-semibold px-2.5 py-0.5 rounded-full tracking-wide">
                                     Variantes ({product.variants.length})
                                 </span>
                             ) : null}
-                            <span className={`font-semibold text-sm mb-2 leading-tight ${totalStock <= 0 ? 'text-gray-600' : ''}`}>{product.nombre}</span>
-                            <span className="text-gray-900 font-bold text-lg">${product.precio_publico.toFixed(2)}</span>
+                            <span
+                                className={`font-medium text-sm mb-1.5 leading-snug line-clamp-2 ${
+                                    totalStock <= 0 ? 'text-zinc-500' : 'text-zinc-700'
+                                }`}
+                            >
+                                {product.nombre}
+                            </span>
+                            <span className="text-zinc-950 font-extrabold text-lg tracking-tight tabular-nums">
+                                ${product.precio_publico.toFixed(2)}
+                            </span>
                         </button>
                     );
                 })}

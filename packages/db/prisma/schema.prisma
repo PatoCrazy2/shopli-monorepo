@@ -25,6 +25,9 @@ model User {
 
   turnos     Turno[]
   movimientos MovimientoInventario[]
+  auditoriasIniciadas   DynamicAudit[]     @relation("AuditIniciadaPor")
+  auditoriasFinalizadas DynamicAudit[]     @relation("AuditFinalizadaPor")
+  itemsAuditados        DynamicAuditItem[] @relation("AuditItemContadoPor")
 }
 
 enum Role {
@@ -231,14 +234,21 @@ model Gasto {
 }
 
 model DynamicAudit {
-  id         String      @id @default(uuid())
-  sucursalId String
-  status     AuditStatus @default(OPEN)
-  startedAt  DateTime    @default(now())
-  isApplied  Boolean     @default(false)
+  id              String      @id @default(uuid())
+  sucursalId      String
+  status          AuditStatus @default(OPEN)
+  startedAt       DateTime    @default(now())
+  finishedAt      DateTime?
+  isApplied       Boolean     @default(false)
+  iniciadaPorId   String?
+  finalizadaPorId String?
   
-  sucursal   Sucursal    @relation(fields: [sucursalId], references: [id])
-  items      DynamicAuditItem[]
+  sucursal        Sucursal    @relation(fields: [sucursalId], references: [id])
+  iniciadaPor     User?       @relation("AuditIniciadaPor", fields: [iniciadaPorId], references: [id], onDelete: SetNull)
+  finalizadaPor   User?       @relation("AuditFinalizadaPor", fields: [finalizadaPorId], references: [id], onDelete: SetNull)
+  items           DynamicAuditItem[]
+
+  @@index([sucursalId, startedAt])
 }
 
 model DynamicAuditItem {
@@ -250,9 +260,13 @@ model DynamicAuditItem {
   countedAt       DateTime? // ISOString del POS (opcional hasta reporte)
   expectedAtCount Int?     // Calculado al momento del reporte (opcional hasta reporte)
   difference      Int?     // Calculado al momento del reporte (opcional hasta reporte)
+  contadoPorId    String?
 
   audit           DynamicAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
   producto        Producto     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  contadoPor      User?        @relation("AuditItemContadoPor", fields: [contadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([auditId])
 }
 
 model MovimientoInventario {
@@ -285,6 +299,7 @@ enum TipoMovimiento {
 enum AuditStatus {
   OPEN
   CLOSED
+  CANCELED
 }
 
 model Empresa {

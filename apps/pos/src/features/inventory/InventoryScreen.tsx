@@ -43,9 +43,9 @@ export default function InventoryScreen() {
                     </p>
                     <Link
                         to="/auditoria-dinamica"
-                        className="inline-flex items-center justify-center w-full h-12 bg-black text-white rounded-xl font-bold text-sm hover:bg-zinc-800 active:scale-95 transition-all shadow-sm"
+                        className="inline-flex items-center justify-center w-full h-12 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 active:scale-95 transition-all shadow-sm"
                     >
-                        Volver a la Auditoría
+                        Ir a auditoría
                     </Link>
                 </div>
             </div>
@@ -64,13 +64,13 @@ export default function InventoryScreen() {
                 </p>
             </div>
 
-            {/* Summary Card de 2 Columnas Balanceadas */}
-            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-2xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
+            {/* Summary Card de 2 Columnas Balanceadas (Panel Global Flotante rounded-3xl) */}
+            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-3xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
                 <div className="pr-3 sm:pr-5 flex flex-col justify-center">
                     <span className="text-zinc-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block mb-1">
                         Catálogo Total
                     </span>
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 tabular-nums">
                         <span className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
                             {products.length}
                         </span>
@@ -83,7 +83,7 @@ export default function InventoryScreen() {
                     <span className="text-zinc-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block mb-1">
                         En Riesgo (≤ 5)
                     </span>
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 tabular-nums">
                         <span className={`text-xl sm:text-2xl lg:text-3xl font-black tracking-tight ${
                             lowStockCount > 0 ? 'text-amber-400' : 'text-white'
                         }`}>
@@ -98,9 +98,9 @@ export default function InventoryScreen() {
 
             {/* Controles de Búsqueda y Filtro */}
             <div className="flex gap-2.5 items-center mb-4 shrink-0">
-                {/* Buscador estilizado */}
+                {/* Buscador Píldora */}
                 <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                         <Search className="h-4 w-4 text-zinc-400" />
                     </div>
                     <input
@@ -108,16 +108,18 @@ export default function InventoryScreen() {
                         placeholder="Buscar por nombre o código..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="block w-full h-10 pl-9 pr-8 bg-white border border-zinc-200 rounded-xl text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 shadow-sm transition-colors"
+                        className="block w-full h-10 pl-10 pr-9 bg-white border border-zinc-200 rounded-full text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 shadow-sm transition-colors"
                     />
                     {searchTerm && (
                         <button
                             type="button"
                             onClick={() => setSearchTerm('')}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center"
                             aria-label="Limpiar búsqueda"
                         >
-                            <X className="w-3.5 h-3.5" />
+                            <span className="w-5 h-5 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-500 transition-colors">
+                                <X className="w-3 h-3" />
+                            </span>
                         </button>
                     )}
                 </div>
@@ -126,16 +128,16 @@ export default function InventoryScreen() {
                 <button
                     type="button"
                     onClick={() => setShowLowStockOnly(!showLowStockOnly)}
-                    className={`flex items-center gap-1.5 h-10 px-3 sm:px-3.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 shrink-0 shadow-sm ${
+                    className={`flex items-center gap-1.5 h-10 px-4 rounded-full text-xs font-semibold border transition-all active:scale-95 shrink-0 shadow-sm ${
                         showLowStockOnly
                             ? "bg-zinc-900 text-white border-zinc-900 ring-1 ring-black/10"
                             : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50"
                     }`}
                 >
                     <AlertTriangle className={`w-3.5 h-3.5 flex-shrink-0 ${showLowStockOnly ? "text-amber-400" : "text-amber-600"}`} />
-                    <span>Stock Bajo</span>
+                    <span>Stock bajo</span>
                     {lowStockCount > 0 && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${
                             showLowStockOnly ? "bg-zinc-800 text-amber-300" : "bg-amber-100 text-amber-900"
                         }`}>
                             {lowStockCount}
@@ -164,9 +166,9 @@ export default function InventoryScreen() {
                                     setSearchTerm("");
                                     setShowLowStockOnly(false);
                                 }}
-                                className="mt-4 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-bold text-zinc-800 hover:bg-zinc-50 shadow-sm transition-all active:scale-95"
+                                className="mt-4 px-4 py-2 bg-white border border-zinc-200 rounded-full text-xs font-bold text-zinc-800 hover:bg-zinc-50 shadow-sm transition-all active:scale-95"
                             >
-                                Limpiar filtros
+                                Restablecer
                             </button>
                         )}
                     </div>
@@ -196,7 +198,7 @@ export default function InventoryScreen() {
                                                     #{product.codigo_interno}
                                                 </span>
                                             )}
-                                            <span className="text-[11px] text-zinc-400">
+                                            <span className="text-[11px] text-zinc-400 tabular-nums">
                                                 Act. {new Date(product.updatedAt).toLocaleDateString('es-MX', {
                                                     day: '2-digit',
                                                     month: 'short',
@@ -208,7 +210,7 @@ export default function InventoryScreen() {
                                     </div>
                                     <div className="text-right shrink-0">
                                         <span
-                                            className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black ${
+                                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tabular-nums ${
                                                 product.stock <= 0
                                                     ? "bg-red-50 text-red-700 border border-red-200"
                                                     : product.stock <= 5
@@ -262,7 +264,7 @@ export default function InventoryScreen() {
                                             </td>
                                             <td className="px-5 py-3.5 whitespace-nowrap">
                                                 <span
-                                                    className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black ${
+                                                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold tabular-nums ${
                                                         product.stock <= 0
                                                             ? "bg-red-50 text-red-700 border border-red-200"
                                                             : product.stock <= 5
@@ -273,7 +275,7 @@ export default function InventoryScreen() {
                                                     {product.stock} {product.stock === 1 ? "pza" : "pzas"}
                                                 </span>
                                             </td>
-                                            <td className="px-5 py-3.5 whitespace-nowrap text-xs text-zinc-400 text-right">
+                                            <td className="px-5 py-3.5 whitespace-nowrap text-xs text-zinc-400 text-right tabular-nums">
                                                 {new Date(product.updatedAt).toLocaleDateString('es-MX', {
                                                     day: '2-digit',
                                                     month: 'short',

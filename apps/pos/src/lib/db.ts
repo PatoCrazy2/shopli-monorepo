@@ -117,12 +117,13 @@ export interface LocalGasto {
 }
 
 export interface LocalDynamicAuditItem {
-  id: string; // product id basically for uniqueness in local contexts per audit
+  id: string; // UUID
   auditId: string;
   productId: string;
   initialStock?: number;
   countedQuantity: number | null;
   countedAt: string | null; // ISOString
+  contadoPorId?: string | null;
   sync_status: 'PENDING' | 'SYNCED';
 }
 
@@ -130,6 +131,10 @@ export interface LocalDynamicAudit {
   id: string; // UUID
   branchId: string; // Branch associated with the audit
   startedAt: string; // ISOString
+  finishedAt?: string | null; // ISOString
+  status?: 'OPEN' | 'FINISHED';
+  iniciadaPorId?: string | null;
+  finalizadaPorId?: string | null;
   sync_status: 'PENDING' | 'SYNCED';
 }
 
@@ -148,8 +153,8 @@ export class ShopLIPOSDatabase extends Dexie {
   dynamicAudits!: EntityTable<LocalDynamicAudit, 'id'>;
   meta!: EntityTable<LocalMeta, 'key'>;
 
-  constructor() {
-    super('ShopLIPOS');
+  constructor(dbName = 'ShopLIPOS') {
+    super(dbName);
     this.version(13).stores({
       users: 'id, role, pin',
       branches: 'id',
@@ -165,6 +170,42 @@ export class ShopLIPOSDatabase extends Dexie {
       dynamicAudits: 'id, branchId, sync_status',
       meta: 'key',
     });
+
+    this.version(14)
+      .stores({
+        users: 'id, role, pin',
+        branches: 'id',
+        products: 'id, codigo_interno, categoria',
+        turnos: 'id, usuario_id, sucursal_id, estado, sync_status',
+        cart: 'id, producto_id',
+        sales: 'id, turno_id, estado, sync_status, fecha',
+        sale_details: 'id, venta_id, producto_id',
+        inventory: 'id, sucursal_id, producto_id, [sucursal_id+producto_id]',
+        audits: 'id, shiftId, sync_status',
+        gastos: 'id, turno_id, sucursal_id, sync_status',
+        dynamicAuditItems: 'id, auditId, productId, [auditId+productId], sync_status',
+        dynamicAudits: 'id, branchId, status, sync_status',
+        meta: 'key',
+      })
+      .upgrade((tx) => {
+        return tx
+          .table('dynamicAudits')
+          .toCollection()
+          .modify((audit) => {
+            if (!audit.status) {
+              audit.status = 'OPEN';
+            }
+            if (audit.finishedAt === undefined) {
+              audit.finishedAt = null;
+            }
+            if (audit.iniciadaPorId === undefined) {
+              audit.iniciadaPorId = null;
+            }
+            if (audit.finalizadaPorId === undefined) {
+              audit.finalizadaPorId = null;
+            }
+          });
+      });
   }
 }
 

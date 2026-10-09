@@ -108,6 +108,10 @@ const pushSyncSchema = z.object({
       id: z.string().uuid(),
       sucursal_id: z.string().uuid(),
       startedAt: z.string().datetime(),
+      finishedAt: z.string().datetime().nullable().optional(),
+      iniciadaPorId: z.string().uuid().nullable().optional(),
+      finalizadaPorId: z.string().uuid().nullable().optional(),
+      contadoPorId: z.string().uuid().nullable().optional(),
       items: z.array(
         z.object({
           productId: z.string().uuid(),
@@ -122,6 +126,7 @@ const pushSyncSchema = z.object({
 import { getCorsHeaders, handleCorsPreflight } from "@/lib/cors";
 import { verifyPosSyncToken } from "@/lib/pos-token";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { reconstructInitialStock, computeDynamicAuditItemMetrics } from "@/lib/dynamic-audit-math";
 
 export async function OPTIONS(req: Request) {
   return handleCorsPreflight(req);
@@ -285,6 +290,11 @@ export async function POST(req: Request) {
     for (const a of auditorias) {
       const uid = a.usuario_id || a.userId;
       if (uid) userIds.add(uid);
+    }
+    for (const da of auditoriasDinamicas) {
+      if (da.iniciadaPorId) userIds.add(da.iniciadaPorId);
+      if (da.finalizadaPorId) userIds.add(da.finalizadaPorId);
+      if (da.contadoPorId) userIds.add(da.contadoPorId);
     }
 
     if (userIds.size > 0) {
@@ -540,6 +550,7 @@ export async function POST(req: Request) {
                 audit: {
                   sucursalId: venta.sucursal_id,
                   isApplied: false,
+                  status: { not: 'CANCELED' },
                   startedAt: {
                     gte: seventyTwoHoursAgo,
                     lte: saleDate
@@ -647,17 +658,44 @@ export async function POST(req: Request) {
           include: { items: true }
         });
 
+        // Si la auditoría fue cancelada en servidor (ej. limpieza de mantenimiento), ignoramos cambios tardíos
+        // pero enviamos ACK para liberar la cola offline del POS.
+        if (dbAudit && dbAudit.status === 'CANCELED') {
+          procesados.auditoriasDinamicas.push(da.id);
+          continue;
+        }
+
         // Si la auditoria no existe, la creamos
         if (!dbAudit) {
           dbAudit = await tx.dynamicAudit.create({
             data: {
               id: da.id, // Forzamos el uso del UUID que genero el POS para mantener sincronia
               sucursalId: da.sucursal_id,
-              status: 'OPEN',
+              status: da.finishedAt ? 'CLOSED' : 'OPEN',
               startedAt: new Date(da.startedAt), // Usamos el tiempo exacto en que POS la inicio
+              finishedAt: da.finishedAt ? new Date(da.finishedAt) : null,
+              iniciadaPorId: da.iniciadaPorId || null,
+              finalizadaPorId: da.finalizadaPorId || null,
             },
             include: { items: true }
           });
+        } else {
+          // Actualizar con datos más recientes si los hay
+          const dataToUpdate: any = {};
+          if (da.finishedAt && !dbAudit.finishedAt) {
+            dataToUpdate.status = 'CLOSED';
+            dataToUpdate.finishedAt = new Date(da.finishedAt);
+          }
+          if (da.finalizadaPorId && !dbAudit.finalizadaPorId) dataToUpdate.finalizadaPorId = da.finalizadaPorId;
+          if (da.iniciadaPorId && !dbAudit.iniciadaPorId) dataToUpdate.iniciadaPorId = da.iniciadaPorId;
+
+          if (Object.keys(dataToUpdate).length > 0) {
+            dbAudit = await tx.dynamicAudit.update({
+              where: { id: da.id },
+              data: dataToUpdate,
+              include: { items: true }
+            });
+          }
         }
 
         // Si la auditoria no tiene items (es nueva o se quedó a medias en un sync anterior), hacemos el Snapshot
@@ -677,13 +715,30 @@ export async function POST(req: Request) {
           });
 
           if (branchInventory.length > 0) {
+            // Conseguir cantidades vendidas desde startedAt hasta AHORA
+            const salesSinceStart = await tx.detalle_Venta.groupBy({
+              by: ['producto_id'],
+              _sum: { cantidad: true },
+              where: {
+                venta: {
+                  sucursal_id: dbAudit.sucursalId,
+                  fecha: { gte: dbAudit.startedAt },
+                  estado: 'COMPLETADA'
+                }
+              }
+            });
+            const soldMap = new Map(salesSinceStart.map(s => [s.producto_id, s._sum.cantidad || 0]));
+
             await tx.dynamicAuditItem.createMany({
-              data: branchInventory.map(item => ({
-                id: crypto.randomUUID(), // id para prisma
-                auditId: dbAudit!.id,
-                productId: item.producto_id,
-                initialStock: item.cantidad // Lo que la base de datos cree que hay
-              }))
+              data: branchInventory.map(item => {
+                const sold = soldMap.get(item.producto_id) || 0;
+                return {
+                  id: crypto.randomUUID(), // id para prisma
+                  auditId: dbAudit!.id,
+                  productId: item.producto_id,
+                  initialStock: reconstructInitialStock(item.cantidad, sold)
+                };
+              })
             });
             
             // Recargar con los items recien creados para que el procesamiento de conteos funcione
@@ -726,11 +781,11 @@ export async function POST(req: Request) {
 
               const soldQty = sales._sum.cantidad || 0;
               
-              // Paso B: expected = initialStock - sum(ventas_encontradas)
-              const expected = dbItem.initialStock - soldQty;
-              
-              // Paso C: difference = countedQuantity - expected
-              const difference = item.countedQuantity - expected;
+              const metrics = computeDynamicAuditItemMetrics({
+                initialStock: dbItem.initialStock,
+                countedQuantity: item.countedQuantity,
+                soldInWindow: soldQty
+              });
 
               // Actualizar el Item de Auditoría
               await tx.dynamicAuditItem.update({
@@ -738,8 +793,9 @@ export async function POST(req: Request) {
                 data: {
                   countedQuantity: item.countedQuantity,
                   countedAt: newCountedAt,
-                  expectedAtCount: expected,
-                  difference: difference
+                  expectedAtCount: metrics.expectedAtCount,
+                  difference: metrics.difference,
+                  contadoPorId: da.contadoPorId || null
                 }
               });
             }

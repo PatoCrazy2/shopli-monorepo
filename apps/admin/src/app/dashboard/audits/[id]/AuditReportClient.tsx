@@ -25,6 +25,9 @@ type TAudit = {
     isApplied: boolean;
     hasAdjustments?: boolean;
     startedAt: string;
+    finishedAt?: string | null;
+    startedBy?: string;
+    finishedBy?: string;
     items: TItem[];
 };
 
@@ -63,116 +66,227 @@ export default function AuditReportClient({ audit }: { audit: TAudit }) {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Header with Back Button */}
-      <div className="flex items-center gap-4">
-        <Link 
-          href="/dashboard/audits"
-          className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all shadow-sm hover:shadow-md active:scale-95"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </Link>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">Reporte de Auditoría</h1>
-            {audit.hasAdjustments && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" title="Esta auditoría registró ajustes retroactivos por ventas tardías">
-                <History className="w-3 h-3" /> Reconciliada con Ajustes
+    <div className="flex flex-col gap-6">
+      {/* 1. Header Card (Estilo ShopLI / Apple Crisp con Breadcrumbs) */}
+      <div className="bg-white dark:bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5 min-w-0">
+            {/* Breadcrumb de navegación */}
+            <div className="flex items-center gap-2 text-zinc-400 dark:text-zinc-500 text-xs">
+              <Link
+                href="/dashboard/audits"
+                className="inline-flex items-center gap-1 font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Auditorías</span>
+              </Link>
+              <span>/</span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                {audit.branchName}
               </span>
-            )}
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap pt-0.5">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
+                Reporte de Auditoría
+              </h1>
+
+              {/* Badges de Estado Sutiles */}
+              {audit.isApplied ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Conciliado</span>
+                </span>
+              ) : audit.status === "CANCELED" ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-700/60">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />
+                  <span>Cancelada</span>
+                </span>
+              ) : audit.status === "CLOSED" ? (
+                discrepancyItems.length > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    <span>Pdte. Ajuste</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span>Sin Diferencias</span>
+                  </span>
+                )
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200/60 dark:border-zinc-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                  <span>En Curso</span>
+                </span>
+              )}
+
+              {audit.hasAdjustments && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700" title="Esta auditoría registró ajustes retroactivos por ventas tardías">
+                  <History className="w-3 h-3 text-zinc-400" />
+                  <span>Reconciliada</span>
+                </span>
+              )}
+            </div>
+
+            {/* Metadatos de Trazabilidad */}
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 pt-0.5">
+              <span>Sucursal <strong className="font-semibold text-zinc-700 dark:text-zinc-300">{audit.branchName}</strong></span>
+              <span className="text-zinc-300 dark:text-zinc-700">·</span>
+              <span>Iniciada el {new Date(audit.startedAt).toLocaleDateString()} a las {new Date(audit.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{audit.startedBy ? ` por ${audit.startedBy}` : ''}</span>
+              {audit.finishedAt && (
+                <>
+                  <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                  <span>{audit.status === "CANCELED" ? "Cancelada" : "Finalizada"} a las {new Date(audit.finishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}{audit.finishedBy && audit.status !== "CANCELED" ? ` por ${audit.finishedBy}` : ''}</span>
+                </>
+              )}
+            </div>
           </div>
-          <p className="text-zinc-500 font-medium mt-1">
-            Sucursal {audit.branchName} • {new Date(audit.startedAt).toLocaleDateString()}
-          </p>
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* 2. KPIs Monocromáticos (Estilo Apple Crisp) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <KPIBox 
           title="Productos con Discrepancia" 
           value={discrepancyItems.length.toString()} 
           subtitle={`de ${countedItems.length} productos contados`}
-          icon={<PackageX className="h-5 w-5 text-rose-500" />}
-          color="rose"
+          icon={<PackageX className="h-4 w-4 text-zinc-400" />}
+          hasAlert={discrepancyItems.length > 0}
         />
         <KPIBox 
           title="Impacto Financiero Neto" 
-          value={`${financialImpact < 0 ? "-" : "+"}$${Math.abs(financialImpact).toLocaleString()}`} 
-          subtitle="Valor de la mercancía desfasada"
-          icon={<DollarSign className="h-5 w-5 text-emerald-500" />}
-          color={financialImpact < 0 ? "rose" : "emerald"}
+          value={`${financialImpact < 0 ? "-" : "+"}$${Math.abs(financialImpact).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+          subtitle="Valor monetario del desfase"
+          icon={<DollarSign className="h-4 w-4 text-zinc-400" />}
+          isNegative={financialImpact < 0}
         />
         <KPIBox 
           title="Precisión de Inventario" 
           value={`${precisionPercentage.toFixed(1)}%`} 
-          subtitle="Coincidencia con el sistema"
-          icon={<CheckCircle2 className="h-5 w-5 text-blue-500" />}
-          color="blue"
+          subtitle="Coincidencia con existencias del sistema"
+          icon={<CheckCircle2 className="h-4 w-4 text-zinc-400" />}
         />
       </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
-         {/* Toolbar */}
-         <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl">
-               <FilterBtn active={filter === "ALL"} onClick={() => setFilter("ALL")} label="Todos" />
-               <FilterBtn active={filter === "SHORTAGE"} onClick={() => setFilter("SHORTAGE")} label="Faltantes" color="rose" />
-               <FilterBtn active={filter === "SURPLUS"} onClick={() => setFilter("SURPLUS")} label="Sobrantes" color="emerald" />
-               <FilterBtn active={filter === "MATCH"} onClick={() => setFilter("MATCH")} label="Correctos" />
+      {/* 3. Tabla Principal con Toolbar */}
+      <div className="bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-xs overflow-hidden flex flex-col">
+         {/* Toolbar de Píldoras de Filtro y Acciones */}
+         <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto py-0.5">
+               <FilterPill 
+                 active={filter === "ALL"} 
+                 onClick={() => setFilter("ALL")} 
+                 label="Todos" 
+                 count={audit.items.length} 
+               />
+               <FilterPill 
+                 active={filter === "SHORTAGE"} 
+                 onClick={() => setFilter("SHORTAGE")} 
+                 label="Faltantes" 
+                 count={countedItems.filter(i => (i.difference ?? 0) < 0).length} 
+                 badgeType="shortage"
+               />
+               <FilterPill 
+                 active={filter === "SURPLUS"} 
+                 onClick={() => setFilter("SURPLUS")} 
+                 label="Sobrantes" 
+                 count={countedItems.filter(i => (i.difference ?? 0) > 0).length} 
+                 badgeType="surplus"
+               />
+               <FilterPill 
+                 active={filter === "MATCH"} 
+                 onClick={() => setFilter("MATCH")} 
+                 label="Correctos" 
+                 count={countedItems.filter(i => i.difference === 0).length} 
+               />
             </div>
 
-            {audit.status === "CLOSED" && !audit.isApplied && (
-                <button 
-                    onClick={handleApply} 
-                    disabled={isPending}
-                    className="w-full md:w-auto px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg"
-                >
-                    {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isPending ? "Aplicando..." : "Aplicar Ajustes al Inventario"}
-                </button>
-            )}
-            
-            {audit.isApplied && (
-                <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-bold rounded-lg text-sm border border-emerald-100 dark:border-emerald-800 flex items-center gap-2">
-                   <CheckCircle2 className="w-4 h-4" /> Ajustes Aplicados
-                </div>
-            )}
+            {/* Acciones y Estados de Ajuste */}
+            <div className="w-full md:w-auto shrink-0 flex items-center justify-end">
+              {audit.status === "OPEN" && (
+                  <div className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 font-medium rounded-xl text-xs border border-zinc-200 dark:border-zinc-800 flex items-center gap-1.5">
+                     <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                     <span>Auditoría en curso en POS. Ajustes bloqueados hasta finalizar.</span>
+                  </div>
+              )}
+
+              {audit.status === "CANCELED" && (
+                  <div className="px-3.5 py-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 font-medium rounded-xl text-xs border border-zinc-200/80 dark:border-zinc-800 flex items-center gap-2">
+                     <span className="w-2 h-2 rounded-full bg-zinc-400 shrink-0" />
+                     <span>Auditoría cancelada por mantenimiento. Sin impacto en inventario.</span>
+                  </div>
+              )}
+
+              {audit.status === "CLOSED" && !audit.isApplied && discrepancyItems.length === 0 && (
+                  <div className="px-3.5 py-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-medium rounded-xl text-xs border border-zinc-200/80 dark:border-zinc-800 flex items-center gap-2">
+                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                     <span>Inventario cuadrado. No se requieren ajustes.</span>
+                  </div>
+              )}
+
+              {audit.status === "CLOSED" && !audit.isApplied && discrepancyItems.length > 0 && (
+                  <button 
+                      onClick={handleApply} 
+                      disabled={isPending}
+                      className="w-full md:w-auto h-10 px-5 bg-black dark:bg-white text-white dark:text-black font-bold text-xs rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                  >
+                      {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>{isPending ? "Aplicando ajustes..." : `Aplicar Ajustes (${discrepancyItems.length} diferencias)`}</span>
+                  </button>
+              )}
+              
+              {audit.isApplied && (
+                  <div className="px-3.5 py-1.5 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl text-xs border border-zinc-200/80 dark:border-zinc-800 flex items-center gap-2">
+                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                     <span>Ajustes Aplicados</span>
+                  </div>
+              )}
+            </div>
          </div>
 
-         {/* Table */}
+         {/* Tabla de Productos Sobria y Aireada */}
          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800">
+            <table className="w-full text-left text-xs sm:text-sm">
+                <thead className="bg-zinc-50/75 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     <tr>
-                        <th className="px-6 py-4 font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">Producto</th>
-                        <th className="px-6 py-4 font-semibold text-zinc-500 text-center uppercase tracking-wider text-[10px]">Stock Inicial</th>
-                        <th className="px-6 py-4 font-semibold text-zinc-500 text-center uppercase tracking-wider text-[10px]">Ventas</th>
-                        <th className="px-6 py-4 font-bold text-zinc-900 dark:text-white text-center uppercase tracking-wider text-[10px] bg-zinc-100/50 dark:bg-zinc-800/50">Esperado</th>
-                        <th className="px-6 py-4 font-bold text-blue-600 dark:text-blue-400 text-center uppercase tracking-wider text-[10px] bg-blue-50/30 dark:bg-blue-900/10">Conteo (POS)</th>
-                        <th className="px-6 py-4 font-semibold text-zinc-500 text-right uppercase tracking-wider text-[10px]">Diferencia</th>
+                        <th className="px-5 sm:px-6 py-3.5">Producto</th>
+                        <th className="px-5 sm:px-6 py-3.5 text-center font-mono">Stock Inicial</th>
+                        <th className="px-5 sm:px-6 py-3.5 text-center font-mono">Ventas</th>
+                        <th className="px-5 sm:px-6 py-3.5 text-center font-mono">Esperado</th>
+                        <th className="px-5 sm:px-6 py-3.5 text-center font-mono">Conteo (POS)</th>
+                        <th className="px-5 sm:px-6 py-3.5 text-right font-mono">Diferencia</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
                     {filteredItems.length === 0 ? (
                         <tr>
-                            <td colSpan={6} className="py-20 text-center text-zinc-400 italic">No hay registros que coincidan con el filtro</td>
+                            <td colSpan={6} className="py-16 text-center text-zinc-400 text-xs italic">
+                              No hay productos que coincidan con el filtro seleccionado
+                            </td>
                         </tr>
                     ) : (
                         filteredItems.map(item => (
-                            <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 transition-colors">
-                                <td className="px-6 py-4 font-bold text-zinc-800 dark:text-zinc-200">{item.productName}</td>
-                                <td className="px-6 py-4 text-center text-zinc-500">{item.initialStock}</td>
-                                <td className="px-6 py-4 text-center">
-                                    {item.sales > 0 ? <span className="text-orange-500 font-medium">-{item.sales}</span> : <span className="text-zinc-300">0</span>}
+                            <tr key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40 transition-colors">
+                                <td className="px-5 sm:px-6 py-3.5 font-semibold text-zinc-900 dark:text-zinc-100">
+                                  {item.productName}
                                 </td>
-                                <td className="px-6 py-4 text-center font-bold bg-zinc-100/50 dark:bg-zinc-800/50">{item.expectedStock ?? "—"}</td>
-                                <td className="px-6 py-4 text-center font-bold text-blue-600 dark:text-blue-400 bg-blue-50/30 dark:bg-blue-900/10">
-                                    {item.countedQuantity ?? "..."}
+                                <td className="px-5 sm:px-6 py-3.5 text-center font-mono text-zinc-500 dark:text-zinc-400">
+                                  {item.initialStock}
                                 </td>
-                                <td className="px-6 py-4 text-right">
-                                    <Badge value={item.difference} />
+                                <td className="px-5 sm:px-6 py-3.5 text-center font-mono text-zinc-500 dark:text-zinc-400">
+                                  {item.sales > 0 ? `-${item.sales}` : "0"}
+                                </td>
+                                <td className="px-5 sm:px-6 py-3.5 text-center font-mono font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {item.expectedStock ?? "—"}
+                                </td>
+                                <td className="px-5 sm:px-6 py-3.5 text-center font-mono font-bold text-zinc-900 dark:text-white">
+                                  {item.countedQuantity !== null ? item.countedQuantity : (
+                                    <span className="text-[11px] font-normal text-zinc-400 italic">No contado</span>
+                                  )}
+                                </td>
+                                <td className="px-5 sm:px-6 py-3.5 text-right font-mono">
+                                    <Badge value={item.difference} isCounted={item.countedQuantity !== null} />
                                 </td>
                             </tr>
                         ))
@@ -185,57 +299,94 @@ export default function AuditReportClient({ audit }: { audit: TAudit }) {
   );
 }
 
-function KPIBox({ title, value, subtitle, icon, color }: { title: string, value: string, subtitle: string, icon: React.ReactNode, color: string }) {
-    const colorClasses: Record<string, string> = {
-        rose: "text-rose-600 bg-rose-50 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/50",
-        emerald: "text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/50",
-        blue: "text-blue-600 bg-blue-50 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/50",
-    };
-
+function KPIBox({ 
+  title, 
+  value, 
+  subtitle, 
+  icon, 
+  isNegative,
+  hasAlert
+}: { 
+  title: string; 
+  value: string; 
+  subtitle: string; 
+  icon: React.ReactNode; 
+  isNegative?: boolean;
+  hasAlert?: boolean;
+}) {
     return (
-        <div className="p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm transition-all hover:shadow-md">
-            <div className="flex justify-between items-start mb-4">
-                <p className="text-sm font-semibold text-zinc-500">{title}</p>
-                <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">{icon}</div>
+        <div className="p-4 sm:p-5 bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl shadow-xs transition-all">
+            <div className="flex justify-between items-start mb-3">
+                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{title}</span>
+                <div className="p-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">{icon}</div>
             </div>
-            <h2 className={`text-3xl font-black tracking-tight ${color === 'rose' ? 'text-rose-600' : color === 'emerald' ? 'text-emerald-600' : 'text-zinc-900 dark:text-white'}`}>
+            <h2 className={`text-2xl sm:text-3xl font-mono font-black tracking-tight tabular-nums ${
+              isNegative ? "text-rose-600 dark:text-rose-400" : hasAlert ? "text-zinc-900 dark:text-white" : "text-zinc-900 dark:text-white"
+            }`}>
                 {value}
             </h2>
-            <p className="text-xs text-zinc-400 mt-1 font-medium italic">{subtitle}</p>
+            <p className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 mt-1 font-medium">{subtitle}</p>
         </div>
     );
 }
 
-function FilterBtn({ active, onClick, label, color }: { active: boolean, onClick: () => void, label: string, color?: "rose" | "emerald" }) {
+function FilterPill({ 
+  active, 
+  onClick, 
+  label, 
+  count,
+  badgeType 
+}: { 
+  active: boolean; 
+  onClick: () => void; 
+  label: string; 
+  count?: number;
+  badgeType?: "shortage" | "surplus";
+}) {
     return (
         <button 
+            type="button"
             onClick={onClick}
             className={`
-                px-4 py-2 text-xs font-bold rounded-lg transition-all
+                inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0
                 ${active 
-                    ? `bg-white dark:bg-zinc-800 shadow-sm ${color === 'rose' ? 'text-rose-600' : color === 'emerald' ? 'text-emerald-600' : 'text-zinc-900 dark:text-white'}` 
-                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"}
+                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-xs" 
+                    : "bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"}
             `}
         >
-            {label}
+            <span>{label}</span>
+            {count !== undefined && count > 0 && (
+              <span className={`
+                font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded font-semibold
+                ${active
+                  ? "bg-zinc-800 dark:bg-zinc-200 text-zinc-200 dark:text-zinc-800"
+                  : badgeType === "shortage" 
+                    ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"}
+              `}>
+                {count}
+              </span>
+            )}
         </button>
     );
 }
 
-function Badge({ value }: { value: number | null }) {
-    if (value === null) return <span className="text-zinc-300">—</span>;
+function Badge({ value, isCounted }: { value: number | null; isCounted?: boolean }) {
+    if (value === null || !isCounted) {
+      return <span className="text-zinc-300 dark:text-zinc-600">—</span>;
+    }
     
     const isNegative = value < 0;
     const isPositive = value > 0;
 
     return (
         <span className={`
-            inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black
-            ${isNegative ? "bg-rose-50 text-rose-600 dark:bg-rose-950/30" : 
-              isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30" : 
-              "bg-zinc-100 text-zinc-500 dark:bg-zinc-800"}
+            inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-semibold tabular-nums
+            ${isNegative ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40" : 
+              isPositive ? "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700" : 
+              "text-zinc-500 dark:text-zinc-400"}
         `}>
-            {isPositive ? "+" : ""}{value}
+            {isPositive ? `+${value}` : value}
         </span>
     );
 }

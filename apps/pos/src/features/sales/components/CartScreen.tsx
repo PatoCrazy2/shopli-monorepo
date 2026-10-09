@@ -84,18 +84,31 @@ export default function CartScreen({
     };
 
     return (
-        <div className="flex-1 flex flex-col bg-white relative">
-            <div className="h-14 sm:h-16 flex items-center px-4 sm:px-6 border-b border-gray-200 gap-3 sm:gap-4 shrink-0">
-                <button
-                    onClick={onBack}
-                    className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center -ml-2 sm:-ml-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg"
-                >
-                    <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Carrito ({totalItems})</h2>
+        <div className="fixed inset-0 z-50 bg-zinc-50 flex flex-col font-sans select-none overflow-hidden">
+            {/* Contextual Focus Header */}
+            <div className="h-14 sm:h-16 flex items-center justify-between px-3 sm:px-6 bg-white border-b border-zinc-200/80 shrink-0">
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={onBack}
+                        aria-label="Volver a catálogo de ventas"
+                        className="w-10 h-10 rounded-full bg-white border border-zinc-200/80 hover:bg-zinc-100 active:scale-95 flex items-center justify-center text-zinc-700 shadow-2xs cursor-pointer transition-none"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-base sm:text-lg font-bold text-zinc-950 tracking-tight">
+                            Resumen de Venta
+                        </h2>
+                        <span className="w-6 h-6 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-800 text-xs font-extrabold flex items-center justify-center tabular-nums">
+                            {totalItems}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
+            {/* Cart Items List */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 custom-scrollbar">
                 {cartItems.map(item => {
                     const inv = inventoryDb.find(i => i.producto_id === item.producto_id);
                     const currentStock = inv ? inv.cantidad : 0;
@@ -111,124 +124,150 @@ export default function CartScreen({
                     const itemTotal = Math.max(0, roundCustom(basePrice * item.quantity) - (item.descuento_manual || 0));
 
                     return (
-                    <div key={item.id} className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border shadow-sm rounded-xl transition-colors gap-3 sm:gap-0 ${stockIsLow ? 'bg-amber-50/30 border-amber-200' : 'bg-white border-gray-100'}`}>
-                        <div className="flex-1 pr-2">
-                            <div className="flex items-start gap-2">
-                                <p className="font-semibold text-lg leading-tight">
-                                    {item.name} {item.variante_nombre ? `(${item.variante_nombre})` : ''}
-                                </p>
-                                {stockIsLow && (
-                                    <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-                                        <AlertTriangle className="w-3 h-3" />
-                                        Stock: {currentStock}
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Precios con Mayoreo Tachado y Descuento Manual */}
-                            <div className="mt-1 flex flex-col gap-0.5">
-                                <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
-                                    <span className="font-bold text-gray-950 text-lg">
-                                        ${itemTotal}.00
-                                    </span>
-                                    {hasMayoreo && (
-                                        <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
-                                            Oferta Aplicada (<s>${item.price}</s> ${item.precio_mayoreo}/u)
+                        <div
+                            key={item.id}
+                            className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl border shadow-xs transition-none gap-3 sm:gap-4 ${
+                                stockIsLow
+                                    ? 'bg-amber-50/20 border-amber-200/80'
+                                    : 'bg-white border-zinc-200/80'
+                            }`}
+                        >
+                            <div className="flex-1 pr-2">
+                                <div className="flex items-start gap-2">
+                                    <p className="font-semibold text-base sm:text-lg leading-tight text-zinc-900">
+                                        {item.name} {item.variante_nombre ? `(${item.variante_nombre})` : ''}
+                                    </p>
+                                    {stockIsLow && (
+                                        <span className="flex items-center gap-1 bg-amber-50 border border-amber-200/80 text-amber-700 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
+                                            <AlertTriangle className="w-3 h-3" />
+                                            Stock: {currentStock}
                                         </span>
                                     )}
                                 </div>
-                                {item.descuento_manual > 0 && (
-                                    <span className="text-xs text-amber-700 font-medium">
-                                        Descuento manual: -${item.descuento_manual}.00 ({item.nota_descuento})
+
+                                {/* Precios con Mayoreo Tachado y Descuento Manual */}
+                                <div className="mt-1 flex flex-col gap-0.5">
+                                    <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                                        <span className="font-extrabold text-zinc-950 text-base sm:text-lg tabular-nums tracking-tight">
+                                            ${Number(itemTotal).toFixed(2)}
+                                        </span>
+                                        {hasMayoreo && (
+                                            <span className="text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold">
+                                                Oferta (<s>${item.price}</s> ${item.precio_mayoreo}/u)
+                                            </span>
+                                        )}
+                                    </div>
+                                    {item.descuento_manual > 0 && (
+                                        <span className="text-xs text-amber-700 font-medium">
+                                            Descuento: -${item.descuento_manual}.00 ({item.nota_descuento})
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between sm:justify-end gap-3">
+                                {/* Cápsula Integrada de Cantidad */}
+                                <div className="inline-flex items-center bg-zinc-100 rounded-full p-1 border border-zinc-200/60 shadow-2xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                                        aria-label="Disminuir cantidad"
+                                        className="w-8 h-8 rounded-full bg-white text-zinc-800 hover:bg-zinc-50 active:scale-90 flex items-center justify-center shadow-2xs cursor-pointer transition-none"
+                                    >
+                                        <Minus className="w-3.5 h-3.5" />
+                                    </button>
+                                    <span className="w-8 sm:w-10 text-center font-bold text-sm sm:text-base tabular-nums text-zinc-900">
+                                        {item.quantity}
                                     </span>
-                                )}
+                                    <button
+                                        type="button"
+                                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                        aria-label="Aumentar cantidad"
+                                        className="w-8 h-8 rounded-full bg-white text-zinc-800 hover:bg-zinc-50 active:scale-90 flex items-center justify-center shadow-2xs cursor-pointer transition-none"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                    {/* Botón de Descuento Manual */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedItemForDiscount(item);
+                                            setDiscountAmount(item.descuento_manual > 0 ? String(item.descuento_manual) : '');
+                                            setDiscountNote(item.nota_descuento || '');
+                                            setErrorMsg('');
+                                        }}
+                                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-none cursor-pointer ${
+                                            item.descuento_manual > 0 
+                                                ? 'text-amber-800 bg-amber-100 border border-amber-200' 
+                                                : 'text-zinc-500 bg-zinc-100 hover:bg-zinc-200/70 border border-zinc-200/50'
+                                        }`}
+                                        title="Descuento Manual"
+                                    >
+                                        <Tag className="w-4 h-4" />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => onRemove(item.id)}
+                                        className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100 active:scale-95 flex items-center justify-center transition-none cursor-pointer border border-red-200/50"
+                                        title="Eliminar producto"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
-                            <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg">
-                                <button
-                                    onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                                    className="p-2 sm:p-3 hover:bg-gray-100 active:bg-gray-200 rounded-l-lg transition-colors"
-                                >
-                                    <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
-                                </button>
-                                <span className="w-10 sm:w-12 text-center font-semibold text-lg">{item.quantity}</span>
-                                <button
-                                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                                    className="p-2 sm:p-3 hover:bg-gray-100 active:bg-gray-200 rounded-r-lg transition-colors"
-                                >
-                                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                                {/* Botón de Descuento Manual */}
-                                <button
-                                    onClick={() => {
-                                        setSelectedItemForDiscount(item);
-                                        setDiscountAmount(item.descuento_manual > 0 ? String(item.descuento_manual) : '');
-                                        setDiscountNote(item.nota_descuento || '');
-                                        setErrorMsg('');
-                                    }}
-                                    className={`p-2 sm:p-3 rounded-lg transition-colors ${item.descuento_manual > 0 
-                                        ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' 
-                                        : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'}`}
-                                    title="Descuento Manual"
-                                >
-                                    <Tag className="w-5 h-5 sm:w-6 sm:h-6" />
-                                </button>
-
-                                <button
-                                    onClick={() => onRemove(item.id)}
-                                    className="p-2 sm:p-3 text-red-600 hover:bg-red-50 active:bg-red-100 rounded-lg transition-colors"
-                                >
-                                    <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )})}
+                    );
+                })}
             </div>
 
-            <div className="p-4 sm:p-6 bg-gray-50 border-t border-gray-200 shrink-0">
-                <div className="flex justify-between items-center mb-4 sm:mb-6">
-                    <span className="text-lg sm:text-xl font-medium text-gray-500">Total</span>
-                    <span className="text-3xl sm:text-4xl font-bold">${totalCart}.00</span>
+            {/* Bottom Panel (Totales y Pago) */}
+            <div className="bg-white border-t border-zinc-200/80 rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.04)] p-4 sm:p-6 shrink-0 flex flex-col gap-3.5">
+                <div className="flex justify-between items-baseline px-1">
+                    <span className="text-xs sm:text-sm font-bold text-zinc-500 uppercase tracking-wider">Total a pagar</span>
+                    <span className="text-3xl sm:text-4xl font-extrabold text-zinc-950 tracking-tight tabular-nums">
+                        ${Number(totalCart).toFixed(2)}
+                    </span>
                 </div>
 
                 <button
+                    type="button"
                     onClick={onCheckout}
                     disabled={cartItems.length === 0}
-                    className={`w-full h-14 sm:h-16 text-xl font-bold rounded-lg flex items-center justify-center transition-colors ${cartItems.length === 0
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900'
-                        }`}
+                    className={`w-full h-14 sm:h-15 rounded-full font-bold text-base sm:text-lg flex items-center justify-center shadow-lg transition-transform cursor-pointer select-none ${
+                        cartItems.length === 0
+                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'
+                            : 'bg-black text-white hover:bg-zinc-800 active:scale-[0.99]'
+                    }`}
                 >
-                    Cobrar
+                    <span>Cobrar</span>
                 </button>
             </div>
 
             {/* Modal para Descuento Manual */}
             {selectedItemForDiscount && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-xs">
-                    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-150">
-                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Tag className="w-5 h-5 text-amber-500" />
-                                Descuento Manual: {selectedItemForDiscount.name}
+                <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/35 backdrop-blur-[1px]">
+                    <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-zinc-200/80 overflow-hidden">
+                        <div className="flex justify-between items-center px-6 py-4 border-b border-zinc-100 bg-zinc-50/50">
+                            <h3 className="text-base font-bold text-zinc-950 flex items-center gap-2">
+                                <Tag className="w-4 h-4 text-amber-600" />
+                                Descuento: {selectedItemForDiscount.name}
                             </h3>
                             <button
+                                type="button"
                                 onClick={() => setSelectedItemForDiscount(null)}
-                                className="text-gray-400 hover:bg-gray-100 hover:text-gray-700 p-1.5 rounded-lg transition-colors"
+                                className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 flex items-center justify-center cursor-pointer transition-none"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         <form onSubmit={handleSaveDiscount} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wide mb-1.5">
                                     Dinero a descontar ($)
                                 </label>
                                 <input
@@ -239,41 +278,41 @@ export default function CartScreen({
                                     value={discountAmount}
                                     onChange={(e) => setDiscountAmount(e.target.value)}
                                     placeholder="Ej. 15"
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:outline-hidden focus:ring-2 focus:ring-black/10 focus:border-black transition-all"
+                                    className="w-full px-4 h-12 bg-white border border-zinc-200 rounded-full font-semibold focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all text-zinc-900"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                                    Nota / Justificación (Obligatoria si se aplica descuento)
+                                <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wide mb-1.5">
+                                    Nota / Justificación (Obligatoria)
                                 </label>
                                 <textarea
                                     rows={2}
                                     value={discountNote}
                                     onChange={(e) => setDiscountNote(e.target.value)}
                                     placeholder="Ej. Mercancía con detalle estético o promoción especial."
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:outline-hidden focus:ring-2 focus:ring-black/10 focus:border-black transition-all resize-none text-sm"
+                                    className="w-full p-3 bg-white border border-zinc-200 rounded-2xl font-medium focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all resize-none text-sm text-zinc-900"
                                 />
                             </div>
 
                             {errorMsg && (
-                                <p className="text-sm text-red-600 font-medium flex items-center gap-1.5">
+                                <p className="text-xs text-red-600 font-semibold flex items-center gap-1.5">
                                     <AlertTriangle className="w-4 h-4 shrink-0" />
                                     {errorMsg}
                                 </p>
                             )}
 
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-2.5 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setSelectedItemForDiscount(null)}
-                                    className="flex-1 py-3 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 active:scale-98 transition-all"
+                                    className="flex-1 h-12 text-sm font-bold text-zinc-700 bg-white border border-zinc-200 rounded-full hover:bg-zinc-50 active:scale-98 transition-none cursor-pointer"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-3 text-sm font-bold text-white bg-black hover:bg-zinc-800 active:scale-98 transition-all rounded-xl"
+                                    className="flex-1 h-12 text-sm font-bold text-white bg-black hover:bg-zinc-800 active:scale-98 transition-none rounded-full cursor-pointer shadow-xs"
                                 >
                                     Guardar
                                 </button>
