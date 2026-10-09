@@ -26,6 +26,47 @@ export function getTodayMexicoCity(): string {
   return `${y}-${m}-${d}`;
 }
 
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+export function resolveAnalyticsDateRange(
+  startDate?: string,
+  endDate?: string
+): { sDate: Date; eDate: Date } {
+  const todayStr = getTodayMexicoCity();
+  const startDateClean = startDate && DATE_REGEX.test(startDate) ? startDate : undefined;
+  const endDateClean = endDate && DATE_REGEX.test(endDate) ? endDate : undefined;
+
+  let sDate: Date;
+  let eDate: Date;
+
+  if (startDateClean && endDateClean) {
+    const [minDateStr, maxDateStr] =
+      startDateClean <= endDateClean
+        ? [startDateClean, endDateClean]
+        : [endDateClean, startDateClean];
+
+    sDate = new Date(`${minDateStr}T00:00:00.000-06:00`);
+    eDate = new Date(`${maxDateStr}T23:59:59.999-06:00`);
+
+    const diffMs = eDate.getTime() - sDate.getTime();
+    const maxMs = 366 * 24 * 60 * 60 * 1000;
+    if (diffMs > maxMs) {
+      sDate = new Date(eDate.getTime() - maxMs);
+    }
+  } else if (startDateClean) {
+    sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
+    eDate = new Date(sDate.getTime() + 366 * 24 * 60 * 60 * 1000);
+  } else if (endDateClean) {
+    eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
+    sDate = new Date(eDate.getTime() - 366 * 24 * 60 * 60 * 1000);
+  } else {
+    sDate = new Date(`${todayStr}T00:00:00.000-06:00`);
+    eDate = new Date(`${todayStr}T23:59:59.999-06:00`);
+  }
+
+  return { sDate, eDate };
+}
+
 export async function getAnalyticsData(filters: AnalyticsFilters): Promise<AnalyticsData> {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
@@ -57,38 +98,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
     }
 
     // 2. Validación y clamping de fechas (por defecto Hoy CDMX; máximo 366 días para proteger Neon)
-    const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-    const todayStr = getTodayMexicoCity();
-    const startDateClean = filters.startDate && DATE_REGEX.test(filters.startDate) ? filters.startDate : undefined;
-    const endDateClean = filters.endDate && DATE_REGEX.test(filters.endDate) ? filters.endDate : undefined;
-
-    let sDate: Date;
-    let eDate: Date;
-
-    if (startDateClean && endDateClean) {
-      const [minDateStr, maxDateStr] =
-        startDateClean <= endDateClean
-          ? [startDateClean, endDateClean]
-          : [endDateClean, startDateClean];
-
-      sDate = new Date(`${minDateStr}T00:00:00.000-06:00`);
-      eDate = new Date(`${maxDateStr}T23:59:59.999-06:00`);
-
-      const diffMs = eDate.getTime() - sDate.getTime();
-      const maxMs = 366 * 24 * 60 * 60 * 1000;
-      if (diffMs > maxMs) {
-        sDate = new Date(eDate.getTime() - maxMs);
-      }
-    } else if (startDateClean) {
-      sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
-      eDate = new Date(sDate.getTime() + 366 * 24 * 60 * 60 * 1000);
-    } else if (endDateClean) {
-      eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
-      sDate = new Date(eDate.getTime() - 366 * 24 * 60 * 60 * 1000);
-    } else {
-      sDate = new Date(`${todayStr}T00:00:00.000-06:00`);
-      eDate = new Date(`${todayStr}T23:59:59.999-06:00`);
-    }
+    const { sDate, eDate } = resolveAnalyticsDateRange(filters.startDate, filters.endDate);
 
     // 3. Construcción de condiciones SQL parametrizadas para Ventas
     const salesConditions: Prisma.Sql[] = [
