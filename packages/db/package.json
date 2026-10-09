@@ -12,6 +12,7 @@
         "db:grant-founder": "tsx scripts/grant-founder-plan.ts",
         "db:migrate-skus": "tsx scripts/migrate-skus.ts",
         "db:cleanup-companies": "tsx scripts/cleanup-test-companies.ts",
+        "db:cleanup-audits": "tsx scripts/cleanup-audits.ts",
         "db:test-pdf": "tsx scripts/test-pdf.ts",
         "lint": "eslint \"src/**/*.ts*\"",
         "clean": "rm -rf .turbo node_modules"

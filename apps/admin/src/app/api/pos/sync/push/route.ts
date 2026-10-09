@@ -550,6 +550,7 @@ export async function POST(req: Request) {
                 audit: {
                   sucursalId: venta.sucursal_id,
                   isApplied: false,
+                  status: { not: 'CANCELED' },
                   startedAt: {
                     gte: seventyTwoHoursAgo,
                     lte: saleDate
@@ -656,6 +657,13 @@ export async function POST(req: Request) {
           where: { id: da.id },
           include: { items: true }
         });
+
+        // Si la auditoría fue cancelada en servidor (ej. limpieza de mantenimiento), ignoramos cambios tardíos
+        // pero enviamos ACK para liberar la cola offline del POS.
+        if (dbAudit && dbAudit.status === 'CANCELED') {
+          procesados.auditoriasDinamicas.push(da.id);
+          continue;
+        }
 
         // Si la auditoria no existe, la creamos
         if (!dbAudit) {

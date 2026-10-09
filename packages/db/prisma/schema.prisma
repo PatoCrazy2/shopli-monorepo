@@ -299,6 +299,7 @@ enum TipoMovimiento {
 enum AuditStatus {
   OPEN
   CLOSED
+  CANCELED
 }
 
 model Empresa {
