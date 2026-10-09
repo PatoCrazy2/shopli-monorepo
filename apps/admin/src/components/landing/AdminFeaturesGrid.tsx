@@ -185,14 +185,17 @@ export default function AdminFeaturesGrid() {
           <div className="md:col-span-4 bg-white h-[380px] sm:h-[420px] md:h-[450px] relative overflow-hidden group">
             {/* Video en loop continuo ocupando todo el cuadro */}
             <video
-              src="/features/multisucursal-v2.webm"
               autoPlay
               loop
               muted
               playsInline
               preload="auto"
+              poster="/features/multisucursal-poster.webp"
               className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
-            />
+            >
+              <source src="/features/multsu.mp4" type="video/mp4" />
+              <source src="/features/multisucursal-v2.webm" type="video/webm" />
+            </video>
 
             {/* Enlace e info detallada en esquina inferior izquierda */}
             <div className="absolute bottom-5 left-5 sm:bottom-6 sm:left-6 z-20">
