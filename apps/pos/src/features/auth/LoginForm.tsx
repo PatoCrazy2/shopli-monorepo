@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Loader2, Settings, ArrowLeft, ShieldAlert, Clock, Mail, Lock } from 'lucide-react';
+import { Loader2, Settings, ArrowLeft, ShieldAlert, Clock, Mail, Lock, Delete } from 'lucide-react';
 import { db, type LocalUser } from '../../lib/db';
 import { PWASettingsModal } from '../../components/PWASettingsModal';
 import { PWAInstallPrompt } from '../../components/PWAInstallPrompt';
@@ -438,25 +438,27 @@ export function LoginForm({
                             </div>
                         ) : null}
 
-                        {/* Display de PIN (6 slots de puntos) */}
-                        <div className="flex justify-center gap-3">
+                        {/* Display de PIN: 6 puntos circulares minimalistas */}
+                        <div
+                            className={`flex items-center justify-center gap-4 py-2 ${
+                                isSyncing ? 'animate-pulse' : ''
+                            }`}
+                        >
                             {[...Array(6)].map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`w-11 h-14 rounded-xl border-2 flex items-center justify-center text-3xl font-bold transition-none select-none ${
+                                    className={`w-3.5 h-3.5 rounded-full transition-none select-none ${
                                         errorMessage
-                                            ? 'border-red-500 text-red-500 bg-red-50'
+                                            ? 'bg-red-500'
                                             : pin.length > i
-                                            ? 'border-black text-black bg-white shadow-xs'
-                                            : 'border-zinc-200 text-transparent bg-white'
+                                            ? 'bg-black'
+                                            : 'bg-zinc-200'
                                     }`}
-                                >
-                                    {pin.length > i ? '•' : ''}
-                                </div>
+                                />
                             ))}
                         </div>
 
-                        {/* Teclado Numérico */}
+                        {/* Teclado Numérico (Opción 1: Píldoras/Círculos suaves en blanco) */}
                         <div className="grid grid-cols-3 gap-3">
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                                 <button
@@ -464,7 +466,7 @@ export function LoginForm({
                                     type="button"
                                     disabled={isInputBlocked || isSyncing}
                                     onClick={() => handleKeyPress(num.toString())}
-                                    className="h-14 rounded-xl bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-xs active:scale-[0.98] select-none"
+                                    className="h-15 rounded-full bg-white border border-zinc-200/90 text-zinc-900 text-2xl font-semibold active:bg-black active:text-white active:border-black disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-2xs active:scale-[0.98] select-none transition-none cursor-pointer"
                                 >
                                     {num}
                                 </button>
@@ -472,45 +474,29 @@ export function LoginForm({
                             <button
                                 type="button"
                                 onClick={() => setIsSettingsOpen(true)}
-                                className="h-14 rounded-xl bg-zinc-100 text-zinc-700 hover:text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation active:scale-[0.98] select-none"
+                                className="h-15 rounded-full bg-transparent text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 active:bg-zinc-200/70 flex items-center justify-center touch-manipulation active:scale-[0.98] select-none transition-none cursor-pointer"
                                 title="Ajustes del Sistema"
                             >
-                                <Settings size={22} />
+                                <Settings size={21} />
                             </button>
                             <button
                                 type="button"
                                 disabled={isInputBlocked || isSyncing}
                                 onClick={() => handleKeyPress('0')}
-                                className="h-14 rounded-xl bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-xs active:scale-[0.98] select-none"
+                                className="h-15 rounded-full bg-white border border-zinc-200/90 text-zinc-900 text-2xl font-semibold active:bg-black active:text-white active:border-black disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-2xs active:scale-[0.98] select-none transition-none cursor-pointer"
                             >
                                 0
                             </button>
                             <button
                                 type="button"
-                                disabled={isInputBlocked || isSyncing}
+                                disabled={isInputBlocked || isSyncing || pin.length === 0}
                                 onClick={handleBackspace}
-                                className="h-14 rounded-xl bg-zinc-100 text-zinc-700 hover:text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation active:scale-[0.98] select-none"
+                                className="h-15 rounded-full bg-transparent text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 active:bg-zinc-200/70 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed flex items-center justify-center touch-manipulation active:scale-[0.98] select-none transition-none cursor-pointer"
+                                title="Borrar"
                             >
-                                ⌫
+                                <Delete size={21} />
                             </button>
                         </div>
-
-                        {/* Botón de Entrada */}
-                        <button
-                            type="button"
-                            onClick={() => executeLogin(pin, undefined, selectedUser.id)}
-                            disabled={pin.length !== 6 || isInputBlocked || isSyncing}
-                            className="w-full h-14 bg-black text-white text-lg font-bold rounded-xl hover:bg-zinc-900 active:scale-[0.98] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none disabled:active:scale-100 touch-manipulation flex items-center justify-center shadow-sm transition-none cursor-pointer disabled:cursor-not-allowed"
-                        >
-                            {isSyncing ? (
-                                <>
-                                    <Loader2 className="animate-spin mr-2" size={20} />
-                                    Verificando PIN...
-                                </>
-                            ) : (
-                                'Acceder'
-                            )}
-                        </button>
                     </div>
                 )}
             </div>
