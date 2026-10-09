@@ -55,12 +55,12 @@ export function BranchSelect({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className={`w-full h-13 px-4 bg-white border border-zinc-200 hover:border-zinc-300 rounded-2xl flex items-center justify-between shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-black/10 disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`w-full h-13 px-5 bg-white border border-zinc-200 hover:border-zinc-300 rounded-full flex items-center justify-between shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-black/10 disabled:opacity-50 disabled:cursor-not-allowed ${
           isOpen ? 'border-zinc-400 ring-2 ring-black/5' : ''
         }`}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
+          <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
             ) : (
