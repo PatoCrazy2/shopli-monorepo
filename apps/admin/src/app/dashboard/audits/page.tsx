@@ -70,6 +70,12 @@ export default async function AuditsListPage({
         sucursal: true,
         _count: {
           select: { items: true }
+        },
+        items: {
+          select: {
+            difference: true,
+            countedQuantity: true,
+          }
         }
       },
       orderBy: {
@@ -115,30 +121,39 @@ export default async function AuditsListPage({
             <p className="text-zinc-400 text-sm">Las auditorías iniciadas desde el POS aparecerán aquí.</p>
           </div>
         ) : (
-          audits.map((audit) => (
-            <Link 
-              key={audit.id} 
-              href={`/dashboard/audits/${audit.id}`}
-              className="group bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-between"
-            >
-              <div className="flex items-center gap-6">
-                <div className={`p-4 rounded-2xl ${audit.status === 'CLOSED' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-600'}`}>
-                   <ClipboardCheck className="w-6 h-6" />
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                   <div className="flex items-center gap-2">
-                       <h3 className="font-bold text-lg text-zinc-900 dark:text-white">
-                          Auditoría de Inventario
-                       </h3>
-                       {audit.isApplied ? (
-                           <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-widest rounded-md">Conciliado</span>
-                       ) : audit.status === 'CLOSED' ? (
-                           <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase tracking-widest rounded-md">Pdte. Ajuste</span>
-                       ) : (
-                           <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase tracking-widest rounded-md">Abierta</span>
-                       )}
-                   </div>
+          audits.map((audit) => {
+            const hasDiscrepancies = audit.items.some(
+              (item) => item.difference !== null && item.difference !== 0
+            );
+
+            return (
+              <Link 
+                key={audit.id} 
+                href={`/dashboard/audits/${audit.id}`}
+                className="group bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-between"
+              >
+                <div className="flex items-center gap-6">
+                  <div className={`p-4 rounded-2xl ${audit.status === 'CLOSED' ? (hasDiscrepancies && !audit.isApplied ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600' : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600') : 'bg-blue-50 dark:bg-blue-950/30 text-blue-600'}`}>
+                     <ClipboardCheck className="w-6 h-6" />
+                  </div>
+                  
+                  <div className="flex flex-col gap-1">
+                     <div className="flex items-center gap-2">
+                         <h3 className="font-bold text-lg text-zinc-900 dark:text-white">
+                            Auditoría de Inventario
+                         </h3>
+                         {audit.isApplied ? (
+                             <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-widest rounded-md">Conciliado</span>
+                         ) : audit.status === 'CLOSED' ? (
+                             hasDiscrepancies ? (
+                                 <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase tracking-widest rounded-md">Pdte. Ajuste</span>
+                             ) : (
+                                 <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-[10px] font-black uppercase tracking-widest rounded-md">Sin Diferencias</span>
+                             )
+                         ) : (
+                             <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px] font-black uppercase tracking-widest rounded-md">Abierta</span>
+                         )}
+                     </div>
                    
                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-500">
                       <div className="flex items-center gap-1.5 font-medium">
@@ -161,7 +176,8 @@ export default async function AuditsListPage({
                  <ArrowRight className="w-6 h-6" />
               </div>
             </Link>
-          ))
+          );
+        })
         )}
       </div>
     </div>
