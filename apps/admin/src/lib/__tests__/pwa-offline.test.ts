@@ -16,12 +16,14 @@ describe("Etapa 3: PWA Offline Fallback y Service Worker v3", () => {
     expect(content).toContain("width: 36px");
   });
 
-  it("el service worker sw.js está en versión v3 y precachea /offline.html", () => {
+  it("el service worker sw.js está en versión v4 y precachea /offline.html", () => {
     const swPath = path.resolve(__dirname, "../../../public/sw.js");
     expect(fs.existsSync(swPath)).toBe(true);
 
     const content = fs.readFileSync(swPath, "utf-8");
-    expect(content).toContain('const CACHE_NAME = "shopli-admin-v3";');
+    expect(content).toContain('const CACHE_NAME = "shopli-admin-v4";');
+    expect(content).toContain('fetchWithTimeout');
+    expect(content).toContain('!networkResponse.redirected');
     expect(content).toContain('"/offline.html"');
     expect(content).toContain('caches.match("/offline.html")');
   });

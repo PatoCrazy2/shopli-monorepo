@@ -1,5 +1,6 @@
 // ShopLI Admin PWA Service Worker (Production-Ready)
-const CACHE_NAME = "shopli-admin-v3";
+const CACHE_NAME = "shopli-admin-v4";
+const NAVIGATION_TIMEOUT_MS = 6000;
 
 const PRECACHE_ASSETS = [
   "/manifest.webmanifest",
@@ -12,6 +13,16 @@ const PRECACHE_ASSETS = [
   "/shopli_snbg.svg",
   "/offline.html",
 ];
+
+// Helper con timeout para evitar cuelgues indefinidos en WebKit / iOS
+function fetchWithTimeout(request, timeoutMs = NAVIGATION_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(request, { signal: controller.signal }).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
 
 // 1. Instalación: Cachear assets estáticos iniciales
 self.addEventListener("install", (event) => {
@@ -26,17 +37,19 @@ self.addEventListener("install", (event) => {
 // 2. Activación: Limpieza de cachés antiguas y tomar control inmediato
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 // 3. Estrategia de Fetch
@@ -82,13 +95,18 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // B) Network First para navegación (HTML del App Shell)
-  // Intenta la red para mantener datos frescos, pero si está offline o reconectando, sirve desde caché
+  // B) Network First con Timeout para navegación (HTML del App Shell)
+  // Intenta la red para mantener datos frescos, pero si excede el timeout, está offline o falla, sirve desde caché
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetchWithTimeout(request, NAVIGATION_TIMEOUT_MS)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          // Solo cachear si es 200 y no fue redirigida (ej. no guardar HTML de /login bajo /dashboard)
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            !networkResponse.redirected
+          ) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseToCache);
@@ -107,7 +125,7 @@ self.addEventListener("fetch", (event) => {
           if (dashboardResponse) {
             return dashboardResponse;
           }
-          // 3. Fallback controlado contra el logo gigante: servir la pantalla offline amigable
+          // 3. Fallback controlado: servir la pantalla offline amigable
           const offlineFallback = await caches.match("/offline.html");
           if (offlineFallback) {
             return offlineFallback;
