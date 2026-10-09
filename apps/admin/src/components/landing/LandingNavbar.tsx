@@ -80,22 +80,22 @@ export default function LandingNavbar() {
             <button
               type="button"
               onClick={() => {
-                const el = document.getElementById("offline");
+                const el = document.getElementById("showcase-phone");
                 el?.scrollIntoView({ behavior: "smooth" });
               }}
               className="hover:text-white transition-colors cursor-pointer"
             >
-              Offline-First
+              Punto de Venta
             </button>
             <button
               type="button"
               onClick={() => {
-                const el = document.getElementById("auditorias");
+                const el = document.getElementById("centro-cloud");
                 el?.scrollIntoView({ behavior: "smooth" });
               }}
               className="hover:text-white transition-colors cursor-pointer"
             >
-              Auditorías
+              Centro Cloud
             </button>
             <button
               type="button"
@@ -202,23 +202,23 @@ export default function LandingNavbar() {
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                const el = document.getElementById("offline");
+                const el = document.getElementById("showcase-phone");
                 el?.scrollIntoView({ behavior: "smooth" });
               }}
               className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
-              Offline-First
+              Punto de Venta
             </button>
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                const el = document.getElementById("auditorias");
+                const el = document.getElementById("centro-cloud");
                 el?.scrollIntoView({ behavior: "smooth" });
               }}
               className="text-left text-sm font-medium text-neutral-300 hover:text-white transition-colors py-1.5 cursor-pointer"
             >
-              Auditorías
+              Centro Cloud
             </button>
             <button
               type="button"

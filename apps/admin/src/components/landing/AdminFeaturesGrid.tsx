@@ -5,7 +5,21 @@ import { ArrowUpRight } from "lucide-react";
 
 export default function AdminFeaturesGrid() {
   return (
-    <section className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-24 md:py-32 flex flex-col items-center">
+    <section className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-24 md:py-32 flex flex-col items-center" id="centro-cloud">
+      {/* Encabezado de la Sección Centro Cloud */}
+      <div className="flex flex-col items-center text-center mb-16 sm:mb-20">
+        <span className="text-sm font-semibold tracking-wider uppercase text-neutral-400 mb-4">
+          Centro Cloud
+        </span>
+        <h2 className="text-4xl md:text-5xl lg:text-[64px] font-bold tracking-tight text-white mb-6 leading-tight">
+          El control de tu negocio, <br className="hidden sm:block" /> desde cualquier lugar.
+        </h2>
+        <p className="text-neutral-400 text-lg md:text-xl max-w-2xl font-light">
+          Supervisa inventarios, audita gastos y revisa analíticas en tiempo real. 
+          Toda la potencia de tu dashboard optimizada para celular, tablet o computadora.
+        </p>
+      </div>
+
       {/* 
         El borde externo y las líneas divisorias internas de 1px se logran 
         con el background del contenedor padre (bg-white/[0.08]) y un gap de 1px.
