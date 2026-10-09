@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Minus, Plus, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { db } from "../../lib/db";
 import { useAuth } from "../../contexts/AuthContext";
 import type { LocalProduct } from "../../lib/db";
@@ -141,6 +141,31 @@ export default function DynamicAuditPage() {
         }
     };
 
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        if (val === "" || /^\d+$/.test(val)) {
+            setCountedAmount(val);
+        }
+    };
+
+    const handleIncrement = () => {
+        const current = countedAmount === "" ? 0 : parseInt(countedAmount, 10);
+        setCountedAmount(String((isNaN(current) ? 0 : current) + 1));
+    };
+
+    const handleDecrement = () => {
+        const current = countedAmount === "" ? 0 : parseInt(countedAmount, 10);
+        const next = Math.max(0, (isNaN(current) ? 0 : current) - 1);
+        setCountedAmount(String(next));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && countedAmount !== "") {
+            e.preventDefault();
+            handleNext();
+        }
+    };
+
     if (!isStarted) {
         return (
             <div className="flex flex-col w-full h-full bg-zinc-50 px-4 py-8 items-center justify-center text-center select-none font-sans">
@@ -185,78 +210,113 @@ export default function DynamicAuditPage() {
     }
 
     if (products.length === 0) {
-        return <div className="p-6 text-center text-gray-500">Cargando productos...</div>;
+        return (
+            <div className="flex flex-col w-full h-full bg-zinc-50 items-center justify-center p-6 text-center text-xs sm:text-sm text-zinc-400 font-medium font-sans">
+                Cargando productos...
+            </div>
+        );
     }
 
     const currentProduct = products[currentIndex];
+    const progressPercent = Math.round(((currentIndex + 1) / products.length) * 100);
+    const isLastProduct = currentIndex === products.length - 1;
+    const canDecrement = countedAmount !== "" && Number(countedAmount) > 0;
 
     return (
-        <div className="flex flex-col w-full h-full bg-gray-50 items-center justify-center p-6">
-            <div className="w-full max-w-xl bg-white rounded-xl shadow-lg border border-gray-100 p-8">
-                {/* Cabecera / Barra de progreso */}
-                <div className="mb-8">
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                            Producto {currentIndex + 1} de {products.length}
-                        </span>
-                        <span className="text-sm font-bold text-gray-900">
-                            {Math.round(((currentIndex + 1) / products.length) * 100)}%
-                        </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                            className="bg-black h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${((currentIndex + 1) / products.length) * 100}%` }}
-                        ></div>
-                    </div>
+        <div className="flex flex-col justify-between w-full h-full bg-zinc-50 p-4 sm:p-8 select-none font-sans overflow-y-auto">
+            {/* Zona Superior: Barra de Progreso de Ancho Completo */}
+            <div className="w-full max-w-3xl mx-auto shrink-0">
+                <div className="flex justify-between items-center mb-2.5 tabular-nums">
+                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                        Producto {currentIndex + 1} de {products.length}
+                    </span>
+                    <span className="text-xs sm:text-sm font-extrabold text-zinc-900">
+                        {progressPercent}%
+                    </span>
                 </div>
+                <div className="w-full bg-zinc-200/80 rounded-full h-2 overflow-hidden">
+                    <div
+                        className="bg-black h-full rounded-full transition-all duration-150"
+                        style={{ width: `${((currentIndex + 1) / products.length) * 100}%` }}
+                    />
+                </div>
+            </div>
 
-                {/* Cuerpo */}
-                <div className="text-center mb-10">
-                    <h2 className="text-4xl font-black text-gray-900 mb-2 leading-tight">
+            {/* Zona Central: Producto Protagonista + Captura Píldora */}
+            <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto py-6">
+                <div className="text-center mb-8 sm:mb-10">
+                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-zinc-900 leading-tight mb-2">
                         {currentProduct.nombre}
                     </h2>
-                    <p className="text-lg text-gray-500 font-medium">
+                    <p className="text-sm sm:text-base text-zinc-400 font-medium">
                         {currentProduct.categoria || "Sin categoría"}
                     </p>
                 </div>
 
-                {/* Input gigante */}
-                <div className="mb-10">
-                    <input
-                        ref={inputRef}
-                        type="number"
-                        inputMode="numeric"
-                        value={countedAmount}
-                        onChange={(e) => setCountedAmount(e.target.value)}
-                        className="block w-full text-center h-24 font-black text-6xl text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-4 focus:ring-black/5 focus:border-black"
-                        placeholder="0"
-                    />
-                </div>
+                {/* Captura Píldora + Botones Circulares - / + */}
+                <div className="w-full max-w-md">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <button
+                            type="button"
+                            onClick={handleDecrement}
+                            disabled={!canDecrement}
+                            aria-label="Disminuir cantidad"
+                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-100 active:scale-95 flex items-center justify-center shadow-xs shrink-0 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                        >
+                            <Minus className="w-6 h-6" />
+                        </button>
 
-                {/* Navegación */}
-                <div className="flex gap-4">
-                    <button
-                        onClick={handlePrev}
-                        disabled={currentIndex === 0}
-                        className={`flex-1 h-16 rounded-lg font-bold text-lg border-2 transition-colors
-                            ${currentIndex === 0
-                                ? 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-                    >
-                        Anterior
-                    </button>
-                    <button
-                        onClick={handleNext}
-                        disabled={!countedAmount}
-                        className={`flex-1 h-16 rounded-lg font-bold text-lg text-white transition-colors
-                            ${!countedAmount
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-black hover:bg-zinc-800 shadow-md'}`}
-                    >
-                        {currentIndex < products.length - 1 ? 'Siguiente' : 'Finalizar'}
-                    </button>
+                        <input
+                            id="countedAmount"
+                            ref={inputRef}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={countedAmount}
+                            onChange={handleAmountChange}
+                            onKeyDown={handleKeyDown}
+                            placeholder="0"
+                            aria-label="Existencia física contada"
+                            className="flex-1 min-w-0 h-16 sm:h-20 bg-white border border-zinc-200 rounded-full text-center text-4xl sm:text-5xl font-black text-zinc-900 placeholder:text-zinc-300 tabular-nums shadow-xs focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400"
+                        />
+
+                        <button
+                            type="button"
+                            onClick={handleIncrement}
+                            aria-label="Aumentar cantidad"
+                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border border-zinc-200 text-zinc-900 hover:bg-zinc-100 active:scale-95 flex items-center justify-center shadow-xs shrink-0 cursor-pointer"
+                        >
+                            <Plus className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
+            </div>
+
+            {/* Zona Inferior: Navegación Anclada al Pie */}
+            <div className="w-full max-w-3xl mx-auto shrink-0 flex items-center gap-3 sm:gap-4">
+                <button
+                    type="button"
+                    onClick={handlePrev}
+                    disabled={currentIndex === 0}
+                    className="flex-1 h-13 sm:h-14 rounded-full font-bold text-sm sm:text-base bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100 active:scale-95 shadow-2xs flex items-center justify-center gap-2 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                >
+                    <ArrowLeft className="w-4 h-4 shrink-0" />
+                    <span>Anterior</span>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={countedAmount === ""}
+                    className="flex-1 h-13 sm:h-14 rounded-full font-bold text-sm sm:text-base bg-black text-white hover:bg-zinc-800 active:scale-95 shadow-sm flex items-center justify-center gap-2 disabled:bg-zinc-200 disabled:text-zinc-400 disabled:pointer-events-none cursor-pointer"
+                >
+                    <span>{isLastProduct ? "Finalizar" : "Siguiente"}</span>
+                    {isLastProduct ? (
+                        <Check className="w-4 h-4 shrink-0" />
+                    ) : (
+                        <ArrowRight className="w-4 h-4 shrink-0" />
+                    )}
+                </button>
             </div>
         </div>
     );
