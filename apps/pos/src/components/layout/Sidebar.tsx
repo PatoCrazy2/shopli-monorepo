@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ShoppingCart, Package, Wallet, History, X, Lock, Settings } from "lucide-react";
+import { ShoppingCart, Package, Wallet, History, X, Lock, Settings, ClipboardCheck } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../lib/db";
 import { PWASettingsModal } from "../PWASettingsModal";
+import { useAuth } from "../../contexts/AuthContext";
+import { UserAvatar } from "../../features/auth/LoginForm";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -12,6 +14,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const { user } = useAuth();
     const isAuditActive = useLiveQuery(
         async () => {
             const activeAudit = await db.meta.get('active_audit_id');
@@ -31,30 +34,52 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             icon: Package,
             disabled: isAuditActive 
         },
-        { path: "/auditoria-dinamica", label: "Auditoría Dinámica", icon: Package },
+        { path: "/auditoria-dinamica", label: "Auditoría Dinámica", icon: ClipboardCheck },
         { path: "/corte-caja", label: "Corte de Caja", icon: Wallet },
     ];
 
     return (
         <>
-            {/* Backdrop for POS touch-friendly interaction */}
+            {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/20 z-40 transition-none"
+                className="fixed inset-0 bg-black/25 backdrop-blur-[1px] z-40 transition-none"
                 onClick={onClose}
             />
-            {/* Sidebar content */}
-            <aside className="fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 z-50 flex flex-col transition-none shadow-xl">
-                <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200 shrink-0">
-                    <h2 className="text-xl font-bold tracking-tight">Menú</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 -mr-2 rounded-md hover:bg-gray-100 min-h-[3rem] min-w-[3rem] flex items-center justify-center transition-none"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
+
+            {/* Modern Sheet Drawer */}
+            <aside className="fixed top-0 left-0 h-dvh w-[82vw] max-w-[300px] bg-white rounded-r-3xl border-r border-zinc-200/80 z-50 flex flex-col shadow-2xl select-none overflow-hidden">
+                {/* Cashier Profile Card Header */}
+                <div className="p-4 pb-3 border-b border-zinc-100 shrink-0">
+                    <div className="flex items-center justify-between gap-2">
+                        {user ? (
+                            <div className="flex items-center gap-3 min-w-0 flex-1 bg-zinc-50 border border-zinc-200/70 rounded-full p-1.5 pr-3.5">
+                                <UserAvatar id={user.id} name={user.name} size={36} />
+                                <div className="min-w-0 flex-1 text-left">
+                                    <p className="text-sm font-bold text-zinc-900 truncate leading-tight">
+                                        {user.name}
+                                    </p>
+                                    <p className="text-[11px] font-medium text-zinc-500 truncate leading-tight mt-0.5">
+                                        {user.branchName || user.role}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-base font-bold text-zinc-900 px-2">Menú</span>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            aria-label="Cerrar menú"
+                            className="w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 flex items-center justify-center shrink-0 active:scale-95 cursor-pointer"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
 
-                <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-2">
+                {/* Navigation Links */}
+                <nav className="flex-1 overflow-y-auto py-4 px-3.5 flex flex-col gap-1.5">
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -67,42 +92,42 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 onClose();
                             }}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-4 rounded-md text-base font-medium min-h-[3rem] transition-none 
-                                ${item.disabled 
-                                    ? "opacity-50 cursor-not-allowed bg-gray-50 text-gray-400" 
-                                    : isActive
-                                        ? "bg-black text-white"
-                                        : "text-gray-700 hover:bg-gray-100"
+                                `flex items-center gap-3.5 px-4 py-3.5 rounded-full text-sm transition-none ${
+                                    item.disabled
+                                        ? "opacity-45 cursor-not-allowed bg-zinc-50 text-zinc-400 font-medium"
+                                        : isActive
+                                        ? "bg-black text-white font-semibold shadow-xs"
+                                        : "text-zinc-700 hover:bg-zinc-100 active:bg-zinc-200/70 font-medium"
                                 }`
                             }
                         >
-                            <div className="relative">
-                                <item.icon className="w-5 h-5" />
+                            <div className="relative flex items-center justify-center shrink-0">
+                                <item.icon className="w-[18px] h-[18px]" />
                                 {item.disabled && (
-                                    <Lock className="w-3 h-3 absolute -top-1 -right-1 text-red-500" />
+                                    <Lock className="w-3 h-3 absolute -top-1 -right-1.5 text-red-500" />
                                 )}
                             </div>
-                            {item.label}
+                            <span className="truncate">{item.label}</span>
                         </NavLink>
                     ))}
                 </nav>
 
-                <div className="border-t border-gray-200 p-4 shrink-0 bg-gray-50/50">
+                {/* System Settings Footer */}
+                <div className="p-3.5 border-t border-zinc-100 shrink-0 bg-zinc-50/40">
                     <button
                         type="button"
-                        onClick={() => {
-                            setIsSettingsOpen(true);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 transition-none min-h-[3rem]"
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 active:scale-[0.99] transition-none cursor-pointer"
                     >
-                        <Settings className="w-5 h-5 text-gray-500" />
-                        Ajustes del Sistema
+                        <Settings className="w-[18px] h-[18px] text-zinc-400 shrink-0" />
+                        <span>Ajustes del Sistema</span>
                     </button>
                 </div>
             </aside>
-            <PWASettingsModal 
-                isOpen={isSettingsOpen} 
-                onClose={() => setIsSettingsOpen(false)} 
+
+            <PWASettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
             />
         </>
     );

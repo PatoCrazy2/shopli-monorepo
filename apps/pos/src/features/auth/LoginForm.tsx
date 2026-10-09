@@ -25,7 +25,7 @@ function getDeterministicHash(seed: string): number {
     return Math.abs(hash);
 }
 
-function UserAvatar({ id, name, size = 40 }: { id: string; name?: string | null; size?: number }) {
+export function UserAvatar({ id, name, size = 40 }: { id: string; name?: string | null; size?: number }) {
     const seed = `${id || ''}-${name || 'user'}`;
     const hash = getDeterministicHash(seed);
     const [colorStart, colorEnd] = AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
