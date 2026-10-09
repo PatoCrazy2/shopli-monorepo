@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ShoppingCart, Package, Wallet, History, X, Lock, Settings, ClipboardCheck } from "lucide-react";
+import { ShoppingCart, Package, Wallet, History, Lock, Settings, ClipboardCheck, Check } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../lib/db";
 import { PWASettingsModal } from "../PWASettingsModal";
@@ -41,46 +41,31 @@ export default function Sidebar({ isOpen, onClose, onOpenExpense }: SidebarProps
 
     return (
         <>
-            {/* Backdrop */}
+            {/* Backdrop invisible/suave para cerrar tocando afuera */}
             <div
-                className="fixed inset-0 bg-black/25 backdrop-blur-[1px] z-40 transition-none"
+                className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[1px]"
                 onClick={onClose}
             />
 
-            {/* Modern Sheet Drawer */}
-            <aside className="fixed top-0 left-0 h-dvh w-[82vw] max-w-[300px] bg-white rounded-r-3xl border-r border-zinc-200/80 z-50 flex flex-col shadow-2xl select-none overflow-hidden">
-                {/* Cashier Profile Card Header */}
-                <div className="p-4 pb-3 border-b border-zinc-100 shrink-0">
-                    <div className="flex items-center justify-between gap-2">
-                        {user ? (
-                            <div className="flex items-center gap-3 min-w-0 flex-1 bg-zinc-50 border border-zinc-200/70 rounded-full p-1.5 pr-3.5">
-                                <UserAvatar id={user.id} name={user.name} size={36} />
-                                <div className="min-w-0 flex-1 text-left">
-                                    <p className="text-sm font-bold text-zinc-900 truncate leading-tight">
-                                        {user.name}
-                                    </p>
-                                    <p className="text-[11px] font-medium text-zinc-500 truncate leading-tight mt-0.5">
-                                        {user.branchName || user.role}
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-base font-bold text-zinc-900 px-2">Menú</span>
-                        )}
-
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            aria-label="Cerrar menú"
-                            className="w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 flex items-center justify-center shrink-0 active:scale-95 cursor-pointer"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
+            {/* Popover Card flotante tipo Select */}
+            <div className="fixed top-14 left-3 sm:left-6 w-[290px] sm:w-[310px] bg-white rounded-3xl border border-zinc-200/90 shadow-2xl z-50 p-2 flex flex-col select-none overflow-hidden max-h-[calc(100dvh-4.5rem)]">
+                {/* Encabezado: Contexto del Cajero */}
+                {user && (
+                    <div className="px-3 py-2.5 flex items-center gap-2.5 bg-zinc-50 border border-zinc-200/60 rounded-2xl mb-1 shrink-0">
+                        <UserAvatar id={user.id} name={user.name} size={32} />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-zinc-900 truncate leading-tight">
+                                {user.name}
+                            </p>
+                            <p className="text-[10px] font-medium text-zinc-500 truncate leading-tight mt-0.5">
+                                {user.branchName || user.role}
+                            </p>
+                        </div>
                     </div>
-                </div>
+                )}
 
-                {/* Navigation Links */}
-                <nav className="flex-1 overflow-y-auto py-4 px-3.5 flex flex-col gap-1.5">
+                {/* Lista de Vistas (Estilo Select con Check) */}
+                <div className="flex flex-col gap-0.5 py-1 overflow-y-auto custom-scrollbar">
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -93,52 +78,59 @@ export default function Sidebar({ isOpen, onClose, onOpenExpense }: SidebarProps
                                 onClose();
                             }}
                             className={({ isActive }) =>
-                                `flex items-center gap-3.5 px-4 py-3.5 rounded-full text-sm transition-none ${
+                                `flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs sm:text-sm transition-none cursor-pointer ${
                                     item.disabled
-                                        ? "opacity-45 cursor-not-allowed bg-zinc-50 text-zinc-400 font-medium"
+                                        ? "opacity-45 cursor-not-allowed text-zinc-400 font-medium"
                                         : isActive
-                                        ? "bg-black text-white font-semibold shadow-xs"
-                                        : "text-zinc-700 hover:bg-zinc-100 active:bg-zinc-200/70 font-medium"
+                                        ? "bg-zinc-100 text-zinc-950 font-bold"
+                                        : "text-zinc-700 hover:bg-zinc-50 active:bg-zinc-100 font-medium"
                                 }`
                             }
                         >
-                            <div className="relative flex items-center justify-center shrink-0">
-                                <item.icon className="w-[18px] h-[18px]" />
-                                {item.disabled && (
-                                    <Lock className="w-3 h-3 absolute -top-1 -right-1.5 text-red-500" />
-                                )}
-                            </div>
-                            <span className="truncate">{item.label}</span>
+                            {({ isActive }) => (
+                                <>
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <item.icon className="w-4 h-4 text-zinc-500 shrink-0" />
+                                        <span className="truncate">{item.label}</span>
+                                        {item.disabled && (
+                                            <Lock className="w-3 h-3 text-red-500 shrink-0" />
+                                        )}
+                                    </div>
+                                    {isActive && !item.disabled && (
+                                        <Check className="w-4 h-4 text-zinc-900 shrink-0" />
+                                    )}
+                                </>
+                            )}
                         </NavLink>
                     ))}
+                </div>
 
+                <div className="h-px bg-zinc-100 my-1 shrink-0" />
+
+                {/* Acciones Secundarias */}
+                <div className="flex flex-col gap-0.5 shrink-0">
                     <button
                         type="button"
                         onClick={() => {
                             onClose();
                             onOpenExpense();
                         }}
-                        className="flex items-center gap-3.5 px-4 py-3.5 rounded-full text-sm text-zinc-700 hover:bg-zinc-100 active:bg-zinc-200/70 font-medium transition-none text-left cursor-pointer"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm text-zinc-700 hover:bg-zinc-50 active:bg-zinc-100 font-medium text-left cursor-pointer transition-none"
                     >
-                        <div className="relative flex items-center justify-center shrink-0">
-                            <Wallet className="w-[18px] h-[18px] text-zinc-500" />
-                        </div>
+                        <Wallet className="w-4 h-4 text-zinc-500 shrink-0" />
                         <span className="truncate">Gasto Caja Chica</span>
                     </button>
-                </nav>
 
-                {/* System Settings Footer */}
-                <div className="p-3.5 border-t border-zinc-100 shrink-0 bg-zinc-50/40">
                     <button
                         type="button"
                         onClick={() => setIsSettingsOpen(true)}
-                        className="w-full flex items-center gap-3.5 px-4 py-3 rounded-full text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 active:scale-[0.99] transition-none cursor-pointer"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 active:bg-zinc-100 font-medium text-left cursor-pointer transition-none"
                     >
-                        <Settings className="w-[18px] h-[18px] text-zinc-400 shrink-0" />
-                        <span>Ajustes del Sistema</span>
+                        <Settings className="w-4 h-4 text-zinc-400 shrink-0" />
+                        <span className="truncate">Ajustes del Sistema</span>
                     </button>
                 </div>
-            </aside>
+            </div>
 
             <PWASettingsModal
                 isOpen={isSettingsOpen}

@@ -62,7 +62,7 @@ export default function MainLayout() {
                         <span className="text-sm font-semibold text-zinc-900 tracking-tight">
                             {currentViewLabel}
                         </span>
-                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180 text-zinc-900' : ''}`} />
                     </button>
 
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-zinc-200/80 rounded-full shadow-2xs select-none">
