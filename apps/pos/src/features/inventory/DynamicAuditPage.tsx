@@ -1,170 +1,26 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { ClipboardCheck, Minus, Plus, ArrowLeft, ArrowRight, Check } from "lucide-react";
-import { db } from "../../lib/db";
-import { useAuth } from "../../contexts/AuthContext";
-import type { LocalProduct } from "../../lib/db";
+import { useDynamicAudit } from "./hooks/useDynamicAudit";
 
 export default function DynamicAuditPage() {
-    const navigate = useNavigate();
-    const { user } = useAuth();
-    const [products, setProducts] = useState<LocalProduct[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [countedAmount, setCountedAmount] = useState<string>("");
-    const [auditId, setAuditId] = useState<string>("");
-    const [isStarted, setIsStarted] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    const filterParentProducts = (allProds: LocalProduct[]) => {
-        const parentIds = new Set<string>();
-        allProds.forEach(p => {
-            if (p.parent_id) {
-                parentIds.add(p.parent_id);
-            }
-        });
-        return allProds.filter(p => !parentIds.has(p.id));
-    };
-
-    // Check if an audit is already in progress and pre-load auditable product count
-    useEffect(() => {
-        const checkExisting = async () => {
-            try {
-                const [activeId, allProducts] = await Promise.all([
-                    db.meta.get('active_audit_id'),
-                    db.products.toArray()
-                ]);
-                setProducts(filterParentProducts(allProducts));
-                if (activeId) {
-                    setAuditId(activeId.value);
-                    setIsStarted(true);
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        checkExisting();
-    }, []);
-
-    const handleStartAudit = async () => {
-        if (!user?.branchId) {
-            alert("No se pudo determinar la sucursal activa. Por favor reinicia sesión.");
-            return;
-        }
-
-        const allProducts = await db.products.toArray();
-        const auditableProducts = filterParentProducts(allProducts);
-        if (auditableProducts.length === 0) return;
-
-        setProducts(auditableProducts);
-
-        const newAuditId = crypto.randomUUID();
-        setAuditId(newAuditId);
-        setIsStarted(true);
-        
-        await db.transaction('rw', db.meta, db.dynamicAudits, async () => {
-            await db.dynamicAudits.add({
-                id: newAuditId,
-                branchId: user.branchId,
-                startedAt: new Date().toISOString(),
-                sync_status: 'PENDING'
-            });
-            await db.meta.put({ key: 'active_audit_id', value: newAuditId });
-        });
-    };
-
-    // Fetch existing count if we navigate back
-    useEffect(() => {
-        const fetchCurrentCount = async () => {
-            if (products.length === 0 || !auditId) return;
-            const currentProduct = products[currentIndex];
-            const existing = await db.dynamicAuditItems
-                .filter(item => item.auditId === auditId && item.productId === currentProduct.id)
-                .first();
-            
-            if (existing && existing.countedQuantity !== null) {
-                setCountedAmount(existing.countedQuantity.toString());
-            } else {
-                setCountedAmount("");
-            }
-            
-            // Auto-focus input
-            if (inputRef.current) {
-                inputRef.current.focus();
-            }
-        };
-
-        fetchCurrentCount();
-    }, [currentIndex, products, auditId]);
-
-    const handleNext = async () => {
-        if (!countedAmount || isNaN(Number(countedAmount))) return;
-        
-        const currentProduct = products[currentIndex];
-        const currentTime = new Date().toISOString();
-        
-        // Find if it already exists
-        const existing = await db.dynamicAuditItems
-            .filter(item => item.auditId === auditId && item.productId === currentProduct.id)
-            .first();
-
-        if (existing) {
-            await db.dynamicAuditItems.update(existing.id, {
-                countedQuantity: Number(countedAmount),
-                countedAt: currentTime,
-                sync_status: 'PENDING'
-            });
-        } else {
-            await db.dynamicAuditItems.add({
-                id: crypto.randomUUID(),
-                auditId,
-                productId: currentProduct.id,
-                countedQuantity: Number(countedAmount),
-                countedAt: currentTime,
-                sync_status: 'PENDING'
-            });
-        }
-
-        if (currentIndex < products.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        } else {
-            // Finalize: Clear the active audit block
-            await db.meta.delete('active_audit_id');
-            navigate("/inventario");
-        }
-    };
-
-    const handlePrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(prev => prev - 1);
-        }
-    };
-
-    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        if (val === "" || /^\d+$/.test(val)) {
-            setCountedAmount(val);
-        }
-    };
-
-    const handleIncrement = () => {
-        const current = countedAmount === "" ? 0 : parseInt(countedAmount, 10);
-        setCountedAmount(String((isNaN(current) ? 0 : current) + 1));
-    };
-
-    const handleDecrement = () => {
-        const current = countedAmount === "" ? 0 : parseInt(countedAmount, 10);
-        const next = Math.max(0, (isNaN(current) ? 0 : current) - 1);
-        setCountedAmount(String(next));
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && countedAmount !== "") {
-            e.preventDefault();
-            handleNext();
-        }
-    };
+    const {
+        products,
+        currentIndex,
+        currentProduct,
+        countedAmount,
+        isStarted,
+        isLoading,
+        progressPercent,
+        isLastProduct,
+        canDecrement,
+        inputRef,
+        handleStartAudit,
+        handleNext,
+        handlePrev,
+        handleAmountChange,
+        handleIncrement,
+        handleDecrement,
+        handleKeyDown,
+    } = useDynamicAudit();
 
     if (!isStarted) {
         return (
@@ -209,18 +65,13 @@ export default function DynamicAuditPage() {
         );
     }
 
-    if (products.length === 0) {
+    if (products.length === 0 || !currentProduct) {
         return (
             <div className="flex flex-col w-full h-full bg-zinc-50 items-center justify-center p-6 text-center text-xs sm:text-sm text-zinc-400 font-medium font-sans">
                 Cargando productos...
             </div>
         );
     }
-
-    const currentProduct = products[currentIndex];
-    const progressPercent = Math.round(((currentIndex + 1) / products.length) * 100);
-    const isLastProduct = currentIndex === products.length - 1;
-    const canDecrement = countedAmount !== "" && Number(countedAmount) > 0;
 
     return (
         <div className="flex flex-col justify-between w-full h-full bg-zinc-50 p-4 sm:p-8 select-none font-sans overflow-y-auto">
