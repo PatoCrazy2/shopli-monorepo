@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "ShopLI",
     description: "Panel de administración y reconciliación de ShopLI",
     id: "/dashboard",
-    start_url: "/dashboard",
+    start_url: "/dashboard/inicio",
     scope: "/",
     display: "standalone",
     display_override: ["window-controls-overlay", "standalone", "minimal-ui"],

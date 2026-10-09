@@ -36,4 +36,11 @@ describe("Etapa 3: PWA Offline Fallback y Service Worker v3", () => {
     expect(content).toContain("Sin conexión");
     expect(content).toContain("Reintentar");
   });
+
+  it("el manifest tiene start_url directo a /dashboard/inicio e id /dashboard", async () => {
+    const manifestModule = await import("../../app/manifest");
+    const manifestData = manifestModule.default();
+    expect(manifestData.start_url).toBe("/dashboard/inicio");
+    expect(manifestData.id).toBe("/dashboard");
+  });
 });
