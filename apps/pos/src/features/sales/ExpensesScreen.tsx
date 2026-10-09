@@ -82,13 +82,13 @@ export default function ExpensesScreen() {
                 </div>
             </div>
 
-            {/* Summary Banner de 2 Columnas Balanceadas (Idéntico a Historial de Ventas) */}
-            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-2xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
+            {/* Summary Banner de 2 Columnas Balanceadas */}
+            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-3xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
                 <div className="pr-3 sm:pr-5 flex flex-col justify-center">
                     <span className="text-zinc-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block mb-1">
                         Total Retirado (Turno)
                     </span>
-                    <span className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight truncate">
+                    <span className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight tabular-nums truncate">
                         -{formatMoney(Number(totalExpenses))}
                     </span>
                 </div>
@@ -97,7 +97,7 @@ export default function ExpensesScreen() {
                         Salidas Registradas
                     </span>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+                        <span className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight tabular-nums">
                             {sortedExpenses.length}
                         </span>
                         <span className="text-xs sm:text-sm text-zinc-400 font-medium">
@@ -113,7 +113,7 @@ export default function ExpensesScreen() {
                 <div className="md:col-span-5 lg:col-span-4 flex flex-col shrink-0">
                     <form
                         onSubmit={handleSave}
-                        className="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/80 shadow-xs flex flex-col gap-4"
+                        className="bg-white rounded-3xl p-4 sm:p-5 border border-zinc-200/80 shadow-xs flex flex-col gap-4"
                     >
                         <div className="border-b border-zinc-100 pb-3">
                             <h2 className="text-sm sm:text-base font-extrabold tracking-tight text-zinc-900">
@@ -124,16 +124,16 @@ export default function ExpensesScreen() {
                             </p>
                         </div>
 
-                        {/* Input de Monto */}
+                        {/* Input de Monto estilo Píldora */}
                         <div className="space-y-1.5">
                             <label
                                 htmlFor="expenseAmount"
-                                className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block"
+                                className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block text-center"
                             >
                                 Monto del Gasto
                             </label>
                             <div
-                                className="w-full bg-zinc-50/70 border border-zinc-200 rounded-xl py-2.5 px-4 shadow-2xs focus-within:bg-white focus-within:ring-2 focus-within:ring-black/10 focus-within:border-zinc-400 flex items-center justify-center transition-all cursor-text"
+                                className="w-full bg-zinc-50/70 border border-zinc-200 rounded-full py-2.5 px-5 shadow-2xs focus-within:bg-white focus-within:ring-2 focus-within:ring-black/10 focus-within:border-zinc-400 flex items-center justify-center transition-all cursor-text"
                                 onClick={() => document.getElementById('expenseAmount')?.focus()}
                             >
                                 <div className="inline-flex items-center justify-center">
@@ -159,11 +159,11 @@ export default function ExpensesScreen() {
                             </div>
                         </div>
 
-                        {/* Input de Motivo / Descripción */}
+                        {/* Input de Motivo / Descripción estilo Píldora */}
                         <div className="space-y-2">
                             <label
                                 htmlFor="expenseDescription"
-                                className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block"
+                                className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 block px-1"
                             >
                                 Motivo o Concepto
                             </label>
@@ -176,7 +176,7 @@ export default function ExpensesScreen() {
                                     setDescription(e.target.value);
                                     if (error) setError(null);
                                 }}
-                                className="w-full h-11 px-3.5 bg-zinc-50/70 border border-zinc-200 rounded-xl text-xs sm:text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all shadow-2xs"
+                                className="w-full h-11 sm:h-12 px-4 bg-zinc-50/70 border border-zinc-200 rounded-full text-xs sm:text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all shadow-2xs"
                             />
 
                             {/* Chips Rápidos de Conceptos Frecuentes */}
@@ -191,7 +191,7 @@ export default function ExpensesScreen() {
                                                 setDescription(concept);
                                                 if (error) setError(null);
                                             }}
-                                            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-none active:scale-95 cursor-pointer ${
+                                            className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-none active:scale-95 cursor-pointer ${
                                                 isSelected
                                                     ? 'bg-black text-white border-black'
                                                     : 'bg-zinc-50 text-zinc-600 border-zinc-200/80 hover:bg-zinc-100'
@@ -205,14 +205,14 @@ export default function ExpensesScreen() {
                         </div>
 
                         {error && (
-                            <div className="p-2.5 bg-red-50 border border-red-200/80 rounded-xl text-red-600 text-xs font-semibold flex items-center justify-center gap-2">
+                            <div className="px-4 py-2.5 bg-red-50 border border-red-200/80 rounded-full text-red-600 text-xs font-semibold flex items-center justify-center gap-2">
                                 <AlertCircle className="w-4 h-4 shrink-0" />
                                 <span>{error}</span>
                             </div>
                         )}
 
                         {justSaved && (
-                            <div className="p-2.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-700 text-xs font-semibold flex items-center justify-center gap-2">
+                            <div className="px-4 py-2.5 bg-emerald-50 border border-emerald-200/80 rounded-full text-emerald-700 text-xs font-semibold flex items-center justify-center gap-2">
                                 <Check className="w-4 h-4 shrink-0 stroke-[2.5]" />
                                 <span>Gasto registrado correctamente</span>
                             </div>
@@ -221,7 +221,7 @@ export default function ExpensesScreen() {
                         <button
                             type="submit"
                             disabled={isSaving || !amount || !description.trim()}
-                            className="w-full h-11 sm:h-12 bg-black text-white rounded-xl font-bold text-sm shadow-sm hover:bg-zinc-800 active:scale-[0.98] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none transition-transform cursor-pointer disabled:cursor-not-allowed mt-1"
+                            className="w-full h-12 bg-black text-white rounded-full font-bold text-sm shadow-sm hover:bg-zinc-800 active:scale-[0.98] disabled:bg-zinc-200 disabled:text-zinc-400 disabled:shadow-none transition-transform cursor-pointer disabled:cursor-not-allowed mt-1"
                         >
                             {isSaving ? 'Guardando...' : 'Registrar Salida'}
                         </button>
@@ -231,17 +231,19 @@ export default function ExpensesScreen() {
                 {/* Lado Derecho: Lista de Salidas del Turno (Full Canvas Scroll) */}
                 <div className="md:col-span-7 lg:col-span-8 flex flex-col min-h-0">
                     <div className="flex items-center justify-between pb-3 px-1">
-                        <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                            Movimientos del Turno Actual
-                        </span>
-                        <span className="text-xs font-mono font-semibold text-zinc-400">
-                            {sortedExpenses.length} registro{sortedExpenses.length === 1 ? '' : 's'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                                Movimientos del Turno Actual
+                            </span>
+                            <span className="w-5 h-5 rounded-full bg-zinc-200/80 text-zinc-700 text-[11px] font-extrabold flex items-center justify-center tabular-nums">
+                                {sortedExpenses.length}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pr-0.5">
                         {sortedExpenses.length === 0 ? (
-                            <div className="h-full min-h-[220px] bg-white rounded-2xl border border-zinc-200/70 p-8 text-center flex flex-col items-center justify-center gap-2 shadow-2xs">
+                            <div className="h-full min-h-[220px] bg-white rounded-3xl border border-zinc-200/70 p-8 text-center flex flex-col items-center justify-center gap-2 shadow-2xs">
                                 <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center">
                                     <Banknote className="w-6 h-6 stroke-[1.5]" />
                                 </div>
@@ -256,10 +258,10 @@ export default function ExpensesScreen() {
                             sortedExpenses.map((gasto) => (
                                 <div
                                     key={gasto.id}
-                                    className="bg-white p-4 rounded-xl shadow-xs border border-zinc-200/80 flex items-center justify-between hover:bg-zinc-50/80 transition-colors"
+                                    className="bg-white p-4 rounded-2xl shadow-xs border border-zinc-200/80 flex items-center justify-between hover:bg-zinc-50/80 transition-colors"
                                 >
                                     <div className="flex items-center gap-3.5 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-100 text-red-600 flex items-center justify-center shrink-0">
+                                        <div className="w-10 h-10 rounded-full bg-red-50 border border-red-100 text-red-600 flex items-center justify-center shrink-0">
                                             <Banknote className="w-5 h-5 stroke-[2]" />
                                         </div>
                                         <div className="min-w-0">
@@ -283,7 +285,7 @@ export default function ExpensesScreen() {
                                         <span className="text-base sm:text-lg font-black text-red-600 tabular-nums tracking-tight">
                                             -{formatMoney(Number(gasto.monto))}
                                         </span>
-                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider bg-zinc-100 px-2 py-0.5 rounded-full mt-0.5">
+                                        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider bg-zinc-100 border border-zinc-200/60 px-2.5 py-0.5 rounded-full mt-0.5">
                                             Turno Activo
                                         </span>
                                     </div>
