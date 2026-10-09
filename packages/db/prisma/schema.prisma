@@ -247,6 +247,8 @@ model DynamicAudit {
   iniciadaPor     User?       @relation("AuditIniciadaPor", fields: [iniciadaPorId], references: [id], onDelete: SetNull)
   finalizadaPor   User?       @relation("AuditFinalizadaPor", fields: [finalizadaPorId], references: [id], onDelete: SetNull)
   items           DynamicAuditItem[]
+
+  @@index([sucursalId, startedAt])
 }
 
 model DynamicAuditItem {
@@ -263,6 +265,8 @@ model DynamicAuditItem {
   audit           DynamicAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
   producto        Producto     @relation(fields: [productId], references: [id], onDelete: Restrict)
   contadoPor      User?        @relation("AuditItemContadoPor", fields: [contadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([auditId])
 }
 
 model MovimientoInventario {
