@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import { 
     AlertTriangle, Activity, ShoppingBag, Landmark, Store, Users,
-    ChevronDown, Check
+    ChevronDown, Check, Calendar as CalendarIcon
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
@@ -17,6 +17,22 @@ type FilterOptions = {
     sucursales: { id: string; nombre: string }[];
     usuarios: { id: string; name: string }[];
 };
+
+function getSafeDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatShortRange(start?: string, end?: string): string {
+  if (!start || !end) return "Rango";
+  const sParts = start.split("-");
+  const eParts = end.split("-");
+  if (sParts.length !== 3 || eParts.length !== 3) return "Rango";
+  if (start === end) return `${sParts[2]}/${sParts[1]}`;
+  return `${sParts[2]}/${sParts[1]} - ${eParts[2]}/${eParts[1]}`;
+}
 
 export function AnalyticsClient({ 
     initialData, 
@@ -27,14 +43,40 @@ export function AnalyticsClient({
     initialFilters: AnalyticsFilters, 
     options: FilterOptions
 }) {
+  const todayDefault = initialFilters.endDate || getSafeDateString(new Date());
   const [data, setData] = useState<AnalyticsData>(initialData);
   const [filters, setFilters] = useState<AnalyticsFilters>(initialFilters);
-  const [preset, setPreset] = useState<"hoy" | "7d" | "30d" | "ytd" | "todo">("todo");
+  const [preset, setPreset] = useState<"hoy" | "7d" | "30d" | "ytd" | "custom">("hoy");
+  const [rangeOpen, setRangeOpen] = useState(false);
+  const [customStart, setCustomStart] = useState<string>(initialFilters.startDate || todayDefault);
+  const [customEnd, setCustomEnd] = useState<string>(initialFilters.endDate || todayDefault);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"finanzas" | "operaciones" | "catalogo">("finanzas");
 
   const isFirstRender = useRef(true);
+  const rangePopoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (rangePopoverRef.current && !rangePopoverRef.current.contains(event.target as Node)) {
+        setRangeOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setRangeOpen(false);
+      }
+    }
+    if (rangeOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [rangeOpen]);
 
   const loadData = async () => {
     setLoading(true);
@@ -62,26 +104,56 @@ export function AnalyticsClient({
     setFilters(prev => ({ ...prev, [key]: val || undefined }));
   };
 
-  const handlePreset = (p: "hoy" | "7d" | "30d" | "ytd" | "todo") => {
+  const handlePreset = (p: "hoy" | "7d" | "30d" | "ytd" | "custom") => {
+    if (p === "custom") {
+      setRangeOpen((prev) => !prev);
+      return;
+    }
+
+    setRangeOpen(false);
     setPreset(p);
     const now = new Date();
-    if (p === "todo") {
-      setFilters(prev => ({ ...prev, startDate: undefined, endDate: undefined }));
-    } else if (p === "hoy") {
-      const today = now.toISOString().split("T")[0];
+    const today = getSafeDateString(now);
+
+    if (p === "hoy") {
+      setCustomStart(today);
+      setCustomEnd(today);
       setFilters(prev => ({ ...prev, startDate: today, endDate: today }));
     } else if (p === "7d") {
       const d = new Date(now);
       d.setDate(d.getDate() - 7);
-      setFilters(prev => ({ ...prev, startDate: d.toISOString().split("T")[0], endDate: now.toISOString().split("T")[0] }));
+      const start = getSafeDateString(d);
+      setCustomStart(start);
+      setCustomEnd(today);
+      setFilters(prev => ({ ...prev, startDate: start, endDate: today }));
     } else if (p === "30d") {
       const d = new Date(now);
       d.setDate(d.getDate() - 30);
-      setFilters(prev => ({ ...prev, startDate: d.toISOString().split("T")[0], endDate: now.toISOString().split("T")[0] }));
+      const start = getSafeDateString(d);
+      setCustomStart(start);
+      setCustomEnd(today);
+      setFilters(prev => ({ ...prev, startDate: start, endDate: today }));
     } else if (p === "ytd") {
-      const start = new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0];
-      setFilters(prev => ({ ...prev, startDate: start, endDate: now.toISOString().split("T")[0] }));
+      const start = getSafeDateString(new Date(now.getFullYear(), 0, 1));
+      setCustomStart(start);
+      setCustomEnd(today);
+      setFilters(prev => ({ ...prev, startDate: start, endDate: today }));
     }
+  };
+
+  const handleApplyCustomRange = () => {
+    if (!customStart || !customEnd) return;
+    const [normalizedStart, normalizedEnd] =
+      customStart <= customEnd ? [customStart, customEnd] : [customEnd, customStart];
+    setCustomStart(normalizedStart);
+    setCustomEnd(normalizedEnd);
+    setPreset("custom");
+    setRangeOpen(false);
+    setFilters(prev => ({
+      ...prev,
+      startDate: normalizedStart,
+      endDate: normalizedEnd,
+    }));
   };
 
   return (
@@ -98,30 +170,105 @@ export function AnalyticsClient({
 
         {/* Filters: 3 columnas iguales en móvil para que nunca se desborden ni salga barra lateral */}
         <div className="grid grid-cols-3 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-          {/* Preset Buttons for Desktop */}
-          <div className="hidden sm:flex gap-0.5 p-0.5 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0">
-            <PresetButton active={preset === "hoy"} onClick={() => handlePreset("hoy")}>Hoy</PresetButton>
-            <PresetButton active={preset === "7d"} onClick={() => handlePreset("7d")}>7d</PresetButton>
-            <PresetButton active={preset === "30d"} onClick={() => handlePreset("30d")}>30d</PresetButton>
-            <PresetButton active={preset === "ytd"} onClick={() => handlePreset("ytd")}>YTD</PresetButton>
-            <PresetButton active={preset === "todo"} onClick={() => handlePreset("todo")}>Todo</PresetButton>
-          </div>
+          {/* Contenedor de Presets y Popover de Rango Personalizado */}
+          <div ref={rangePopoverRef} className="relative min-w-0 shrink-0">
+            {/* Preset Buttons for Desktop */}
+            <div className="hidden sm:flex gap-0.5 p-0.5 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0">
+              <PresetButton active={preset === "hoy" && !rangeOpen} onClick={() => handlePreset("hoy")}>Hoy</PresetButton>
+              <PresetButton active={preset === "7d" && !rangeOpen} onClick={() => handlePreset("7d")}>7d</PresetButton>
+              <PresetButton active={preset === "30d" && !rangeOpen} onClick={() => handlePreset("30d")}>30d</PresetButton>
+              <PresetButton active={preset === "ytd" && !rangeOpen} onClick={() => handlePreset("ytd")}>YTD</PresetButton>
+              <PresetButton active={preset === "custom" || rangeOpen} onClick={() => handlePreset("custom")}>
+                <span className="inline-flex items-center gap-1">
+                  <CalendarIcon size={10} className="shrink-0" />
+                  <span>{preset === "custom" ? formatShortRange(filters.startDate, filters.endDate) : "Rango"}</span>
+                </span>
+              </PresetButton>
+            </div>
 
-          {/* Preset Select for Mobile */}
-          <div className="sm:hidden min-w-0">
-            <CustomSelect
-              value={preset}
-              onChange={(val) => handlePreset(val as any)}
-              placeholder="Rango"
-              options={[
-                { value: "hoy", label: "Hoy" },
-                { value: "7d", label: "7 días" },
-                { value: "30d", label: "30 días" },
-                { value: "ytd", label: "YTD" },
-                { value: "todo", label: "Todo" }
-              ]}
-              className="w-full"
-            />
+            {/* Preset Select for Mobile */}
+            <div className="sm:hidden min-w-0">
+              <CustomSelect
+                value={preset}
+                onChange={(val) => handlePreset((val || "hoy") as any)}
+                placeholder="Hoy"
+                allowEmpty={false}
+                options={[
+                  { value: "hoy", label: "Hoy" },
+                  { value: "7d", label: "7 días" },
+                  { value: "30d", label: "30 días" },
+                  { value: "ytd", label: "YTD" },
+                  {
+                    value: "custom",
+                    label: preset === "custom"
+                      ? formatShortRange(filters.startDate, filters.endDate)
+                      : "Elegir rango...",
+                  }
+                ]}
+                className="w-full"
+              />
+            </div>
+
+            {/* Popover de Rango de Fechas (Inicio y Fin) */}
+            {rangeOpen && (
+              <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 z-50 w-[250px] sm:w-[270px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-3.5 shadow-lg animate-in fade-in zoom-in-95 duration-100">
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                    Rango de fechas
+                  </span>
+                  <span className="text-[9px] font-mono text-zinc-400">
+                    Máx. 1 año
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+                      Fecha inicio
+                    </label>
+                    <input
+                      type="date"
+                      value={customStart}
+                      max={customEnd || todayDefault}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-900 dark:focus:border-zinc-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
+                      Fecha fin
+                    </label>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      min={customStart}
+                      max={todayDefault}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="w-full h-8 px-2.5 text-xs font-mono rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 outline-none focus:border-zinc-900 dark:focus:border-zinc-100"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-zinc-100 dark:border-zinc-900">
+                    <button
+                      type="button"
+                      onClick={() => setRangeOpen(false)}
+                      className="h-7 px-2.5 rounded-lg text-[11px] font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyCustomRange}
+                      disabled={!customStart || !customEnd}
+                      className="h-7 px-3 rounded-lg text-[11px] font-semibold bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      Aplicar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sucursal Select */}
@@ -476,12 +623,14 @@ function CustomSelect({
   onChange,
   options,
   placeholder,
+  allowEmpty = true,
   className
 }: {
   value: string;
   onChange: (val: string) => void;
   options: CustomSelectOption[];
   placeholder: string;
+  allowEmpty?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -522,22 +671,24 @@ function CustomSelect({
 
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 min-w-[130px] sm:min-w-[150px] max-h-56 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950 text-[10px] sm:text-xs font-mono animate-in fade-in zoom-in-95 duration-100">
-          <button
-            type="button"
-            onClick={() => {
-              onChange("");
-              setOpen(false);
-            }}
-            className={cn(
-              "w-full px-2.5 py-1.5 text-left rounded-lg transition-colors flex items-center justify-between",
-              value === ""
-                ? "bg-zinc-100 dark:bg-zinc-900 font-bold text-zinc-900 dark:text-zinc-100"
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
-            )}
-          >
-            <span>{placeholder}</span>
-            {value === "" && <Check size={12} className="text-zinc-900 dark:text-zinc-100 shrink-0" />}
-          </button>
+          {allowEmpty && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className={cn(
+                "w-full px-2.5 py-1.5 text-left rounded-lg transition-colors flex items-center justify-between",
+                value === ""
+                  ? "bg-zinc-100 dark:bg-zinc-900 font-bold text-zinc-900 dark:text-zinc-100"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+              )}
+            >
+              <span>{placeholder}</span>
+              {value === "" && <Check size={12} className="text-zinc-900 dark:text-zinc-100 shrink-0" />}
+            </button>
+          )}
           {options.map(opt => {
             const isSelected = opt.value === value;
             return (

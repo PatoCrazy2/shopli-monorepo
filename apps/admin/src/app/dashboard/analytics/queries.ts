@@ -2,6 +2,30 @@ import { db, Prisma } from "@shopli/db";
 import { AnalyticsFilters, AnalyticsData, CategoryPerformance, ProductPerformance } from "./types";
 import { auth } from "@/lib/auth";
 
+export function getTodayMexicoCity(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  if (year && month && day) {
+    return `${year}-${month}-${day}`;
+  }
+
+  const now = new Date();
+  const cdmxDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const y = cdmxDate.getUTCFullYear();
+  const m = String(cdmxDate.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(cdmxDate.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export async function getAnalyticsData(filters: AnalyticsFilters): Promise<AnalyticsData> {
   const session = await auth();
   if (!session?.user?.empresa_id) throw new Error("No autorizado");
@@ -32,23 +56,23 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       }
     }
 
-    // 2. Validación y clamping de fechas (máximo 366 días para proteger Neon)
+    // 2. Validación y clamping de fechas (por defecto Hoy CDMX; máximo 366 días para proteger Neon)
     const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+    const todayStr = getTodayMexicoCity();
     const startDateClean = filters.startDate && DATE_REGEX.test(filters.startDate) ? filters.startDate : undefined;
     const endDateClean = filters.endDate && DATE_REGEX.test(filters.endDate) ? filters.endDate : undefined;
 
-    let sDate: Date | undefined;
-    let eDate: Date | undefined;
+    let sDate: Date;
+    let eDate: Date;
 
     if (startDateClean && endDateClean) {
-      sDate = new Date(`${startDateClean}T00:00:00.000-06:00`);
-      eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
-      
-      if (sDate > eDate) {
-        const tmp = sDate;
-        sDate = eDate;
-        eDate = tmp;
-      }
+      const [minDateStr, maxDateStr] =
+        startDateClean <= endDateClean
+          ? [startDateClean, endDateClean]
+          : [endDateClean, startDateClean];
+
+      sDate = new Date(`${minDateStr}T00:00:00.000-06:00`);
+      eDate = new Date(`${maxDateStr}T23:59:59.999-06:00`);
 
       const diffMs = eDate.getTime() - sDate.getTime();
       const maxMs = 366 * 24 * 60 * 60 * 1000;
@@ -61,6 +85,9 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
     } else if (endDateClean) {
       eDate = new Date(`${endDateClean}T23:59:59.999-06:00`);
       sDate = new Date(eDate.getTime() - 366 * 24 * 60 * 60 * 1000);
+    } else {
+      sDate = new Date(`${todayStr}T00:00:00.000-06:00`);
+      eDate = new Date(`${todayStr}T23:59:59.999-06:00`);
     }
 
     // 3. Construcción de condiciones SQL parametrizadas para Ventas
@@ -72,9 +99,7 @@ export async function getAnalyticsData(filters: AnalyticsFilters): Promise<Analy
       salesConditions.push(Prisma.sql`v.estado = ${filters.estado}::"EstadoVenta"`);
     }
 
-    if (sDate && eDate) {
-      salesConditions.push(Prisma.sql`v.fecha >= ${sDate} AND v.fecha <= ${eDate}`);
-    }
+    salesConditions.push(Prisma.sql`v.fecha >= ${sDate} AND v.fecha <= ${eDate}`);
 
     if (filters.sucursalId) {
       salesConditions.push(Prisma.sql`v.sucursal_id = ${filters.sucursalId}`);

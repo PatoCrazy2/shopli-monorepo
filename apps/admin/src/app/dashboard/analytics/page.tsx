@@ -1,4 +1,4 @@
-import { getAnalyticsData, getFilterOptions } from "./queries";
+import { getAnalyticsData, getFilterOptions, getTodayMexicoCity } from "./queries";
 import { AnalyticsClient } from "./_components/analytics-client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -44,8 +44,11 @@ export default async function AnalyticsPage() {
         );
     }
 
+    const today = getTodayMexicoCity();
     const initialFilters = {
-        estado: "COMPLETADA" as const
+        estado: "COMPLETADA" as const,
+        startDate: today,
+        endDate: today,
     };
 
     const [initialData, options] = await Promise.all([
