@@ -169,6 +169,7 @@ export function useDynamicAudit() {
   const [countedAmount, setCountedAmount] = useState<string>("");
   const [auditId, setAuditId] = useState<string>("");
   const [isStarted, setIsStarted] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -259,8 +260,12 @@ export function useDynamicAudit() {
         auditId,
         userId: user?.id ?? null,
       });
-      navigate("/inventario");
+      setIsFinished(true);
     }
+  };
+
+  const handleDismissSuccess = () => {
+    navigate("/inventario");
   };
 
   const handlePrev = () => {
@@ -306,6 +311,7 @@ export function useDynamicAudit() {
     currentProduct,
     countedAmount,
     isStarted,
+    isFinished,
     isLoading,
     progressPercent,
     isLastProduct,
@@ -318,5 +324,6 @@ export function useDynamicAudit() {
     handleIncrement,
     handleDecrement,
     handleKeyDown,
+    handleDismissSuccess,
   };
 }

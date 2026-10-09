@@ -1,4 +1,4 @@
-import { ClipboardCheck, Minus, Plus, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ClipboardCheck, Minus, Plus, ArrowLeft, ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import { useDynamicAudit } from "./hooks/useDynamicAudit";
 
 export default function DynamicAuditPage() {
@@ -8,6 +8,7 @@ export default function DynamicAuditPage() {
         currentProduct,
         countedAmount,
         isStarted,
+        isFinished,
         isLoading,
         progressPercent,
         isLastProduct,
@@ -20,7 +21,40 @@ export default function DynamicAuditPage() {
         handleIncrement,
         handleDecrement,
         handleKeyDown,
+        handleDismissSuccess,
     } = useDynamicAudit();
+
+    if (isFinished) {
+        return (
+            <div className="flex flex-col w-full h-full bg-zinc-50 px-4 py-8 items-center justify-center text-center select-none font-sans">
+                {/* Ícono de Éxito con estilo visual idéntico al corte de caja */}
+                <div className="w-16 h-16 rounded-full bg-emerald-100/80 border border-emerald-200 shadow-xs flex items-center justify-center mb-5 text-emerald-600 animate-in zoom-in-95 duration-200">
+                    <CheckCircle2 className="w-8 h-8" />
+                </div>
+
+                {/* Título y Mensaje de Conteo Ciego */}
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900 mb-2">
+                    ¡Auditoría Finalizada!
+                </h1>
+                <p className="text-xs sm:text-sm text-zinc-500 max-w-sm mb-2 leading-relaxed">
+                    Tus conteos físicos han sido registrados y enviados a la nube.
+                </p>
+                <p className="text-xs text-zinc-400 max-w-xs mb-8">
+                    El inventario esperado y los ajustes correspondientes se procesarán desde el panel de Administración.
+                </p>
+
+                {/* Botón de Retorno */}
+                <button
+                    type="button"
+                    onClick={handleDismissSuccess}
+                    className="flex items-center justify-center gap-2 w-full max-w-[240px] h-12 px-6 bg-black text-white rounded-full font-bold text-sm hover:bg-zinc-800 active:scale-95 transition-all shadow-sm shrink-0 cursor-pointer"
+                >
+                    <Check className="w-4 h-4 shrink-0" />
+                    <span>Volver al inventario</span>
+                </button>
+            </div>
+        );
+    }
 
     if (!isStarted) {
         return (

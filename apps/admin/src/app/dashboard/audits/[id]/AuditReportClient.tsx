@@ -123,14 +123,29 @@ export default function AuditReportClient({ audit }: { audit: TAudit }) {
                <FilterBtn active={filter === "MATCH"} onClick={() => setFilter("MATCH")} label="Correctos" />
             </div>
 
-            {audit.status === "CLOSED" && !audit.isApplied && (
+            {/* Estados de Acción para Ajustes */}
+            {audit.status === "OPEN" && (
+                <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 font-medium rounded-lg text-xs border border-amber-200 dark:border-amber-800/60 flex items-center gap-2">
+                   <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                   <span>Auditoría en curso en el POS. Los ajustes estarán disponibles al finalizar el conteo.</span>
+                </div>
+            )}
+
+            {audit.status === "CLOSED" && !audit.isApplied && discrepancyItems.length === 0 && (
+                <div className="px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-lg text-xs border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2">
+                   <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                   <span>Inventario exacto. Todos los conteos coincidieron, no se requieren ajustes.</span>
+                </div>
+            )}
+
+            {audit.status === "CLOSED" && !audit.isApplied && discrepancyItems.length > 0 && (
                 <button 
                     onClick={handleApply} 
                     disabled={isPending}
-                    className="w-full md:w-auto px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg"
+                    className="w-full md:w-auto px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                     {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isPending ? "Aplicando..." : "Aplicar Ajustes al Inventario"}
+                    {isPending ? "Aplicando ajustes..." : `Aplicar Ajustes (${discrepancyItems.length} diferencias)`}
                 </button>
             )}
             
