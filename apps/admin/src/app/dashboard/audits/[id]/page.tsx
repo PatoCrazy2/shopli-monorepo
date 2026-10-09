@@ -86,19 +86,7 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
   };
 
   return (
-    <div className="flex-1 w-full flex flex-col p-8 bg-zinc-50 border-s border-zinc-200">
-      <div className="flex justify-between items-center mb-8">
-         <div>
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Reporte de Auditoría</h1>
-            <p className="text-zinc-500 mt-2 text-sm leading-relaxed">
-                <span className="font-medium text-zinc-700">{formattedAudit.branchName}</span> &middot; 
-                Iniciada: {new Date(formattedAudit.startedAt).toLocaleString()} por {formattedAudit.startedBy} <br/>
-                Estado: {formattedAudit.status === 'OPEN' ? 'En Curso (Conteo Abierto)' : 'Cerrada (Conteo Finalizado)'} 
-                {formattedAudit.finishedAt && ` · Finalizada: ${new Date(formattedAudit.finishedAt).toLocaleString()} por ${formattedAudit.finishedBy}`}
-            </p>
-         </div>
-      </div>
-      
+    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-20">
       <AuditReportClient audit={formattedAudit} />
     </div>
   );
