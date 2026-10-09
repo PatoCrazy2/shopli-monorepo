@@ -3,10 +3,10 @@ import { Outlet, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "./Sidebar";
-import ExpenseModal from "../../features/sales/components/ExpenseModal";
 
 const VIEW_LABELS: Record<string, string> = {
     "/": "Ventas",
+    "/caja-chica": "Caja Chica",
     "/historial-ventas": "Historial",
     "/inventario": "Inventario",
     "/auditoria-dinamica": "Auditoría",
@@ -15,7 +15,6 @@ const VIEW_LABELS: Record<string, string> = {
 
 export default function MainLayout() {
     const { isOpen, toggle, close } = useSidebar();
-    const [isExpenseOpen, setIsExpenseOpen] = useState(false);
     const location = useLocation();
     const isAuditActive = location.pathname === '/auditoria-cierre';
     const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -41,7 +40,6 @@ export default function MainLayout() {
                 <Sidebar
                     isOpen={isOpen}
                     onClose={close}
-                    onOpenExpense={() => setIsExpenseOpen(true)}
                 />
             )}
 
@@ -82,10 +80,6 @@ export default function MainLayout() {
             <main className="flex-1 flex overflow-hidden">
                 <Outlet />
             </main>
-
-            {isExpenseOpen && (
-                <ExpenseModal onClose={() => setIsExpenseOpen(false)} />
-            )}
         </div>
     );
 }

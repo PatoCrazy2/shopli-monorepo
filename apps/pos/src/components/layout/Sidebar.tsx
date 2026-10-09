@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { ShoppingCart, Package, Wallet, History, Lock, Settings, ClipboardCheck, Check } from "lucide-react";
+import { ShoppingCart, Package, Wallet, Banknote, History, Lock, Settings, ClipboardCheck, Check } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../lib/db";
 import { PWASettingsModal } from "../PWASettingsModal";
@@ -10,10 +10,9 @@ import { UserAvatar } from "../../features/auth/LoginForm";
 interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
-    onOpenExpense: () => void;
 }
 
-export default function Sidebar({ isOpen, onClose, onOpenExpense }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const { user } = useAuth();
     const isAuditActive = useLiveQuery(
@@ -28,6 +27,7 @@ export default function Sidebar({ isOpen, onClose, onOpenExpense }: SidebarProps
 
     const navItems = [
         { path: "/", label: "Ventas", icon: ShoppingCart },
+        { path: "/caja-chica", label: "Gasto Caja Chica", icon: Banknote },
         { path: "/historial-ventas", label: "Historial de Ventas", icon: History },
         { 
             path: "/inventario", 
@@ -109,18 +109,6 @@ export default function Sidebar({ isOpen, onClose, onOpenExpense }: SidebarProps
 
                 {/* Acciones Secundarias */}
                 <div className="flex flex-col gap-0.5 shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            onClose();
-                            onOpenExpense();
-                        }}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-xs sm:text-sm text-zinc-700 hover:bg-zinc-50 active:bg-zinc-100 font-medium text-left cursor-pointer transition-none"
-                    >
-                        <Wallet className="w-4 h-4 text-zinc-500 shrink-0" />
-                        <span className="truncate">Gasto Caja Chica</span>
-                    </button>
-
                     <button
                         type="button"
                         onClick={() => setIsSettingsOpen(true)}
