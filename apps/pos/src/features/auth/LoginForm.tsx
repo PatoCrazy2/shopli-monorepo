@@ -111,8 +111,28 @@ export function LoginForm({
         }
     }, []);
 
+    // Soporte para teclado físico (0-9, Backspace, Enter) cuando hay un usuario seleccionado
+    useEffect(() => {
+        if (!selectedUser || !isConfigured || isSettingsOpen) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key >= '0' && e.key <= '9') {
+                handleKeyPress(e.key);
+            } else if (e.key === 'Backspace') {
+                handleBackspace();
+            } else if (e.key === 'Enter') {
+                if (pin.length === 6) {
+                    executeLogin(pin, undefined, selectedUser.id);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedUser, isConfigured, isSettingsOpen, pin, lockoutRemaining, deviceLockoutRemaining, isPermanentLock]);
+
     const executeLogin = async (pinToSubmit: string, emailToSubmit?: string, userIdToSubmit?: string) => {
-        if (pinToSubmit.length < 4) return;
+        if (pinToSubmit.length !== 6) return;
 
         setIsSyncing(true);
         setErrorMessage(null);
@@ -154,8 +174,8 @@ export function LoginForm({
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!isConfigured) {
-            if (!email || pin.length < 4) {
-                setErrorMessage('Ingrese correo y PIN de acceso');
+            if (!email || pin.length !== 6) {
+                setErrorMessage('Ingrese correo y el PIN de acceso de 6 dígitos');
                 return;
             }
             await executeLogin(pin, email);
@@ -167,11 +187,18 @@ export function LoginForm({
     const isInputBlocked = lockoutRemaining > 0 || deviceLockoutRemaining > 0 || isPermanentLock;
 
     return (
-        <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans relative">
+        <div className="h-dvh w-full overflow-hidden bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans relative">
             {!isConfigured && <PWAInstallPrompt />}
             <div className="w-full max-w-md">
                 {/* Header */}
-                <div className="text-center mb-8">
+                <div className="text-center mb-8 flex flex-col items-center">
+                    <img
+                        src="/shopli.svg"
+                        alt="ShopLI Logo"
+                        width={56}
+                        height={56}
+                        className="w-14 h-14 rounded-2xl shadow-sm mb-3 object-contain select-none pointer-events-none"
+                    />
                     <h1 className="text-3xl font-black tracking-tight text-black mb-1">
                         ShopLI <span className="text-sm font-semibold text-zinc-500 uppercase tracking-widest">POS</span>
                     </h1>
@@ -221,18 +248,24 @@ export function LoginForm({
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-zinc-700 text-left" htmlFor="pin">
-                                PIN de Acceso (4 a 6 dígitos)
-                            </label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-semibold text-zinc-700 text-left" htmlFor="pin">
+                                    PIN de Acceso
+                                </label>
+                                <span className="text-xs text-zinc-400 font-medium">6 dígitos</span>
+                            </div>
                             <input
                                 id="pin"
                                 type="password"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                autoComplete="off"
                                 value={pin}
                                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                placeholder="******"
+                                placeholder="••••••"
                                 maxLength={6}
                                 required
-                                className="w-full h-12 px-4 rounded-lg border border-zinc-200 focus:outline-none focus:border-black text-black bg-white tracking-widest text-center text-xl font-bold"
+                                className="w-full h-12 px-4 rounded-lg border border-zinc-200 focus:outline-none focus:border-black text-black bg-white tracking-[0.35em] placeholder:tracking-[0.35em] placeholder:text-zinc-300 text-center text-2xl font-bold"
                             />
                         </div>
 
@@ -248,8 +281,8 @@ export function LoginForm({
 
                         <button
                             type="submit"
-                            disabled={isSyncing || !email || pin.length < 4}
-                            className="w-full h-12 bg-black text-white font-bold rounded-lg disabled:opacity-50 disabled:bg-zinc-400 flex items-center justify-center transition-all"
+                            disabled={isSyncing || !email || pin.length !== 6}
+                            className="w-full h-12 bg-black text-white font-bold rounded-lg disabled:opacity-50 disabled:bg-zinc-400 flex items-center justify-center transition-none"
                         >
                             {isSyncing ? (
                                 <>
@@ -353,11 +386,11 @@ export function LoginForm({
                             {[...Array(6)].map((_, i) => (
                                 <div
                                     key={i}
-                                    className={`w-11 h-14 rounded-xl border-2 flex items-center justify-center text-3xl font-bold transition-all ${
+                                    className={`w-11 h-14 rounded-xl border-2 flex items-center justify-center text-3xl font-bold transition-none select-none ${
                                         errorMessage
                                             ? 'border-red-500 text-red-500 bg-red-50'
                                             : pin.length > i
-                                            ? 'border-black text-black bg-white shadow-sm scale-105'
+                                            ? 'border-black text-black bg-white shadow-xs'
                                             : 'border-zinc-200 text-transparent bg-white'
                                     }`}
                                 >
@@ -374,7 +407,7 @@ export function LoginForm({
                                     type="button"
                                     disabled={isInputBlocked || isSyncing}
                                     onClick={() => handleKeyPress(num.toString())}
-                                    className="h-14 rounded-xl bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-sm transition-transform active:scale-95"
+                                    className="h-14 rounded-xl bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-xs active:scale-[0.98] select-none"
                                 >
                                     {num}
                                 </button>
@@ -382,7 +415,7 @@ export function LoginForm({
                             <button
                                 type="button"
                                 onClick={() => setIsSettingsOpen(true)}
-                                className="h-14 rounded-xl bg-zinc-100 text-zinc-700 hover:text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation transition-transform active:scale-95"
+                                className="h-14 rounded-xl bg-zinc-100 text-zinc-700 hover:text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation active:scale-[0.98] select-none"
                                 title="Ajustes del Sistema"
                             >
                                 <Settings size={22} />
@@ -391,7 +424,7 @@ export function LoginForm({
                                 type="button"
                                 disabled={isInputBlocked || isSyncing}
                                 onClick={() => handleKeyPress('0')}
-                                className="h-14 rounded-xl bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-sm transition-transform active:scale-95"
+                                className="h-14 rounded-xl bg-white border border-zinc-200 text-black text-2xl font-bold active:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation shadow-xs active:scale-[0.98] select-none"
                             >
                                 0
                             </button>
@@ -399,7 +432,7 @@ export function LoginForm({
                                 type="button"
                                 disabled={isInputBlocked || isSyncing}
                                 onClick={handleBackspace}
-                                className="h-14 rounded-xl bg-zinc-100 text-zinc-700 hover:text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation transition-transform active:scale-95"
+                                className="h-14 rounded-xl bg-zinc-100 text-zinc-700 hover:text-black text-xl font-bold active:bg-zinc-200 flex items-center justify-center touch-manipulation active:scale-[0.98] select-none"
                             >
                                 ⌫
                             </button>
@@ -409,8 +442,8 @@ export function LoginForm({
                         <button
                             type="button"
                             onClick={() => executeLogin(pin, undefined, selectedUser.id)}
-                            disabled={pin.length < 4 || isInputBlocked || isSyncing}
-                            className="w-full h-14 bg-black text-white text-lg font-bold rounded-xl disabled:opacity-40 disabled:bg-zinc-400 touch-manipulation flex items-center justify-center transition-all shadow-md active:scale-98"
+                            disabled={pin.length !== 6 || isInputBlocked || isSyncing}
+                            className="w-full h-14 bg-black text-white text-lg font-bold rounded-xl disabled:opacity-40 disabled:bg-zinc-400 touch-manipulation flex items-center justify-center shadow-sm active:scale-[0.98] transition-none"
                         >
                             {isSyncing ? (
                                 <>
