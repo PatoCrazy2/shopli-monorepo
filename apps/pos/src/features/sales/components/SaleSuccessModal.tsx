@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface SaleSuccessModalProps {
     onConfirm: () => void;
@@ -6,23 +6,24 @@ interface SaleSuccessModalProps {
 
 export default function SaleSuccessModal({ onConfirm }: SaleSuccessModalProps) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl p-10 max-w-md w-full shadow-2xl flex flex-col items-center animate-in fade-in zoom-in duration-200">
-                <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
-                    <CheckCircle2 className="w-12 h-12" />
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] font-sans select-none">
+            <div className="bg-white rounded-3xl p-7 sm:p-8 max-w-sm sm:max-w-md w-full border border-zinc-200/80 shadow-2xl flex flex-col items-center text-center animate-in fade-in duration-150">
+                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-2xs animate-in zoom-in-75 duration-200">
+                    <Check className="w-10 h-10 stroke-[3]" />
                 </div>
 
-                <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-950 mb-2">
                     ¡Venta Exitosa!
                 </h2>
 
-                <p className="text-lg text-gray-500 mb-10 text-center">
+                <p className="text-sm sm:text-base text-zinc-500 leading-relaxed mb-8 max-w-xs">
                     La compra ha sido registrada correctamente en el sistema offline.
                 </p>
 
                 <button
+                    type="button"
                     onClick={onConfirm}
-                    className="w-full h-16 bg-black text-white text-xl font-bold rounded-xl hover:bg-zinc-800 active:bg-zinc-900 transition-colors"
+                    className="w-full h-14 bg-black text-white text-base sm:text-lg font-bold rounded-full hover:bg-zinc-800 active:scale-[0.99] transition-transform shadow-md cursor-pointer"
                     autoFocus
                 >
                     Nueva Venta
