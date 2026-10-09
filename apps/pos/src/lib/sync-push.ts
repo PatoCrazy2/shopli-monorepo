@@ -9,6 +9,7 @@ export type PushResult = {
     ventas: number;
     auditorias: number;
     gastos: number;
+    auditoriasDinamicas: number;
   };
 };
 
@@ -19,6 +20,7 @@ export async function buildPushPayload() {
   const pendingAudits = await db.audits.where('sync_status').equals('PENDING').toArray();
   const pendingGastos = await db.gastos.where('sync_status').equals('PENDING').toArray();
   const pendingDynamicAudits = await db.dynamicAudits.where('sync_status').equals('PENDING').toArray();
+  const pendingDynamicAuditItems = await db.dynamicAuditItems.where('sync_status').equals('PENDING').toArray();
 
   // Enriquecemos cada venta con sus detalles asociados mediante una consulta adicional a sale_details
   const ventas = await Promise.all(
@@ -74,22 +76,58 @@ export async function buildPushPayload() {
     proveedor_id: g.proveedor_id
   }));
 
+  // Agrupamos ítems pendientes por auditId y unificamos con las cabeceras pendientes
+  // para que ítems contados después de sincronizar la cabecera siempre se envíen.
+  const pendingItemsByAuditId = new Map<string, typeof pendingDynamicAuditItems>();
+  for (const item of pendingDynamicAuditItems) {
+    const list = pendingItemsByAuditId.get(item.auditId) ?? [];
+    list.push(item);
+    pendingItemsByAuditId.set(item.auditId, list);
+  }
 
-  const auditoriasDinamicas = await Promise.all(
-    pendingDynamicAudits.map(async (da) => {
-      const items = await db.dynamicAuditItems.where('auditId').equals(da.id).toArray();
-      return {
-        id: da.id,
-        sucursal_id: da.branchId,
-        startedAt: da.startedAt,
-        items: items.map(item => ({
-          productId: item.productId,
-          countedQuantity: item.countedQuantity,
-          countedAt: item.countedAt,
-        }))
-      };
-    })
-  );
+  const targetAuditIds = new Set<string>([
+    ...pendingDynamicAudits.map(da => da.id),
+    ...pendingItemsByAuditId.keys()
+  ]);
+
+  const pendingAuditMap = new Map(pendingDynamicAudits.map(da => [da.id, da]));
+  const auditoriasDinamicas: Array<{
+    id: string;
+    sucursal_id: string;
+    startedAt: string;
+    finishedAt: string | null;
+    iniciadaPorId: string | null;
+    finalizadaPorId: string | null;
+    items: Array<{
+      id: string;
+      productId: string;
+      countedQuantity: number | null;
+      countedAt: string | null;
+      contadoPorId: string | null;
+    }>;
+  }> = [];
+
+  for (const auditId of targetAuditIds) {
+    const da = pendingAuditMap.get(auditId) ?? (await db.dynamicAudits.get(auditId));
+    if (!da) continue;
+
+    const items = pendingItemsByAuditId.get(da.id) ?? [];
+    auditoriasDinamicas.push({
+      id: da.id,
+      sucursal_id: da.branchId,
+      startedAt: da.startedAt,
+      finishedAt: da.finishedAt ?? null,
+      iniciadaPorId: da.iniciadaPorId ?? null,
+      finalizadaPorId: da.finalizadaPorId ?? null,
+      items: items.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        countedQuantity: item.countedQuantity,
+        countedAt: item.countedAt,
+        contadoPorId: item.contadoPorId ?? null,
+      }))
+    });
+  }
 
   return { turnos, ventas, auditorias, gastos, auditoriasDinamicas };
 }
@@ -110,8 +148,31 @@ export async function pushToCloud(): Promise<PushResult> {
     const payload = await buildPushPayload();
 
     // Optimizamos cortando la sincronización si no hay nada pendiente
-    if (payload.turnos.length === 0 && payload.ventas.length === 0 && payload.auditorias.length === 0 && payload.gastos.length === 0 && payload.auditoriasDinamicas.length === 0) {
-      return { success: true, pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0 } }; // Also we can add auditoriasDinamicas here if needed
+    if (
+      payload.turnos.length === 0 &&
+      payload.ventas.length === 0 &&
+      payload.auditorias.length === 0 &&
+      payload.gastos.length === 0 &&
+      payload.auditoriasDinamicas.length === 0
+    ) {
+      return {
+        success: true,
+        pushed: { turnos: 0, ventas: 0, auditorias: 0, gastos: 0, auditoriasDinamicas: 0 }
+      };
+    }
+
+    // Snapshot de versiones enviadas para reconciliación ACK segura ante escrituras en vuelo
+    const sentHeaderState = new Map(
+      payload.auditoriasDinamicas.map(da => [
+        da.id,
+        { finishedAt: da.finishedAt ?? null, finalizadaPorId: da.finalizadaPorId ?? null }
+      ])
+    );
+    const sentItemCountedAt = new Map<string, string | null>();
+    for (const da of payload.auditoriasDinamicas) {
+      for (const item of da.items) {
+        sentItemCountedAt.set(item.id, item.countedAt);
+      }
     }
 
     const syncTokenRecord = await db.meta.get('syncToken');
@@ -146,7 +207,13 @@ export async function pushToCloud(): Promise<PushResult> {
       await db.meta.put({ key: 'subscriptionSuspended', value: false });
       await db.meta.put({ key: 'tokenRevoked', value: false });
 
-      const { turnos: procTurnos = [], ventas: procVentas = [], auditorias: procAuditorias = [], gastos: procGastos = [], auditoriasDinamicas: procAuditoriasDinamicas = [] } = data.procesados;
+      const {
+        turnos: procTurnos = [],
+        ventas: procVentas = [],
+        auditorias: procAuditorias = [],
+        gastos: procGastos = [],
+        auditoriasDinamicas: procAuditoriasDinamicas = []
+      } = data.procesados;
 
       await db.transaction('rw', [db.turnos, db.sales, db.audits, db.gastos, db.dynamicAudits, db.dynamicAuditItems], async () => {
         // Operaciones masivas usando Dexie modify() lo cual es muy performance friendly.
@@ -163,12 +230,42 @@ export async function pushToCloud(): Promise<PushResult> {
           await db.gastos.where('id').anyOf(procGastos).modify({ sync_status: 'SYNCED' });
         }
         if (procAuditoriasDinamicas.length > 0) {
-          // Marca las cabeceras como SYNCED
-          await db.dynamicAudits.where('id').anyOf(procAuditoriasDinamicas).modify({ sync_status: 'SYNCED' });
-          // Marca todos los items de esas auditorias como SYNCED
-          const itemsPorActualizar = await db.dynamicAuditItems.where('auditId').anyOf(procAuditoriasDinamicas).primaryKeys();
-          if (itemsPorActualizar.length > 0) {
-            await db.dynamicAuditItems.where('id').anyOf(itemsPorActualizar).modify({ sync_status: 'SYNCED' });
+          const procAuditSet = new Set<string>(procAuditoriasDinamicas);
+
+          // Marca las cabeceras como SYNCED solo si no cambiaron (ej. finalizadas) mientras el request estaba en vuelo
+          await db.dynamicAudits
+            .where('id')
+            .anyOf(procAuditoriasDinamicas)
+            .modify((audit) => {
+              const sent = sentHeaderState.get(audit.id);
+              if (
+                sent &&
+                (audit.finishedAt ?? null) === sent.finishedAt &&
+                (audit.finalizadaPorId ?? null) === sent.finalizadaPorId
+              ) {
+                audit.sync_status = 'SYNCED';
+              }
+            });
+
+          // Marca únicamente los ítems que fueron enviados en este lote y cuyo countedAt no fue modificado en vuelo
+          const sentItemIdsForProcessedAudits: string[] = [];
+          for (const da of payload.auditoriasDinamicas) {
+            if (procAuditSet.has(da.id)) {
+              for (const item of da.items) {
+                sentItemIdsForProcessedAudits.push(item.id);
+              }
+            }
+          }
+
+          if (sentItemIdsForProcessedAudits.length > 0) {
+            await db.dynamicAuditItems
+              .where('id')
+              .anyOf(sentItemIdsForProcessedAudits)
+              .modify((item) => {
+                if (sentItemCountedAt.get(item.id) === item.countedAt) {
+                  item.sync_status = 'SYNCED';
+                }
+              });
           }
         }
       });
@@ -181,7 +278,8 @@ export async function pushToCloud(): Promise<PushResult> {
           turnos: procTurnos.length,
           ventas: procVentas.length,
           auditorias: procAuditorias.length,
-          gastos: procGastos.length
+          gastos: procGastos.length,
+          auditoriasDinamicas: procAuditoriasDinamicas.length
         }
       };
     } else {
