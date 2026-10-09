@@ -5,6 +5,30 @@ export const AUDITS_PAGE_SIZE = 30;
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
+export function getTodayMexicoCity(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((p) => p.type === "year")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const day = parts.find((p) => p.type === "day")?.value;
+
+  if (year && month && day) {
+    return `${year}-${month}-${day}`;
+  }
+
+  const now = new Date();
+  const cdmxDate = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const y = cdmxDate.getUTCFullYear();
+  const m = String(cdmxDate.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(cdmxDate.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function parseCdmxDateRange(dateStr?: string): { start: Date; end: Date; normalizedDate: string } | null {
   if (!dateStr) return null;
   const trimmed = dateStr.trim();
@@ -60,7 +84,8 @@ export async function getAudits(filters: {
   }
 
   const activeSucursalId = rawSucursalId || undefined;
-  const dateRange = parseCdmxDateRange(filters.date);
+  const todayStr = getTodayMexicoCity();
+  const dateRange = parseCdmxDateRange(filters.date) ?? parseCdmxDateRange(todayStr)!;
 
   const where: any = {
     sucursal: {
@@ -72,12 +97,10 @@ export async function getAudits(filters: {
     where.sucursalId = activeSucursalId;
   }
 
-  if (dateRange) {
-    where.startedAt = {
-      gte: dateRange.start,
-      lte: dateRange.end,
-    };
-  }
+  where.startedAt = {
+    gte: dateRange.start,
+    lte: dateRange.end,
+  };
 
   const [audits, total] = await Promise.all([
     db.dynamicAudit.findMany({

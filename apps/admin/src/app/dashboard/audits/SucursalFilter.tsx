@@ -48,18 +48,17 @@ function DateSelect({
     };
   }, [open]);
 
-  const isAll = !value;
-  const isToday = value === todayStr;
-  const isYesterday = value === yesterdayStr;
-  const isCustom = Boolean(value && !isToday && !isYesterday);
+  const effectiveValue = value || todayStr;
+  const isToday = effectiveValue === todayStr;
+  const isYesterday = effectiveValue === yesterdayStr;
+  const isCustom = Boolean(effectiveValue && !isToday && !isYesterday);
 
-  let displayLabel = "Todas las fechas";
-  if (isToday) displayLabel = "Hoy";
-  else if (isYesterday) displayLabel = "Ayer";
-  else if (isCustom && value) displayLabel = value;
+  let displayLabel = "Hoy";
+  if (isYesterday) displayLabel = "Ayer";
+  else if (isCustom) displayLabel = effectiveValue;
 
   return (
-    <div ref={containerRef} className="relative w-full sm:w-[190px] shrink-0">
+    <div ref={containerRef} className="relative w-full sm:w-[180px] shrink-0">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -87,27 +86,8 @@ function DateSelect({
       {open && (
         <div
           role="listbox"
-          className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 w-full min-w-[200px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg z-50 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100 text-xs font-sans"
+          className="absolute left-0 sm:right-0 sm:left-auto top-full mt-1.5 w-full min-w-[190px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg z-50 p-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100 text-xs font-sans"
         >
-          <button
-            type="button"
-            role="option"
-            aria-selected={isAll}
-            onClick={() => {
-              onChange("");
-              setOpen(false);
-            }}
-            className={cn(
-              "w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors text-left cursor-pointer",
-              isAll
-                ? "bg-zinc-100 dark:bg-zinc-900 font-bold text-zinc-900 dark:text-zinc-100"
-                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/60 hover:text-zinc-900 dark:hover:text-zinc-100"
-            )}
-          >
-            <span>Todas las fechas</span>
-            {isAll && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100 shrink-0" />}
-          </button>
-
           <button
             type="button"
             role="option"
@@ -152,7 +132,7 @@ function DateSelect({
             </span>
             <input
               type="date"
-              value={value || ""}
+              value={effectiveValue}
               onChange={(e) => {
                 if (e.target.value) {
                   onChange(e.target.value);
@@ -184,6 +164,7 @@ export function AuditsFilters({
   const [isPending, startTransition] = useTransition();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const todayStr = getSafeDateString(new Date());
   const selectedSucursal = sucursales.find((s) => s.id === currentValue);
 
   const handleSelectSucursal = (sucursalId: string) => {
@@ -204,7 +185,7 @@ export function AuditsFilters({
   const handleSelectDate = (dateVal: string) => {
     startTransition(() => {
       const params = new URLSearchParams(searchParams.toString());
-      if (dateVal) {
+      if (dateVal && dateVal !== todayStr) {
         params.set("date", dateVal);
       } else {
         params.delete("date");
@@ -246,7 +227,8 @@ export function AuditsFilters({
     };
   }, [isOpen]);
 
-  const hasActiveFilters = Boolean(currentValue || currentDate);
+  const isTodayActive = !currentDate || currentDate === todayStr;
+  const hasActiveFilters = Boolean(currentValue || !isTodayActive);
 
   return (
     <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">

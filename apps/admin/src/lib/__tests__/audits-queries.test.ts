@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getAudits, parseCdmxDateRange, AUDITS_PAGE_SIZE } from "@/app/dashboard/audits/queries";
+import { getAudits, getTodayMexicoCity, parseCdmxDateRange, AUDITS_PAGE_SIZE } from "@/app/dashboard/audits/queries";
 import { auth } from "@/lib/auth";
 import { db } from "@shopli/db";
 
@@ -54,15 +54,35 @@ describe("Audits Queries - Seguridad, Paginación y Filtrado", () => {
     expect(range?.end.toISOString()).toBe(new Date("2026-10-09T23:59:59.999-06:00").toISOString());
   });
 
-  it("2. Ignora fecha inválida y consulta sin filtro de fecha sin romper", async () => {
-    await getAudits({
-      date: "invalid-date",
-    });
+  it("2. Usa la fecha de Hoy (CDMX) por defecto cuando date no se envía o es inválida", async () => {
+    const todayStr = getTodayMexicoCity();
+    const expectedTodayRange = parseCdmxDateRange(todayStr);
 
+    const resDefault = await getAudits({});
+    expect(resDefault.activeDate).toBe(todayStr);
     expect(db.dynamicAudit.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           sucursal: { empresa_id: mockEmpresaId },
+          startedAt: {
+            gte: expectedTodayRange?.start,
+            lte: expectedTodayRange?.end,
+          },
+        },
+      })
+    );
+
+    vi.clearAllMocks();
+    const resInvalid = await getAudits({ date: "invalid-date" });
+    expect(resInvalid.activeDate).toBe(todayStr);
+    expect(db.dynamicAudit.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          sucursal: { empresa_id: mockEmpresaId },
+          startedAt: {
+            gte: expectedTodayRange?.start,
+            lte: expectedTodayRange?.end,
+          },
         },
       })
     );

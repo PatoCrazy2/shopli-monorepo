@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ClipboardCheck, ArrowRight, Calendar, MapPin, Clock } from "lucide-react";
 import { AuditsFilters } from "./SucursalFilter";
-import { getAudits } from "./queries";
+import { getAudits, getTodayMexicoCity } from "./queries";
 import { canAccessDynamicAudits } from "@/lib/check-plan-limits";
 import { UpgradeGateBanner } from "@/components/UpgradeGateBanner";
 
@@ -73,13 +73,16 @@ export default async function AuditsListPage({
     activeDate,
   } = auditsResult;
 
+  const todayStr = getTodayMexicoCity();
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const hasActiveFilters = Boolean(activeSucursalId || activeDate);
+  const hasActiveFilters = Boolean(
+    activeSucursalId || (activeDate && activeDate !== todayStr)
+  );
 
   const buildPageHref = (targetPage: number) => {
     const params = new URLSearchParams();
     if (activeSucursalId) params.set("sucursalId", activeSucursalId);
-    if (activeDate) params.set("date", activeDate);
+    if (activeDate && activeDate !== todayStr) params.set("date", activeDate);
     if (targetPage > 1) params.set("page", String(targetPage));
     const qs = params.toString();
     return qs ? `/dashboard/audits?${qs}` : "/dashboard/audits";
@@ -120,12 +123,12 @@ export default async function AuditsListPage({
             <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white tracking-tight">
               {hasActiveFilters
                 ? "No hay auditorías para los filtros seleccionados"
-                : "No hay auditorías registradas"}
+                : "No hay auditorías registradas hoy"}
             </h2>
             <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mt-1 font-medium">
               {hasActiveFilters
                 ? "Intenta cambiar la fecha o seleccionar otra sucursal para ver el historial."
-                : "Los conteos ciegos iniciados y finalizados desde el POS aparecerán automáticamente aquí."}
+                : "Los conteos ciegos iniciados hoy desde el POS aparecerán aquí, o selecciona otra fecha para consultar el historial."}
             </p>
           </div>
         ) : (
