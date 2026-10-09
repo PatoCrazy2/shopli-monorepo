@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import "fake-indexeddb/auto";
 import { db } from "../../lib/db";
 import { buildPushPayload, pushToCloud } from "../../lib/sync-push";
@@ -7,6 +7,7 @@ import * as apiClientModule from "../../lib/api-client";
 describe("sync-push - Auditorías Dinámicas (Empaquetado por Ítems y ACK Concurrency-Safe)", () => {
   beforeEach(async () => {
     vi.restoreAllMocks();
+    vi.stubGlobal("navigator", { onLine: true });
     await db.turnos.clear();
     await db.sales.clear();
     await db.sale_details.clear();
@@ -18,10 +19,10 @@ describe("sync-push - Auditorías Dinámicas (Empaquetado por Ítems y ACK Concu
 
     await db.meta.put({ key: "empresaId", value: "emp-123" });
     await db.meta.put({ key: "syncToken", value: "token-pos-test" });
-    Object.defineProperty(globalThis.navigator, "onLine", {
-      value: true,
-      configurable: true,
-    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("1. Incluye la auditoría cuando la cabecera ya está SYNCED pero tiene ítems PENDING", async () => {
