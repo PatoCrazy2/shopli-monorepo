@@ -1,9 +1,67 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Loader2, Settings, User as UserIcon, ArrowLeft, ShieldAlert, Clock, Mail, Lock } from 'lucide-react';
+import { Loader2, Settings, ArrowLeft, ShieldAlert, Clock, Mail, Lock } from 'lucide-react';
 import { db, type LocalUser } from '../../lib/db';
 import { PWASettingsModal } from '../../components/PWASettingsModal';
 import { PWAInstallPrompt } from '../../components/PWAInstallPrompt';
 import type { LoginResult } from '../../contexts/AuthContext';
+
+const AVATAR_PALETTES: readonly [string, string][] = [
+    ['#18181b', '#52525b'], // Obsidian -> Zinc
+    ['#0f172a', '#2563eb'], // Midnight -> Cobalt
+    ['#064e3b', '#10b981'], // Forest -> Emerald
+    ['#1e1b4b', '#7c3aed'], // Deep Indigo -> Violet
+    ['#27272a', '#71717a'], // Graphite -> Slate
+    ['#451a03', '#d97706'], // Espresso -> Amber
+    ['#042f2e', '#0d9488'], // Abyss -> Teal
+    ['#3b0764', '#db2777'], // Plum -> Rose
+];
+
+function getDeterministicHash(seed: string): number {
+    let hash = 2166136261;
+    for (let i = 0; i < seed.length; i++) {
+        hash ^= seed.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+    }
+    return Math.abs(hash);
+}
+
+function UserAvatar({ id, name, size = 40 }: { id: string; name?: string | null; size?: number }) {
+    const seed = `${id || ''}-${name || 'user'}`;
+    const hash = getDeterministicHash(seed);
+    const [colorStart, colorEnd] = AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
+    const orbX = 10 + (hash % 22);
+    const orbY = 8 + ((hash >> 4) % 22);
+    const orbR = 12 + ((hash >> 8) % 8);
+    const gradId = `avatar-grad-${hash}`;
+    const initial = name ? name.trim().charAt(0).toUpperCase() : '•';
+
+    return (
+        <div
+            style={{ width: size, height: size }}
+            className="relative rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 select-none shadow-2xs"
+        >
+            <svg
+                viewBox="0 0 40 40"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-full h-full absolute inset-0"
+                aria-hidden="true"
+            >
+                <defs>
+                    <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={colorStart} />
+                        <stop offset="100%" stopColor={colorEnd} />
+                    </linearGradient>
+                </defs>
+                <rect width="40" height="40" rx="20" fill={`url(#${gradId})`} />
+                <circle cx={orbX} cy={orbY} r={orbR} fill="#ffffff" fillOpacity="0.16" />
+            </svg>
+            <span className="relative z-10 text-white font-semibold text-sm tracking-tight leading-none">
+                {initial}
+            </span>
+        </div>
+    );
+}
 
 export function LoginForm({
     onLogin,
@@ -292,33 +350,33 @@ export function LoginForm({
                         </button>
                     </form>
                 ) : !selectedUser ? (
-                    /* CASO 2: Dispositivo configurado - Selector Visual de Cajeros */
-                    <div className="flex flex-col gap-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto p-1">
+                    /* CASO 2: Dispositivo configurado - Selector Visual de Cajeros (1 columna de píldoras rounded-full) */
+                    <div className="flex flex-col gap-3.5">
+                        <div className="flex flex-col gap-3 max-h-[340px] overflow-y-auto px-0.5 py-0.5">
                             {availableUsers.map((u) => (
                                 <button
                                     key={u.id}
                                     type="button"
                                     onClick={() => handleSelectUser(u)}
-                                    className="flex items-center gap-3.5 p-4 rounded-xl bg-white border border-zinc-200 hover:border-black hover:shadow-md transition-all active:scale-[0.98] text-left group"
+                                    className="w-full h-15 px-3.5 rounded-full bg-white border border-zinc-200 hover:border-black active:scale-[0.98] transition-none flex items-center justify-between gap-3 shadow-xs cursor-pointer text-left group"
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-zinc-100 group-hover:bg-zinc-900 group-hover:text-white text-zinc-700 flex items-center justify-center font-bold text-lg transition-colors flex-shrink-0">
-                                        {u.name ? u.name.charAt(0).toUpperCase() : <UserIcon size={20} />}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-zinc-900 truncate text-base">{u.name || 'Sin nombre'}</h3>
-                                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 uppercase tracking-wider mt-0.5">
-                                            {u.role}
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <UserAvatar id={u.id} name={u.name} size={40} />
+                                        <span className="font-semibold text-zinc-900 truncate text-[15px]">
+                                            {u.name || 'Sin nombre'}
                                         </span>
                                     </div>
+                                    <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-500 uppercase tracking-wider flex-shrink-0">
+                                        {u.role}
+                                    </span>
                                 </button>
                             ))}
                         </div>
 
                         {availableUsers.length === 0 && (
-                            <div className="text-center p-8 bg-white rounded-xl border border-zinc-200">
-                                <p className="text-zinc-500 text-sm mb-3">No hay usuarios locales sincronizados.</p>
-                                <p className="text-xs text-zinc-400">Abra Configuración del sistema abajo para reconfigurar.</p>
+                            <div className="text-center p-7 bg-white rounded-3xl border border-zinc-200 shadow-xs">
+                                <p className="text-zinc-600 text-sm font-medium mb-1">No hay usuarios sincronizados</p>
+                                <p className="text-xs text-zinc-400">Abre Configuración del sistema para sincronizar.</p>
                             </div>
                         )}
 
@@ -326,7 +384,7 @@ export function LoginForm({
                             <button
                                 type="button"
                                 onClick={() => setIsSettingsOpen(true)}
-                                className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 transition-colors py-2"
+                                className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 transition-none py-2 cursor-pointer"
                             >
                                 <Settings size={14} className="opacity-70" />
                                 <span>Configuración del sistema</span>
@@ -336,15 +394,17 @@ export function LoginForm({
                 ) : (
                     /* CASO 3: Teclado Numérico de 6 Dígitos para el Usuario Seleccionado */
                     <div className="flex flex-col gap-6">
-                        {/* Tarjeta del Usuario Seleccionado */}
-                        <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-zinc-200 shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-base">
-                                    {selectedUser.name ? selectedUser.name.charAt(0).toUpperCase() : <UserIcon size={18} />}
-                                </div>
-                                <div>
-                                    <h2 className="font-bold text-zinc-900 text-sm">{selectedUser.name}</h2>
-                                    <span className="text-xs text-zinc-500 font-medium">{selectedUser.role}</span>
+                        {/* Píldora del Usuario Seleccionado */}
+                        <div className="flex items-center justify-between bg-white h-15 px-3.5 rounded-full border border-zinc-200 shadow-xs">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <UserAvatar id={selectedUser.id} name={selectedUser.name} size={38} />
+                                <div className="min-w-0 text-left">
+                                    <h2 className="font-semibold text-zinc-900 text-sm truncate leading-tight">
+                                        {selectedUser.name}
+                                    </h2>
+                                    <span className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider block leading-tight mt-0.5">
+                                        {selectedUser.role}
+                                    </span>
                                 </div>
                             </div>
                             <button
@@ -354,7 +414,7 @@ export function LoginForm({
                                     setPin('');
                                     setErrorMessage(null);
                                 }}
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-black px-2.5 py-1.5 rounded-lg hover:bg-zinc-100 transition-colors"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-black px-3 py-1.5 rounded-full hover:bg-zinc-100 transition-none cursor-pointer flex-shrink-0"
                             >
                                 <ArrowLeft size={14} /> Cambiar
                             </button>
