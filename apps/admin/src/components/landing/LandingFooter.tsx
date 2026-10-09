@@ -82,19 +82,19 @@ export default function LandingFooter() {
               <li>
                 <button
                   type="button"
-                  onClick={() => scrollToSection("offline")}
+                  onClick={() => scrollToSection("showcase-phone")}
                   className="hover:text-white transition-colors cursor-pointer text-left"
                 >
-                  Terminal Offline-First
+                  Punto de Venta (POS)
                 </button>
               </li>
               <li>
                 <button
                   type="button"
-                  onClick={() => scrollToSection("auditorias")}
+                  onClick={() => scrollToSection("centro-cloud")}
                   className="hover:text-white transition-colors cursor-pointer text-left"
                 >
-                  Auditorías Dinámicas
+                  Centro Cloud
                 </button>
               </li>
               <li>
