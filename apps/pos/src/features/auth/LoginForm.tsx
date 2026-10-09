@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Loader2, Settings, User as UserIcon, ArrowLeft, ShieldAlert, Clock } from 'lucide-react';
+import { Loader2, Settings, User as UserIcon, ArrowLeft, ShieldAlert, Clock, Mail, Lock } from 'lucide-react';
 import { db, type LocalUser } from '../../lib/db';
 import { PWASettingsModal } from '../../components/PWASettingsModal';
 import { PWAInstallPrompt } from '../../components/PWAInstallPrompt';
@@ -189,31 +189,29 @@ export function LoginForm({
     return (
         <div className="h-dvh w-full overflow-hidden bg-zinc-50 flex flex-col items-center justify-center p-4 selection:bg-black selection:text-white font-sans relative">
             {!isConfigured && <PWAInstallPrompt />}
-            <div className="w-full max-w-md">
-                {/* Header */}
-                <div className="text-center mb-8 flex flex-col items-center">
+            <div className="w-full max-w-sm">
+                {/* Header: Icono óptico de 46x46, separación de 14px, ShopLI en 29px semibold y POS integrado en 16px medium */}
+                <div className="flex items-center justify-center gap-3.5 mb-10">
                     <img
                         src="/shopli.svg"
                         alt="ShopLI Logo"
-                        width={56}
-                        height={56}
-                        className="w-14 h-14 rounded-2xl shadow-sm mb-3 object-contain select-none pointer-events-none"
+                        width={46}
+                        height={46}
+                        className="w-[46px] h-[46px] rounded-xl object-contain select-none pointer-events-none"
                     />
-                    <h1 className="text-3xl font-black tracking-tight text-black mb-1">
-                        ShopLI <span className="text-sm font-semibold text-zinc-500 uppercase tracking-widest">POS</span>
-                    </h1>
-                    <p className="text-zinc-500 text-sm">
-                        {!isConfigured
-                            ? 'Configura el dispositivo con tu Email y PIN'
-                            : selectedUser
-                            ? `Ingresa el PIN de ${selectedUser.name}`
-                            : 'Selecciona tu usuario para ingresar'}
-                    </p>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-[29px] font-semibold text-black tracking-[-0.02em] leading-none">
+                            ShopLI
+                        </span>
+                        <span className="text-[16px] font-medium text-zinc-400 tracking-normal leading-none">
+                            POS
+                        </span>
+                    </div>
                 </div>
 
                 {/* Banner de Bloqueo Global de Dispositivo */}
                 {deviceLockoutRemaining > 0 && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center gap-3 animate-pulse">
+                    <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 flex items-center gap-3 animate-pulse">
                         <ShieldAlert className="w-6 h-6 flex-shrink-0 text-red-600" />
                         <div className="text-sm">
                             <p className="font-bold">Terminal bloqueada temporalmente</p>
@@ -224,35 +222,34 @@ export function LoginForm({
 
                 {/* Banner de Error */}
                 {errorMessage && (
-                    <div className="mb-6 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center font-medium">
+                    <div className="mb-6 p-3.5 rounded-full bg-red-50 border border-red-200 text-red-600 text-sm text-center font-medium">
                         {errorMessage}
                     </div>
                 )}
 
-                {/* CASO 1: Dispositivo no configurado (Formulario inicial Email + PIN) */}
+                {/* CASO 1: Dispositivo no configurado (Moderno, sin card envolvente, inputs rounded-full) */}
                 {!isConfigured ? (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-zinc-700 text-left" htmlFor="email">
-                                Correo Electrónico
-                            </label>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+                        {/* Input Correo */}
+                        <div className="relative flex items-center">
+                            <div className="absolute left-4 pointer-events-none text-zinc-400">
+                                <Mail size={18} />
+                            </div>
                             <input
                                 id="email"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="ejemplo@shopli.com"
+                                placeholder="Correo electrónico"
                                 required
-                                className="w-full h-12 px-4 rounded-lg border border-zinc-200 focus:outline-none focus:border-black text-black bg-white"
+                                className="w-full h-14 pl-11 pr-5 rounded-full border border-zinc-200 bg-white text-black text-sm placeholder:text-zinc-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black shadow-xs"
                             />
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-semibold text-zinc-700 text-left" htmlFor="pin">
-                                    PIN de Acceso
-                                </label>
-                                <span className="text-xs text-zinc-400 font-medium">6 dígitos</span>
+                        {/* Input PIN */}
+                        <div className="relative flex items-center">
+                            <div className="absolute left-4 pointer-events-none text-zinc-400">
+                                <Lock size={18} />
                             </div>
                             <input
                                 id="pin"
@@ -265,7 +262,7 @@ export function LoginForm({
                                 placeholder="••••••"
                                 maxLength={6}
                                 required
-                                className="w-full h-12 px-4 rounded-lg border border-zinc-200 focus:outline-none focus:border-black text-black bg-white tracking-[0.35em] placeholder:tracking-[0.35em] placeholder:text-zinc-300 text-center text-2xl font-bold"
+                                className="w-full h-14 pl-11 pr-5 rounded-full border border-zinc-200 bg-white text-black text-center text-xl font-bold tracking-[0.35em] placeholder:tracking-[0.35em] placeholder:text-zinc-300 focus:outline-none focus:border-black focus:ring-1 focus:ring-black shadow-xs"
                             />
                         </div>
 
@@ -282,12 +279,12 @@ export function LoginForm({
                         <button
                             type="submit"
                             disabled={isSyncing || !email || pin.length !== 6}
-                            className="w-full h-12 bg-black text-white font-bold rounded-lg disabled:opacity-50 disabled:bg-zinc-400 flex items-center justify-center transition-none"
+                            className="w-full h-14 mt-1 font-bold text-base rounded-full bg-black text-white hover:bg-zinc-900 active:scale-[0.98] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none disabled:active:scale-100 flex items-center justify-center transition-none shadow-sm cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSyncing ? (
                                 <>
-                                    <Loader2 className="animate-spin mr-2" size={20} />
-                                    Configurando empresa...
+                                    <Loader2 className="animate-spin mr-2" size={18} />
+                                    Configurando...
                                 </>
                             ) : (
                                 'Configurar Dispositivo'
@@ -443,7 +440,7 @@ export function LoginForm({
                             type="button"
                             onClick={() => executeLogin(pin, undefined, selectedUser.id)}
                             disabled={pin.length !== 6 || isInputBlocked || isSyncing}
-                            className="w-full h-14 bg-black text-white text-lg font-bold rounded-xl disabled:opacity-40 disabled:bg-zinc-400 touch-manipulation flex items-center justify-center shadow-sm active:scale-[0.98] transition-none"
+                            className="w-full h-14 bg-black text-white text-lg font-bold rounded-xl hover:bg-zinc-900 active:scale-[0.98] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none disabled:active:scale-100 touch-manipulation flex items-center justify-center shadow-sm transition-none cursor-pointer disabled:cursor-not-allowed"
                         >
                             {isSyncing ? (
                                 <>
