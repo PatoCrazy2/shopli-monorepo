@@ -34,7 +34,7 @@ export default function SalesHistoryScreen() {
             </div>
 
             {/* Summary Card de 2 Columnas Balanceadas */}
-            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-2xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
+            <div className="shrink-0 bg-black text-white p-5 sm:p-6 rounded-3xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
                 <div className="pr-3 sm:pr-5 flex flex-col justify-center">
                     <span className="text-zinc-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block mb-1">
                         Total del Día

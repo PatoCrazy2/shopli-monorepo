@@ -75,7 +75,7 @@ export function DateFilterSelect({ activeOffset, onChange }: DateFilterSelectPro
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="h-9 px-3 bg-white border border-zinc-200 hover:border-zinc-300 rounded-xl text-xs font-semibold text-zinc-900 shadow-sm flex items-center gap-1.5 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-black/10"
+        className="h-9 px-4 bg-white border border-zinc-200 hover:border-zinc-300 rounded-full text-xs font-semibold text-zinc-900 shadow-sm flex items-center gap-1.5 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-black/10"
       >
         <Calendar className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
         <span className="hidden sm:inline truncate">
@@ -93,7 +93,7 @@ export function DateFilterSelect({ activeOffset, onChange }: DateFilterSelectPro
       {isOpen && (
         <div
           role="listbox"
-          className="absolute right-0 top-full mt-1.5 w-48 sm:w-52 bg-white border border-zinc-200 rounded-2xl shadow-xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-150 origin-top-right"
+          className="absolute right-0 top-full mt-2 w-48 sm:w-52 bg-white border border-zinc-200 rounded-3xl shadow-xl p-2 z-30 origin-top-right"
         >
           <div className="space-y-1">
             {options.map((option) => {
@@ -105,7 +105,7 @@ export function DateFilterSelect({ activeOffset, onChange }: DateFilterSelectPro
                   role="option"
                   aria-selected={isSelected}
                   onClick={() => handleSelect(option.offset)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all text-left ${
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs transition-colors text-left ${
                     isSelected
                       ? "bg-black text-white font-semibold shadow-sm"
                       : "text-zinc-700 hover:bg-zinc-100 font-medium active:bg-zinc-200"

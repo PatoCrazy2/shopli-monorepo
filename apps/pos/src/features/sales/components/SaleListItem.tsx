@@ -37,21 +37,21 @@ export function SaleListItem({ sale }: SaleListItemProps) {
         <>
             <div 
                 onClick={() => setIsModalOpen(true)}
-                className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between mb-3 min-h-[5rem] cursor-pointer hover:bg-gray-50 transition-colors"
+                className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-zinc-100 flex items-center justify-between mb-3 min-h-[5rem] cursor-pointer hover:bg-zinc-50 transition-colors"
             >
             <div className="flex flex-col">
-                <span className="font-bold text-gray-900 text-lg">
+                <span className="font-bold text-zinc-900 text-base sm:text-lg">
                     Ticket #{ticketId}
                 </span>
-                <span className="text-sm text-gray-500 mt-1">
+                <span className="text-xs sm:text-sm text-zinc-500 mt-1">
                     {timeString} • {totalItems} artículo{totalItems !== 1 ? 's' : ''}
                 </span>
             </div>
             <div className="text-right flex flex-col items-end">
-                <span className="text-xl font-bold text-gray-900 block">
+                <span className="text-lg sm:text-xl font-bold text-zinc-900 block tabular-nums">
                     {formatMoney(sale.total)}
                 </span>
-                <span className="text-xs text-gray-400 mt-1 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] text-zinc-500 mt-1.5 font-semibold bg-zinc-100 px-2.5 py-0.5 rounded-full">
                     Pagado
                 </span>
             </div>
