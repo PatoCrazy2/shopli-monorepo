@@ -23,6 +23,8 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
     where: { id },
     include: {
       sucursal: true,
+      iniciadaPor: true,
+      finalizadaPor: true,
       items: {
         include: {
           producto: {
@@ -37,8 +39,8 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
     }
   });
 
-  if (!audit) {
-    redirect("/dashboard/inventory");
+  if (!audit || audit.sucursal.empresa_id !== empresaId) {
+    redirect("/dashboard/audits");
   }
 
   // Verificar si la auditoría tuvo reconciliaciones retroactivas (ajustes contables registrados)
@@ -66,6 +68,9 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
     isApplied: audit.isApplied,
     hasAdjustments: ajusteCount > 0,
     startedAt: audit.startedAt.toISOString(),
+    finishedAt: audit.finishedAt ? audit.finishedAt.toISOString() : null,
+    startedBy: audit.iniciadaPor?.name || "Desconocido",
+    finishedBy: audit.finalizadaPor?.name || "Desconocido",
     items: filteredItems.map(item => ({
       id: item.id,
       productId: item.productId,
@@ -85,10 +90,11 @@ export default async function AuditReportPage({ params }: { params: Promise<{ id
       <div className="flex justify-between items-center mb-8">
          <div>
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Reporte de Auditoría</h1>
-            <p className="text-zinc-500 mt-2 text-sm">
-                Sucursal: <span className="font-medium text-zinc-700">{formattedAudit.branchName}</span> &middot; 
-                Iniciada: {new Date(formattedAudit.startedAt).toLocaleString()} &middot;
-                Estado: {formattedAudit.status === 'OPEN' ? 'En Curso (Conteo Abierto)' : 'Cerrada (Conteo Finalizado)'}
+            <p className="text-zinc-500 mt-2 text-sm leading-relaxed">
+                <span className="font-medium text-zinc-700">{formattedAudit.branchName}</span> &middot; 
+                Iniciada: {new Date(formattedAudit.startedAt).toLocaleString()} por {formattedAudit.startedBy} <br/>
+                Estado: {formattedAudit.status === 'OPEN' ? 'En Curso (Conteo Abierto)' : 'Cerrada (Conteo Finalizado)'} 
+                {formattedAudit.finishedAt && ` · Finalizada: ${new Date(formattedAudit.finishedAt).toLocaleString()} por ${formattedAudit.finishedBy}`}
             </p>
          </div>
       </div>
