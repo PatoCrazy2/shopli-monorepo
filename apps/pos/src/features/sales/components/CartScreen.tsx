@@ -96,13 +96,13 @@ export default function CartScreen({
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <div>
-                        <h2 className="text-base sm:text-lg font-bold text-zinc-950 tracking-tight leading-tight">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-base sm:text-lg font-bold text-zinc-950 tracking-tight">
                             Resumen de Venta
                         </h2>
-                        <p className="text-xs text-zinc-500 font-medium">
-                            {totalItems} {totalItems === 1 ? 'artículo' : 'artículos'}
-                        </p>
+                        <span className="w-6 h-6 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-800 text-xs font-extrabold flex items-center justify-center tabular-nums">
+                            {totalItems}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -243,7 +243,7 @@ export default function CartScreen({
                             : 'bg-black text-white hover:bg-zinc-800 active:scale-[0.99]'
                     }`}
                 >
-                    <span>Proceder al Cobro</span>
+                    <span>Cobrar</span>
                 </button>
             </div>
 
