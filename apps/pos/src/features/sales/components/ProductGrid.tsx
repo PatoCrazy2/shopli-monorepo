@@ -120,16 +120,16 @@ export default function ProductGrid({ onAddToCart, onOpenScanner }: ProductGridP
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-24">
                 {filteredProducts.length === 0 && (
-                    <div className="col-span-full flex flex-col items-center justify-center p-12 text-gray-500">
+                    <div className="col-span-full flex flex-col items-center justify-center p-12 text-zinc-500">
                         {isSyncing ? (
                             <>
-                                <p className="font-medium">Sincronizando datos desde el servidor...</p>
-                                <p className="text-sm mt-1 text-gray-400">Esto solo ocurre la primera vez.</p>
+                                <p className="font-medium text-zinc-700">Sincronizando datos desde el servidor...</p>
+                                <p className="text-sm mt-1 text-zinc-400">Esto solo ocurre la primera vez.</p>
                             </>
                         ) : (
                             <>
-                                <p>No se encontraron productos.</p>
-                                <p className="text-sm mt-1 text-gray-400">Intenta buscar con otros términos.</p>
+                                <p className="font-medium text-zinc-700">No se encontraron productos.</p>
+                                <p className="text-sm mt-1 text-zinc-400">Intenta buscar con otros términos.</p>
                             </>
                         )}
                     </div>
@@ -141,10 +141,12 @@ export default function ProductGrid({ onAddToCart, onOpenScanner }: ProductGridP
                     const totalStock = hasVariants 
                         ? product.variants.reduce((acc: number, v: any) => acc + v.stock, 0)
                         : product.stock;
+                    const hasBadge = totalStock <= 0 || hasVariants;
 
                     return (
                         <button
                             key={product.id}
+                            type="button"
                             onClick={() => {
                                 if (hasVariants) {
                                     setSelectedParent(product);
@@ -152,20 +154,33 @@ export default function ProductGrid({ onAddToCart, onOpenScanner }: ProductGridP
                                     onAddToCart(product.id);
                                 }
                             }}
-                            className={`h-32 relative border rounded-lg flex flex-col items-center justify-center p-4 transition-colors text-center shadow-sm hover:bg-gray-50 active:scale-95
-                                ${totalStock <= 0 ? 'bg-red-50/20 border-red-200' : 'bg-white border-gray-200'}`}
+                            className={`h-32 relative border rounded-2xl flex flex-col items-center justify-center text-center shadow-xs active:scale-[0.98] select-none cursor-pointer ${
+                                hasBadge ? 'pt-6 pb-3 px-3.5' : 'p-4'
+                            } ${
+                                totalStock <= 0
+                                    ? 'bg-red-50/15 border-red-200/80 hover:bg-red-50/30'
+                                    : 'bg-white border-zinc-200/80 hover:border-zinc-300 hover:bg-zinc-50/40'
+                            }`}
                         >
                             {totalStock <= 0 ? (
-                                <span className="absolute top-2 right-2 flex items-center justify-center bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                <span className="absolute top-2.5 right-2.5 flex items-center justify-center bg-red-50 border border-red-200/70 text-red-600 text-[10px] font-semibold px-2.5 py-0.5 rounded-full tracking-wide">
                                     Stock: {totalStock}
                                 </span>
                             ) : hasVariants ? (
-                                <span className="absolute top-2 right-2 flex items-center justify-center bg-indigo-50 border border-indigo-200 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                <span className="absolute top-2.5 right-2.5 flex items-center justify-center bg-zinc-100 border border-zinc-200/80 text-zinc-700 text-[10px] font-semibold px-2.5 py-0.5 rounded-full tracking-wide">
                                     Variantes ({product.variants.length})
                                 </span>
                             ) : null}
-                            <span className={`font-semibold text-sm mb-2 leading-tight ${totalStock <= 0 ? 'text-gray-600' : ''}`}>{product.nombre}</span>
-                            <span className="text-gray-900 font-bold text-lg">${product.precio_publico.toFixed(2)}</span>
+                            <span
+                                className={`font-medium text-sm mb-1.5 leading-snug line-clamp-2 ${
+                                    totalStock <= 0 ? 'text-zinc-500' : 'text-zinc-700'
+                                }`}
+                            >
+                                {product.nombre}
+                            </span>
+                            <span className="text-zinc-950 font-extrabold text-lg tracking-tight tabular-nums">
+                                ${product.precio_publico.toFixed(2)}
+                            </span>
                         </button>
                     );
                 })}
