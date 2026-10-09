@@ -10,9 +10,10 @@ import { UserAvatar } from "../../features/auth/LoginForm";
 interface SidebarProps {
     isOpen: boolean;
     onClose: () => void;
+    onOpenExpense: () => void;
 }
 
-export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ isOpen, onClose, onOpenExpense }: SidebarProps) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const { user } = useAuth();
     const isAuditActive = useLiveQuery(
@@ -110,6 +111,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <span className="truncate">{item.label}</span>
                         </NavLink>
                     ))}
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onClose();
+                            onOpenExpense();
+                        }}
+                        className="flex items-center gap-3.5 px-4 py-3.5 rounded-full text-sm text-zinc-700 hover:bg-zinc-100 active:bg-zinc-200/70 font-medium transition-none text-left cursor-pointer"
+                    >
+                        <div className="relative flex items-center justify-center shrink-0">
+                            <Wallet className="w-[18px] h-[18px] text-zinc-500" />
+                        </div>
+                        <span className="truncate">Gasto Caja Chica</span>
+                    </button>
                 </nav>
 
                 {/* System Settings Footer */}

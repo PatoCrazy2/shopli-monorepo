@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useSidebar } from "../../hooks/useSidebar";
 import Sidebar from "./Sidebar";
+import ExpenseModal from "../../features/sales/components/ExpenseModal";
 
 const VIEW_LABELS: Record<string, string> = {
     "/": "Ventas",
@@ -14,6 +15,7 @@ const VIEW_LABELS: Record<string, string> = {
 
 export default function MainLayout() {
     const { isOpen, toggle, close } = useSidebar();
+    const [isExpenseOpen, setIsExpenseOpen] = useState(false);
     const location = useLocation();
     const isAuditActive = location.pathname === '/auditoria-cierre';
     const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -35,7 +37,13 @@ export default function MainLayout() {
 
     return (
         <div className="h-dvh bg-zinc-50 flex flex-col font-sans text-zinc-900 overflow-hidden">
-            {!isAuditActive && <Sidebar isOpen={isOpen} onClose={close} />}
+            {!isAuditActive && (
+                <Sidebar
+                    isOpen={isOpen}
+                    onClose={close}
+                    onOpenExpense={() => setIsExpenseOpen(true)}
+                />
+            )}
 
             {/* Minimalist Pill Header */}
             {!isAuditActive && (
@@ -74,6 +82,10 @@ export default function MainLayout() {
             <main className="flex-1 flex overflow-hidden">
                 <Outlet />
             </main>
+
+            {isExpenseOpen && (
+                <ExpenseModal onClose={() => setIsExpenseOpen(false)} />
+            )}
         </div>
     );
 }

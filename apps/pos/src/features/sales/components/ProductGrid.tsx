@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { pullFromCloud } from "../../../lib/sync";
 import VariantSelectorModal from "./VariantSelectorModal";
+import { Search, Scan } from "lucide-react";
 
 interface ProductGridProps {
     onAddToCart: (id: string) => void;
+    onOpenScanner?: () => void;
 }
 
-export default function ProductGrid({ onAddToCart }: ProductGridProps) {
+export default function ProductGrid({ onAddToCart, onOpenScanner }: ProductGridProps) {
     const { user } = useAuth();
     const [isSyncing, setIsSyncing] = useState(false);
     const [selectedParent, setSelectedParent] = useState<any | null>(null);
@@ -92,15 +94,28 @@ export default function ProductGrid({ onAddToCart }: ProductGridProps) {
 
     return (
         <>
-            <div className="mb-4 sm:mb-6 shrink-0 flex gap-2">
-                <input
-                    type="text"
-                    placeholder="Buscar producto por nombre o código..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 h-12 sm:h-14 px-3 sm:px-4 text-base sm:text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent placeholder:text-gray-400 bg-white"
-                    autoFocus
-                />
+            <div className="mb-4 sm:mb-6 shrink-0">
+                <div className="relative flex items-center w-full bg-white border border-zinc-200/90 rounded-full h-13 sm:h-14 shadow-xs focus-within:ring-2 focus-within:ring-black/10 focus-within:border-zinc-400 transition-all select-none">
+                    <Search className="w-5 h-5 text-zinc-400 absolute left-4.5 pointer-events-none" />
+                    <input
+                        type="text"
+                        placeholder="Buscar producto por nombre o código..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full h-full bg-transparent pl-12 pr-14 text-sm sm:text-base font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none rounded-full"
+                        autoFocus
+                    />
+                    {onOpenScanner && (
+                        <button
+                            type="button"
+                            onClick={onOpenScanner}
+                            aria-label="Escanear código con cámara"
+                            className="absolute right-1.5 w-10 h-10 sm:w-11 sm:h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-full flex items-center justify-center shadow-xs transition-transform cursor-pointer"
+                        >
+                            <Scan className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-24">
