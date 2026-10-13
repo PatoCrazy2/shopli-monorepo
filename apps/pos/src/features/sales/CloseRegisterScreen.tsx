@@ -132,14 +132,14 @@ export default function CloseRegisterScreen() {
                                 Conteo Físico
                             </h2>
                             <p className="text-[11px] text-zinc-500 mt-0.5">
-                                Ingresa el efectivo total en gaveta
+                                Ingresa el total de efectivo contado en caja
                             </p>
                         </div>
 
                         {/* Campo de Captura estilo Píldora Compacto */}
                         <div className="space-y-1">
                             <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider" htmlFor="amount">
-                                Efectivo en Gaveta
+                                Efectivo Contado
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
