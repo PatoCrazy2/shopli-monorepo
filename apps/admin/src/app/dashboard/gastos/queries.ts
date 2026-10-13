@@ -30,11 +30,17 @@ export async function getGastos(filters: GastosFilters) {
   }
 
   if (filters.startDate && filters.endDate) {
-    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    // Tolerancia: Math.min entre medianoche UTC (00:00:00Z) y medianoche local México (00:00:00-06:00)
+    // para asegurar compatibilidad con gastos guardados históricamente como fecha pura YYYY-MM-DD
+    const localStart = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const utcMidnight = new Date(`${filters.startDate}T00:00:00.000Z`);
+    const s = new Date(Math.min(localStart.getTime(), utcMidnight.getTime()));
     const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
     where.fecha = { gte: s, lte: e };
   } else if (filters.startDate) {
-    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const localStart = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const utcMidnight = new Date(`${filters.startDate}T00:00:00.000Z`);
+    const s = new Date(Math.min(localStart.getTime(), utcMidnight.getTime()));
     const e = new Date(`${filters.startDate}T23:59:59.999-06:00`);
     where.fecha = { gte: s, lte: e };
   } else if (filters.endDate) {
