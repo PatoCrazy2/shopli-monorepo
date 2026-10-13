@@ -93,36 +93,34 @@ export default function CloseRegisterScreen() {
                             <button
                                 type="button"
                                 onClick={() => setShowBreakdown((prev) => !prev)}
-                                className="px-2.5 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] font-semibold text-zinc-300 flex items-center gap-1 cursor-pointer transition-none select-none"
+                                className="md:hidden px-2.5 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] font-semibold text-zinc-300 flex items-center gap-1 cursor-pointer transition-none select-none"
                             >
                                 <span>{showBreakdown ? 'Ocultar' : 'Ver desglose (3)'}</span>
                                 <ChevronDown className={`w-3.5 h-3.5 ${showBreakdown ? 'rotate-180' : ''}`} />
                             </button>
                         </div>
 
-                        {/* Desglose Integrado (Versión Compacta) */}
-                        {showBreakdown && (
-                            <div className="mt-3.5 pt-3 border-t border-zinc-800 space-y-1.5 text-xs">
-                                <div className="flex justify-between items-center py-0.5">
-                                    <span className="text-zinc-400 font-medium">Fondo Inicial</span>
-                                    <span className="font-bold text-zinc-200 tabular-nums">
-                                        {formatMoney(initialAmount)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center py-0.5">
-                                    <span className="text-zinc-400 font-medium">Ventas en Efectivo</span>
-                                    <span className="font-bold text-emerald-400 tabular-nums">
-                                        +{formatMoney(totalSales)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between items-center py-0.5">
-                                    <span className="text-zinc-400 font-medium">Gastos Caja Chica</span>
-                                    <span className="font-bold text-red-400 tabular-nums">
-                                        {totalExpenses > 0 ? `-${formatMoney(totalExpenses)}` : formatMoney(0)}
-                                    </span>
-                                </div>
+                        {/* Desglose Integrado: visible por defecto en desktop (md:block) y según toggle en móvil */}
+                        <div className={`mt-3.5 pt-3 border-t border-zinc-800 space-y-1.5 text-xs ${showBreakdown ? 'block' : 'hidden md:block'}`}>
+                            <div className="flex justify-between items-center py-0.5">
+                                <span className="text-zinc-400 font-medium">Fondo Inicial</span>
+                                <span className="font-bold text-zinc-200 tabular-nums">
+                                    {formatMoney(initialAmount)}
+                                </span>
                             </div>
-                        )}
+                            <div className="flex justify-between items-center py-0.5">
+                                <span className="text-zinc-400 font-medium">Ventas en Efectivo</span>
+                                <span className="font-bold text-emerald-400 tabular-nums">
+                                    +{formatMoney(totalSales)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center py-0.5">
+                                <span className="text-zinc-400 font-medium">Gastos Caja Chica</span>
+                                <span className="font-bold text-red-400 tabular-nums">
+                                    {totalExpenses > 0 ? `-${formatMoney(totalExpenses)}` : formatMoney(0)}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
