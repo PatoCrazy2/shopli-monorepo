@@ -1,9 +1,22 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 export default function AdminFeaturesGrid() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {
+        // Autoplay bloqueado por políticas de navegador o modo ahorro de batería
+      });
+    }
+  }, []);
   return (
     <section className="relative w-full max-w-7xl mx-auto px-6 sm:px-12 py-24 md:py-32 flex flex-col items-center" id="centro-cloud">
       {/* Encabezado de la Sección Centro Cloud */}
@@ -185,6 +198,7 @@ export default function AdminFeaturesGrid() {
           <div className="md:col-span-4 bg-white h-[380px] sm:h-[420px] md:h-[450px] relative overflow-hidden group">
             {/* Video en loop continuo ocupando todo el cuadro */}
             <video
+              ref={videoRef}
               autoPlay
               loop
               muted

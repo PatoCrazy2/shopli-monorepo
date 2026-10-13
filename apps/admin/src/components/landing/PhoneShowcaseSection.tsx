@@ -195,8 +195,12 @@ export default function PhoneShowcaseSection() {
             if (entry.isIntersecting) {
               setIsScreenOn(true);
               setIsSettled(true);
-              if (videoRef.current && videoRef.current.paused) {
-                videoRef.current.play().catch(() => {});
+              if (videoRef.current) {
+                videoRef.current.defaultMuted = true;
+                videoRef.current.muted = true;
+                if (videoRef.current.paused) {
+                  videoRef.current.play().catch(() => {});
+                }
               }
             } else {
               if (videoRef.current && !videoRef.current.paused) {
