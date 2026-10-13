@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getGastos } from "./queries";
-import { getFilterOptions } from "../analytics/queries";
+import { getFilterOptions, getTodayMexicoCity } from "../analytics/queries";
 import { ExpenseForm } from "./_components/expense-form";
 import { ExpenseList } from "./_components/expense-list";
 import { ExpenseFilters } from "./_components/expense-filters";
@@ -18,16 +18,34 @@ export default async function GastosPage({
   if (!session?.user) redirect("/login");
 
   const sp = await searchParams;
+  const options = await getFilterOptions();
+
+  // 1. Sucursal por defecto: Si solo hay 1 sucursal, se autoselecciona. Si hay 2+, undefined ("Todas").
+  const defaultSucursalId = options.sucursales.length === 1 ? options.sucursales[0].id : undefined;
+  const sucursalId = sp.sucursalId !== undefined ? sp.sucursalId : defaultSucursalId;
+
+  // 2. Fecha por defecto: "Hoy" (getTodayMexicoCity()) a menos que venga 'all' o una fecha específica
+  const todayStr = getTodayMexicoCity();
+  const rawStartDate = sp.startDate;
+  let resolvedStartDate: string | undefined;
+
+  if (rawStartDate === "all") {
+    resolvedStartDate = undefined; // Todas las fechas
+  } else if (rawStartDate) {
+    resolvedStartDate = rawStartDate;
+  } else {
+    resolvedStartDate = todayStr; // Por defecto: Hoy
+  }
+
   const filters = {
-    sucursalId: sp.sucursalId,
-    startDate: sp.startDate,
-    endDate: sp.endDate,
-    categoria: sp.categoria,
+    sucursalId: sucursalId || undefined,
+    startDate: resolvedStartDate,
+    endDate: sp.endDate || resolvedStartDate,
+    categoria: sp.categoria || undefined,
     page: sp.page ? parseInt(sp.page, 10) || 1 : 1
   };
 
   const { gastos, total, metrics } = await getGastos(filters);
-  const options = await getFilterOptions();
 
   const { totalGastos, nominalGastos, localGastos, otrosGastos } = metrics;
 
@@ -53,7 +71,7 @@ export default async function GastosPage({
           <ExpenseFilters
             sucursales={options.sucursales}
             currentSucursal={filters.sucursalId}
-            currentDate={filters.startDate}
+            currentDate={rawStartDate === "all" ? "all" : filters.startDate}
             currentCategoria={filters.categoria}
           />
           <ExpenseForm sucursales={options.sucursales} />

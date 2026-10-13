@@ -163,8 +163,8 @@ function DateSelect({
 
   const isToday = value === todayStr;
   const isYesterday = value === yesterdayStr;
-  const isAll = !value;
-  const isCustom = Boolean(value && !isToday && !isYesterday);
+  const isAll = value === "all";
+  const isCustom = Boolean(value && !isToday && !isYesterday && !isAll);
 
   let displayLabel = "Todas las fechas";
   if (isToday) displayLabel = "Hoy";
@@ -195,7 +195,7 @@ function DateSelect({
           <button
             type="button"
             onClick={() => {
-              onChange("");
+              onChange("all");
               setOpen(false);
             }}
             className={cn(
@@ -297,6 +297,7 @@ export function ExpenseFilters({
       } else {
         params.delete(key);
       }
+      params.delete("page");
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
     });
@@ -308,7 +309,9 @@ export function ExpenseFilters({
     });
   };
 
-  const hasActiveFilters = Boolean(currentSucursal || currentDate || currentCategoria);
+  const isCustomBranch = sucursales.length > 1 ? Boolean(currentSucursal) : false;
+  const isCustomDate = Boolean(currentDate && currentDate !== getSafeDateString(new Date()));
+  const hasActiveFilters = Boolean(isCustomBranch || isCustomDate || currentCategoria || searchParams.has("page"));
 
   return (
     <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
