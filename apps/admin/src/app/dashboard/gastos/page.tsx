@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getGastos } from "./queries";
+import { getGastos, EXPENSES_PAGE_SIZE } from "./queries";
 import { getFilterOptions, getTodayMexicoCity } from "../analytics/queries";
 import { ExpenseForm } from "./_components/expense-form";
 import { ExpenseList } from "./_components/expense-list";
@@ -110,6 +110,14 @@ export default async function GastosPage({
       {/* 3. Listado de Egresos */}
       <ExpenseList 
         gastos={gastos.map(g => ({ ...g, monto: Number(g.monto) })) as any} 
+        total={total}
+        page={filters.page}
+        pageSize={EXPENSES_PAGE_SIZE}
+        searchParams={{
+          sucursalId: sp.sucursalId,
+          startDate: rawStartDate,
+          categoria: sp.categoria
+        }}
       />
     </div>
   );
