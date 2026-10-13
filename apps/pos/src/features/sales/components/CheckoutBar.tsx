@@ -8,7 +8,7 @@ export default function CheckoutBar({ totalItems, totalCart, onGoToCart }: Check
     if (totalItems === 0) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-6 bg-gradient-to-t from-zinc-50 via-zinc-50/80 to-transparent pointer-events-none flex justify-center z-20 select-none">
+        <div className="fixed bottom-0 left-0 right-0 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:p-6 bg-gradient-to-t from-zinc-50 via-zinc-50/80 to-transparent pointer-events-none flex justify-center z-20 select-none">
             <button
                 type="button"
                 onClick={onGoToCart}
