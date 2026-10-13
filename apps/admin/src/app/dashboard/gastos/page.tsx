@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function GastosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sucursalId?: string; startDate?: string; endDate?: string; categoria?: string }>;
+  searchParams: Promise<{ sucursalId?: string; startDate?: string; endDate?: string; categoria?: string; page?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
@@ -22,16 +22,14 @@ export default async function GastosPage({
     sucursalId: sp.sucursalId,
     startDate: sp.startDate,
     endDate: sp.endDate,
-    categoria: sp.categoria
+    categoria: sp.categoria,
+    page: sp.page ? parseInt(sp.page, 10) || 1 : 1
   };
 
-  const gastos = await getGastos(filters);
+  const { gastos, total, metrics } = await getGastos(filters);
   const options = await getFilterOptions();
 
-  const totalGastos = gastos.reduce((sum, g) => sum + Number(g.monto), 0);
-  const nominalGastos = gastos.filter(g => g.categoria === 'NOMINA').reduce((sum, g) => sum + Number(g.monto), 0);
-  const localGastos = gastos.filter(g => g.categoria === 'RENTA').reduce((sum, g) => sum + Number(g.monto), 0);
-  const otrosGastos = totalGastos - nominalGastos - localGastos;
+  const { totalGastos, nominalGastos, localGastos, otrosGastos } = metrics;
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-20">
@@ -43,7 +41,7 @@ export default async function GastosPage({
               Gastos Operativos
             </h1>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono">
-              {gastos.length}
+              {total}
             </span>
           </div>
           <p className="text-zinc-500 dark:text-zinc-400 text-xs sm:text-sm font-medium">
@@ -67,7 +65,7 @@ export default async function GastosPage({
         <SummaryCard 
           title="Egreso Total" 
           value={`$${totalGastos.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-          desc={`${gastos.length} movimientos`}
+          desc={`${total} movimientos`}
           icon={<Receipt size={16} className="text-zinc-900 dark:text-zinc-100" />}
           featured
         />
