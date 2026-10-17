@@ -33,13 +33,21 @@ export async function createGasto(data: {
   }
 
   try {
+    let gastoFecha: Date;
+    if (data.fecha) {
+      // Si viene YYYY-MM-DD, asegurar mediodía en horario México (UTC-6) para que nunca se desplace al día anterior en UTC
+      gastoFecha = new Date(`${data.fecha}T12:00:00.000-06:00`);
+    } else {
+      gastoFecha = new Date();
+    }
+
     const gasto = await db.gasto.create({
       data: {
         sucursal_id: data.sucursal_id,
         categoria: data.categoria,
         monto: data.monto,
         descripcion: data.descripcion,
-        fecha: data.fecha ? new Date(data.fecha) : new Date(),
+        fecha: gastoFecha,
         proveedor_id: data.proveedor_id || null,
         sync_status: "SYNCED"
       }
@@ -96,11 +104,16 @@ export async function updateGasto(id: string, data: {
   }
 
   try {
+    let gastoFecha: Date | undefined;
+    if (data.fecha) {
+      gastoFecha = new Date(`${data.fecha}T12:00:00.000-06:00`);
+    }
+
     const updatedGasto = await db.gasto.update({
       where: { id },
       data: {
         ...data,
-        fecha: data.fecha ? new Date(data.fecha) : undefined,
+        fecha: gastoFecha,
       }
     });
 

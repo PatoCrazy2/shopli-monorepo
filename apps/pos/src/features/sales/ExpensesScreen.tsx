@@ -69,9 +69,9 @@ export default function ExpensesScreen() {
     };
 
     return (
-        <div className="flex flex-col w-full h-full bg-zinc-50 p-4 sm:p-6 overflow-hidden select-none font-sans">
+        <div className="flex flex-col w-full h-full bg-zinc-50 p-3 sm:p-6 overflow-y-auto md:overflow-hidden select-none font-sans custom-scrollbar">
             {/* Header Area Compacto (Idéntico a Historial de Ventas) */}
-            <div className="shrink-0 flex items-center justify-between gap-3 mb-4">
+            <div className="shrink-0 flex items-center justify-between gap-3 mb-3 sm:mb-4">
                 <div className="min-w-0 flex-1">
                     <h1 className="text-base sm:text-2xl font-black text-zinc-900 tracking-tight truncate">
                         Caja Chica & Gastos
@@ -82,8 +82,8 @@ export default function ExpensesScreen() {
                 </div>
             </div>
 
-            {/* Summary Banner de 2 Columnas Balanceadas */}
-            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-3xl mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
+            {/* Summary Banner de 2 Columnas Balanceadas (Se desplaza en móvil) */}
+            <div className="shrink-0 bg-black text-white p-4 sm:p-5 rounded-3xl mb-3 sm:mb-4 shadow-sm border border-zinc-900 grid grid-cols-2 divide-x divide-zinc-800">
                 <div className="pr-3 sm:pr-5 flex flex-col justify-center">
                     <span className="text-zinc-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block mb-1">
                         Total Retirado (Turno)
@@ -107,8 +107,8 @@ export default function ExpensesScreen() {
                 </div>
             </div>
 
-            {/* Cuerpo Principal Adaptativo: Split View en Pantallas Medianas/Grandes */}
-            <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 overflow-y-auto md:overflow-hidden pb-4">
+            {/* Cuerpo Principal Adaptativo: Flujo natural en móvil, Split View en Desktop */}
+            <div className="flex-1 md:min-h-0 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-6 md:overflow-hidden pb-4">
                 {/* Lado Izquierdo: Formulario de Salida de Efectivo */}
                 <div className="md:col-span-5 lg:col-span-4 flex flex-col shrink-0">
                     <form
@@ -229,8 +229,8 @@ export default function ExpensesScreen() {
                 </div>
 
                 {/* Lado Derecho: Lista de Salidas del Turno (Full Canvas Scroll) */}
-                <div className="md:col-span-7 lg:col-span-8 flex flex-col min-h-0">
-                    <div className="flex items-center justify-between pb-3 px-1">
+                <div className="md:col-span-7 lg:col-span-8 flex flex-col md:min-h-0">
+                    <div className="flex items-center justify-between pb-2.5 sm:pb-3 px-1">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                                 Movimientos del Turno Actual
@@ -241,7 +241,7 @@ export default function ExpensesScreen() {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pr-0.5">
+                    <div className="md:flex-1 md:overflow-y-auto no-scrollbar space-y-2.5 pr-0.5">
                         {sortedExpenses.length === 0 ? (
                             <div className="h-full min-h-[220px] bg-white rounded-3xl border border-zinc-200/70 p-8 text-center flex flex-col items-center justify-center gap-2 shadow-2xs">
                                 <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center">

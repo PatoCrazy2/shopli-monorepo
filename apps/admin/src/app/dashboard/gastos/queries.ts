@@ -1,12 +1,18 @@
-import { db, Role, GastoCategoria, Prisma } from "@shopli/db";
+import { db, GastoCategoria, Prisma } from "@shopli/db";
 import { auth } from "@/lib/auth";
 
-export async function getGastos(filters: {
+export const EXPENSES_PAGE_SIZE = 25;
+
+export interface GastosFilters {
   sucursalId?: string;
   startDate?: string;
   endDate?: string;
   categoria?: string;
-}) {
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getGastos(filters: GastosFilters) {
   const session = await auth();
   if (!session?.user?.empresa_id) {
     throw new Error("No autorizado");
@@ -24,11 +30,17 @@ export async function getGastos(filters: {
   }
 
   if (filters.startDate && filters.endDate) {
-    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    // Tolerancia: Math.min entre medianoche UTC (00:00:00Z) y medianoche local México (00:00:00-06:00)
+    // para asegurar compatibilidad con gastos guardados históricamente como fecha pura YYYY-MM-DD
+    const localStart = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const utcMidnight = new Date(`${filters.startDate}T00:00:00.000Z`);
+    const s = new Date(Math.min(localStart.getTime(), utcMidnight.getTime()));
     const e = new Date(`${filters.endDate}T23:59:59.999-06:00`);
     where.fecha = { gte: s, lte: e };
   } else if (filters.startDate) {
-    const s = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const localStart = new Date(`${filters.startDate}T00:00:00.000-06:00`);
+    const utcMidnight = new Date(`${filters.startDate}T00:00:00.000Z`);
+    const s = new Date(Math.min(localStart.getTime(), utcMidnight.getTime()));
     const e = new Date(`${filters.startDate}T23:59:59.999-06:00`);
     where.fecha = { gte: s, lte: e };
   } else if (filters.endDate) {
@@ -39,21 +51,55 @@ export async function getGastos(filters: {
     where.categoria = filters.categoria as GastoCategoria;
   }
 
-  try {
-    const gastos = await db.gasto.findMany({
-      where,
-      include: {
-        sucursal: {
-          select: { nombre: true }
-        },
-        proveedor: {
-          select: { nombre: true }
-        }
-      },
-      orderBy: { fecha: "desc" }
-    });
+  const pageSize = filters.pageSize || EXPENSES_PAGE_SIZE;
+  const page = Math.max(1, filters.page || 1);
+  const skip = (page - 1) * pageSize;
 
-    return gastos;
+  try {
+    const [gastos, total, allMatchingMetrics] = await Promise.all([
+      db.gasto.findMany({
+        where,
+        include: {
+          sucursal: {
+            select: { nombre: true }
+          },
+          proveedor: {
+            select: { nombre: true }
+          }
+        },
+        orderBy: { fecha: "desc" },
+        take: pageSize,
+        skip,
+      }),
+      db.gasto.count({ where }),
+      db.gasto.findMany({
+        where,
+        select: {
+          monto: true,
+          categoria: true,
+        }
+      })
+    ]);
+
+    const totalGastos = allMatchingMetrics.reduce((sum, g) => sum + Number(g.monto), 0);
+    const nominalGastos = allMatchingMetrics.filter(g => g.categoria === "NOMINA").reduce((sum, g) => sum + Number(g.monto), 0);
+    const localGastos = allMatchingMetrics.filter(g => g.categoria === "RENTA").reduce((sum, g) => sum + Number(g.monto), 0);
+    const otrosGastos = totalGastos - nominalGastos - localGastos;
+
+    return {
+      gastos,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      metrics: {
+        totalGastos,
+        nominalGastos,
+        localGastos,
+        otrosGastos,
+        count: total,
+      }
+    };
   } catch (error) {
     console.error("getGastos Error:", error);
     throw new Error("Error al obtener los gastos");
